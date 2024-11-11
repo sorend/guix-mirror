@@ -1850,6 +1850,15 @@ Analysis and Reporting Technology) functionality.")
               (string-append "--with-udevdir=" #$output "/lib/udev"))
       #:phases
       #~(modify-phases %standard-phases
+          (add-after 'unpack 'patch-commands
+           (lambda* (#:key inputs #:allow-other-keys)
+             (substitute* "src/udisksstate.c"
+               (("\"umount -l")
+                (string-append "\"" (search-input-file inputs "bin/umount")
+                               " -l")))
+             (substitute* "src/udiskslinuxdrive.c"
+               (("\"eject %s")
+                (string-append "\"" (search-input-file inputs "bin/eject"))))))
           (add-before 'configure 'fix-girdir
             (lambda _
               ;; Install introspection data to its own output.
