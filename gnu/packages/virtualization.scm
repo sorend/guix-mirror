@@ -38,6 +38,7 @@
 ;;; Copyright © 2024 Ashish SHUKLA <ashish.is@lostca.se>
 ;;; Copyright © 2024 Jakob Kirsch <jakob.kirsch@web.de>
 ;;; Copyright © 2024 Giacomo Leidi <goodoldpaul@autistici.org>
+;;; Copyright © 2024 Artyom V. Poptsov <poptsov.artyom@gmail.com>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -732,6 +733,12 @@ server and embedded PowerPC, and S390 guests.")
                            (string-append "LIBDIR = " lib "\n"))
                           (("/usr/include")
                            include)))))
+                  ;; XXX: "make -C test" fails because it cannot find "x86test"
+                  ;; executable due to parallel tests.  So we need to make sure that
+                  ;; this file is built before running the tests.
+                  (add-before 'check 'make-x86test
+                    (lambda _
+                      (invoke "make" "-C" "test" "x86test")))
                   (delete 'configure)))) ;no configure script
     (native-inputs (list nasm perl))
     (synopsis "Library for x86 emulation")
@@ -2546,14 +2553,14 @@ by default and can be made read-only.")
 (define-public bochs
   (package
     (name "bochs")
-    (version "2.7")
+    (version "2.8")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "https://sourceforge.net/projects/bochs/files/bochs/"
                            version "/bochs-" version ".tar.gz"))
        (sha256
-        (base32 "0ymiwnfqg5npq2dk9ngidbbfn3qw8z6i491finhcaan7zldsn450"))))
+        (base32 "0n80v8wjd9i3rhc51sq7n7xw2paz7g1scsrmkxx1yhfqyypi6nx8"))))
     (build-system gnu-build-system)
     (arguments
      `(#:tests? #f))                    ; no tests exist

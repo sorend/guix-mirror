@@ -30,6 +30,7 @@
 ;;; Copyright © 2022 dan <i@dan.games>
 ;;; Copyright © 2023, 2024 John Kehayias <john.kehayias@protonmail.com>
 ;;; Copyright © 2024 Nicolas Graves <ngraves@ngraves.fr>
+;;; Copyright © 2024 Maxim Cournoyer <maxim.cournoyer@gmail.com>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -1131,24 +1132,6 @@ windows, accepting user input, loading data, drawing images, playing sounds,
 etc.")
     (home-page "https://liballeg.org")
     (license license:bsd-3)))
-
-(define-public allegro-5.0
-  (package (inherit allegro)
-    (name "allegro")
-    (version "5.0.11")
-    (source (origin
-              (method url-fetch)
-              (uri (string-append "https://github.com/liballeg/allegro5/releases"
-                                  "/download/" version "/allegro-"
-                                  (if (equal? "0" (string-take-right version 1))
-                                    (string-drop-right version 2)
-                                    version)
-                                  ".tar.gz"))
-              (patches (search-patches
-                        "allegro-mesa-18.2.5-and-later.patch"))
-              (sha256
-               (base32
-                "0cd51qrh97jrr0xdmnivqgwljpmizg8pixsgvc4blqqlaz4i9zj9"))))))
 
 (define-public aseprite
   (package
@@ -2572,10 +2555,12 @@ joystick support.")))
               (patches (search-patches "plib-CVE-2011-4620.patch"
                                        "plib-CVE-2012-4552.patch"))))
     (build-system gnu-build-system)
-    (inputs
-     (list mesa libxi libxmu))
-    (native-inputs
-     (list pkg-config))
+    ;; plib exists only as a static library, per the author's choice (see:
+    ;; https://sourceforge.net/p/plib/mailman/message/10289018/).  Build it
+    ;; with PIC, so that shared programs can at least "link" to it.
+    (arguments (list #:configure-flags #~(list "CXXFLAGS=-fPIC")))
+    (native-inputs (list autoconf automake pkg-config))
+    (inputs (list mesa libxi libxmu))
     (home-page "https://plib.sourceforge.net/")
     (synopsis "Suite of portable game libraries")
     (description "PLIB is a set of libraries that will permit programmers to
@@ -2795,6 +2780,35 @@ specific knowledge of the hardware they are targeting.")
      "Flatzebra is a simple, generic C++ game engine library supporting 2D
 double-buffering.")
     (license license:gpl2+)))
+
+(define-public freesolid
+  (package
+    (name "freesolid")
+    (version "2.1.2")
+    (source (origin
+              (method url-fetch)
+              (uri (string-append "mirror://sourceforge/" name "/FreeSOLID-"
+                                  version ".zip"))
+              (sha256
+               (base32
+                "0wxqiv1ba227kwxpgwf6in9ai1lcamhmp1ib1c1chq4xvnpwdvc9"))
+              (patches (search-patches "freesolid-autotools.patch"
+                                       "freesolid-pkgconfig.patch"
+                                       "freesolid-configure.patch"
+                                       "freesolid-automake.patch"))))
+    (build-system gnu-build-system)
+    (arguments (list #:phases #~(modify-phases %standard-phases
+                                  (add-after 'unpack 'force-reboostrap
+                                    (lambda _
+                                      (delete-file "bootstrap.sh")
+                                      (delete-file "configure"))))))
+    (native-inputs (list autoconf automake libtool unzip))
+    (home-page "https://sourceforge.net/projects/freesolid/")
+    (synopsis "3D collision detection C++ library")
+    (description "FreeSOLID is a library for collision detection of
+three-dimensional objects undergoing rigid motion and deformation.  FreeSOLID
+is designed to be used in interactive 3D graphics applications.")
+    (license license:lgpl2.0+)))
 
 (define-public libccd
   (package

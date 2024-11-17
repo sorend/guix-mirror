@@ -864,6 +864,7 @@ INSTALLER_MODULES =                             \
   %D%/installer/final.scm			\
   %D%/installer/hardware.scm			\
   %D%/installer/hostname.scm			\
+  %D%/installer/kernel.scm			\
   %D%/installer/keymap.scm			\
   %D%/installer/locale.scm			\
   %D%/installer/newt.scm			\
@@ -882,6 +883,7 @@ INSTALLER_MODULES =                             \
   %D%/installer/newt/final.scm  		\
   %D%/installer/newt/parameters.scm		\
   %D%/installer/newt/hostname.scm		\
+  %D%/installer/newt/kernel.scm			\
   %D%/installer/newt/keymap.scm			\
   %D%/installer/newt/locale.scm			\
   %D%/installer/newt/menu.scm			\
@@ -955,7 +957,6 @@ dist_patch_DATA =						\
   %D%/packages/patches/akonadi-paths.patch		\
   %D%/packages/patches/akonadi-not-relocatable.patch		\
   %D%/packages/patches/akonadi-timestamps.patch		\
-  %D%/packages/patches/allegro-mesa-18.2.5-and-later.patch	\
   %D%/packages/patches/alure-dumb-2.patch			\
   %D%/packages/patches/ibus-anthy-fix-tests.patch		\
   %D%/packages/patches/ibus-table-paths.patch			\
@@ -1120,6 +1121,7 @@ dist_patch_DATA =						\
   %D%/packages/patches/clucene-contribs-lib.patch               \
   %D%/packages/patches/cube-nocheck.patch			\
   %D%/packages/patches/cups-minimal-Address-PPD-injection-issues.patch	\
+  %D%/packages/patches/curl-CVE-2024-8096.patch			\
   %D%/packages/patches/curl-use-ssl-cert-env.patch		\
   %D%/packages/patches/curlftpfs-fix-error-closing-file.patch	\
   %D%/packages/patches/curlftpfs-fix-file-names.patch		\
@@ -1186,7 +1188,6 @@ dist_patch_DATA =						\
   %D%/packages/patches/emacs-disable-jit-compilation.patch			\
   %D%/packages/patches/emacs-exec-path.patch			\
   %D%/packages/patches/emacs-fix-scheme-indent-function.patch	\
-  %D%/packages/patches/emacs-git-email-missing-parens.patch	\
   %D%/packages/patches/emacs-helpful-fix-tests.patch	\
   %D%/packages/patches/emacs-highlight-stages-add-gexp.patch	\
   %D%/packages/patches/emacs-json-reformat-fix-tests.patch	\
@@ -1256,7 +1257,6 @@ dist_patch_DATA =						\
   %D%/packages/patches/ffmpeg-jami-pipewiregrab-source-filter.patch	\
   %D%/packages/patches/ffmpeg-jami-remove-mjpeg-log.patch	\
   %D%/packages/patches/ffmpeg-jami-screen-sharing-x11-fix.patch	\
-  %D%/packages/patches/ffmpeg-remove-compressed_ten_bit_format.patch	\
   %D%/packages/patches/ffmpeg-4-binutils-2.41.patch	\
   %D%/packages/patches/fifengine-boost-compat.patch		\
   %D%/packages/patches/fifengine-python-3.9-compat.patch	\
@@ -1292,6 +1292,10 @@ dist_patch_DATA =						\
   %D%/packages/patches/freeimage-unbundle.patch		\
   %D%/packages/patches/freeimage-CVE-2020-21428.patch		\
   %D%/packages/patches/freeimage-CVE-2020-22524.patch		\
+  %D%/packages/patches/freesolid-automake.patch			\
+  %D%/packages/patches/freesolid-autotools.patch		\
+  %D%/packages/patches/freesolid-configure.patch		\
+  %D%/packages/patches/freesolid-pkgconfig.patch		\
   %D%/packages/patches/fulcrum-1.9.1-unbundled-libraries.patch	\
   %D%/packages/patches/fuse-glibc-2.34.patch			\
   %D%/packages/patches/fuse-overlapping-headers.patch		\
@@ -1545,6 +1549,7 @@ dist_patch_DATA =						\
   %D%/packages/patches/hubbub-sort-entities.patch		\
   %D%/packages/patches/hueplusplus-mbedtls.patch		\
   %D%/packages/patches/hurd-rumpdisk-no-hd.patch		\
+  %D%/packages/patches/hurd-startup.patch			\
   %D%/packages/patches/hwloc-1-test-btrfs.patch			\
   %D%/packages/patches/i7z-gcc-10.patch				\
   %D%/packages/patches/icecat-makeicecat.patch			\
@@ -1985,6 +1990,7 @@ dist_patch_DATA =						\
   %D%/packages/patches/portaudio-audacity-compat.patch		\
   %D%/packages/patches/portmidi-modular-build.patch		\
   %D%/packages/patches/postgresql-disable-resolve_symlinks.patch	\
+  %D%/packages/patches/postgresql-disable-normalize_exec_path.patch	\
   %D%/packages/patches/procmail-ambiguous-getline-debian.patch  \
   %D%/packages/patches/procmail-CVE-2014-3618.patch		\
   %D%/packages/patches/procmail-CVE-2017-16844.patch		\
@@ -2234,6 +2240,9 @@ dist_patch_DATA =						\
   %D%/packages/patches/tla2tools-build-xml.patch		\
   %D%/packages/patches/tlf-support-hamlib-4.2+.patch		\
   %D%/packages/patches/tofi-32bit-compat.patch			\
+  %D%/packages/patches/torcs-glibc-default-source.patch		\
+  %D%/packages/patches/torcs-isnan.patch			\
+  %D%/packages/patches/torcs-nullptr.patch			\
   %D%/packages/patches/tpetra-remove-duplicate-using.patch	\
   %D%/packages/patches/transcode-ffmpeg.patch	\
   %D%/packages/patches/transmission-4.0.6-fix-build.patch	\

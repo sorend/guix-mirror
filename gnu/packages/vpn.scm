@@ -74,6 +74,7 @@
   #:use-module (gnu packages gnupg)
   #:use-module (gnu packages golang)
   #:use-module (gnu packages golang-build)
+  #:use-module (gnu packages golang-xyz)
   #:use-module (gnu packages guile)
   #:use-module (gnu packages libevent)
   #:use-module (gnu packages linux)
@@ -867,7 +868,7 @@ this process.  It is compatible with Fortinet VPNs.")
 (define-public openvpn
   (package
     (name "openvpn")
-    (version "2.6.7")
+    (version "2.6.12")
     (source (origin
               (method url-fetch)
               (uri (string-append
@@ -875,7 +876,7 @@ this process.  It is compatible with Fortinet VPNs.")
                     version ".tar.gz"))
               (sha256
                (base32
-                "04wr0g97nmv81javym8r99mglmb86v1i49xmnmzf938x1cs7g67f"))))
+                "0a8r3bvg4aic9b7dix0h7990g3j1gq17wd3w6vqk8vk8xgfhyq8w"))))
     (build-system gnu-build-system)
     (arguments
      '(#:configure-flags '("--enable-iproute2=yes")))

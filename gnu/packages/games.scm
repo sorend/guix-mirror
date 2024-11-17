@@ -788,6 +788,101 @@ canyons and wait for the long I-shaped block to clear four rows at a time.")
 attacks you can use on opponents.")
     (license license:public-domain)))
 
+(define-public vdrift-data
+  ;; There are no tags or releases for the vdrift data; use the latest SVN
+  ;; revision available.
+  (let ((commit 1463)
+        (revision "0"))
+    ;; The package is hidden as the game data is *required* by the install
+    ;; target of vdrift itself, and there is no need for users to manually
+    ;; install it.
+    (hidden-package
+     (package
+       (name "vdrift-data")
+       ;; The date is the last modified time shown next to the 'vdrift-data'
+       ;; directory when visiting
+       ;; https://sourceforge.net/p/vdrift/code/HEAD/tree/.
+       (version (format #f "2024-10-23-~a.~a" revision commit))
+       (source (origin
+                 (method svn-fetch)
+                 (uri (svn-reference
+                       (url "https://svn.code.sf.net/p/vdrift/code/vdrift-data")
+                       (revision commit)))
+                 (file-name (string-append name "-" version "-checkout"))
+                 (sha256
+                  (base32
+                   "1zx08q4v3s4l5r0wxphd323h0rqp9pjb7kr08s3gb2qr85lw587h"))))
+       (build-system copy-build-system)
+       (arguments (list #:install-plan #~'(("." "share/games/vdrift/data"))))
+       (home-page "https://vdrift.net/")
+       (synopsis "Game data for Vdrift")
+       (description "This package contains the assets for the Vdrift racing
+game.")
+       (license license:gpl3+)))))      ;assumed same as Vdrift itself
+
+(define-public vdrift
+  ;; The latest release is from 2014, and lacks build system and other
+  ;; unreleased improvements; use the latest commit.
+  (let ((commit "120ae28d2a1b43a8589c5ce3c5e02d813890d090")
+        (revision "0"))
+    (package
+      (name "vdrift")
+      (version (git-version "2014-10-20" revision commit))
+      (source (origin
+                (method git-fetch)
+                (uri (git-reference
+                      (url "https://github.com/VDrift/vdrift")
+                      (commit commit)))
+                (file-name (git-file-name name version))
+                (sha256
+                 (base32
+                  "13id01rr6rjhmrh34p8n0ka3yfwzp62j6p8z6rc5aagnr5mn1qn0"))))
+      (build-system scons-build-system)
+      (arguments
+       (list
+        #:tests? #f                     ;no test suite
+        #:scons-flags #~(list (string-append "prefix=" #$output)
+                              "release=1"
+                              "verbose=1")
+        #:phases
+        #~(modify-phases %standard-phases
+            (add-after 'unpack 'setup-vdrift-data
+              (lambda _
+                ;; The locale data must be made writable, as gettext
+                ;; translation files are generated and written there as part
+                ;; of the installation script.
+                (copy-recursively (search-input-directory
+                                   %build-inputs
+                                   "share/games/vdrift/data")
+                                  "data")
+                (for-each make-file-writable (find-files "data/locale")))))))
+      (native-inputs (list gettext-minimal pkg-config vdrift-data))
+      (inputs (list bullet curl libvorbis mesa sdl2 zlib))
+      (home-page "https://vdrift.net/")
+      (synopsis "Racing simulator")
+      (description "VDrift aims to provide an accurate driving physics
+emulation, based on real world data of the actual vehicles, employing a full
+rigid body simulation and a complex tire model.  VDrift features:
+@itemize
+@item Over 45 tracks based on famous real-world tracks
+@item Over 45 cars based on real-world vehicles
+@item Very realistic, simulation-grade driving physics
+@item Mouse/joystick/gamepad/wheel/keyboard support
+@item Fully modeled tracks, scenery and terrain
+@item Several different camera modes
+@item Basic replay system with Skip Forward/Skip Backward
+@item Fully customizable controls
+@item Joystick, mouse and keyboard input filtering
+@item Brake and reverse lights
+@item Driver aids: automatic shifting, traction control, anti-lock braking
+@item Experimental force feedback
+@item Race against up to 3 AI with variable difficultly
+@item Engine and road sounds
+@end itemize
+The recommended input method is a steering wheel with pedals and force
+feedback support.")
+      (license license:gpl3+))))
+
 (define-public vitetris
   (package
     (name "vitetris")
@@ -7704,6 +7799,130 @@ challenging battles, and developing characters with your own tailored mix of
 abilities and powers.")
     (license license:gpl3+)))
 
+(define-public torcs
+  (package
+    (name "torcs")
+    (version "1.3.7")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (string-append "https://sourceforge.net/projects/" name
+                           "/files/all-in-one/" version "/"
+                           name "-" version ".tar.bz2/download"))
+       (file-name (string-append name "-" version ".tar.bz2"))
+       (sha256
+        (base32
+         "0kdq0sc7dsfzlr0ggbxggcbkivc6yp30nqwjwcaxg9295s3b06wa"))
+       (patches (search-patches "torcs-isnan.patch"
+                                "torcs-nullptr.patch"
+                                "torcs-glibc-default-source.patch"))
+       (snippet
+        '(begin
+           (use-modules (guix build utils)
+                        (ice-9 ftw)
+                        (ice-9 regex)
+                        (srfi srfi-26))
+           ;; Delete Windows-specific sources and pre-built binaries.
+           (delete-file-recursively "src/windows")
+           ;; The license of the kw-* and pw-* car models includes a
+           ;; non-commercial clause, hence does not comply with the GNU FSDG.
+           (with-directory-excursion "data/cars/models"
+             (for-each delete-file-recursively
+                       (scandir "." (cut string-match "^(kc|pw)-" <>))))
+           ;; Delete extraneous CVS directories.
+           (for-each delete-file-recursively
+                     (find-files "." (lambda (file stat)
+                                       (and (eq? 'directory (stat:type stat))
+                                            (string=? "CVS" (basename file))))
+                                 #:directories? #t))))))
+    (build-system gnu-build-system)
+    (arguments
+     ;; Building in parallel fails due to a race where include files have not
+     ;; yet been generated, with errors such as "controlconfig.cpp:30:10:
+     ;; fatal error: tgfclient.h: No such file or directory".  The issue was
+     ;; reported to the 'torcs-devel' mailing list (see:
+     ;; https://sourceforge.net/p/torcs/mailman/message/58834764/).
+     (list #:modules `(,@%default-gnu-modules (srfi srfi-26))
+           #:parallel-build? #f
+           #:tests? #f                  ;no test suite
+           ;; Ensure the binaries find libraries provided by this very package
+           ;; (see: https://issues.guix.gnu.org/73979).
+           #:configure-flags
+           #~(list (string-append "LDFLAGS=-Wl,-rpath=" #$output
+                                  "/lib/torcs/lib"))
+           #:phases
+           #~(modify-phases %standard-phases
+               (add-after 'unpack 'patch-commands
+                 (lambda* (#:key inputs #:allow-other-keys)
+                   (substitute* "src/linux/torcs.in"
+                     (("/bin/bash")
+                      (search-input-file inputs "bin/bash")))))
+               (add-after 'install 'install-data
+                 (lambda _
+                   (invoke "make" "datainstall")))
+               (add-after 'install-data 'install-doc
+                 (lambda _
+                   (let ((docdir (string-append #$output "/share/doc/torcs/"))
+                         (man6 (string-append #$output "/share/man/man6")))
+                     (for-each (cut install-file <> man6)
+                               (find-files "doc/man" "\\.6$"))
+                     (install-file "doc/userman/how_to_drive.html" docdir)
+                     (install-file "doc/faq/faq.html" docdir)
+                     (copy-recursively "doc/userman/images"
+                                       (string-append docdir "/images")))))
+               (add-after 'install 'install-freedesktop-entry
+                 (lambda _
+                   (let ((iconsdir (string-append #$output "/share/icons/hicolor/"
+                                                  "48x48/apps")))
+                     (mkdir-p iconsdir)
+                     (copy-file "Ticon.png" (string-append iconsdir "/torcs.png")))
+                   (install-file "torcs.desktop"
+                                 (string-append #$output
+                                                "/share/applications/"))))
+               (add-after 'install 'fix-permissions
+                 ;; XXX: Otherwise, the guix daemon reports: "suspicious
+                 ;; ownership or permission on /gnu/store/xxx-torcs-1.3.7',
+                 ;; rejecting this build output".
+                 (lambda _
+                   (chmod #$output #o744))))))
+    (inputs
+     (list bash-minimal
+           freealut
+           freeglut
+           libice
+           libpng
+           libsm
+           libvorbis
+           libxi
+           libxmu
+           libxrandr
+           libxrender
+           libxt
+           mesa
+           openal
+           plib
+           zlib))
+    (home-page "https://sourceforge.net/projects/torcs/")
+    (synopsis "Car racing simulator")
+    (description "TORCS stands for The Open Racing Car Simulator.  It can be
+used as an ordinary car racing game, as an artificial intelligence (AI) racing
+game, or as a research platform.  The game has features such as:
+@itemize
+@item Input support for a driving wheel, joystick, keyboard or mouse
+@item More than 30 car models
+@item 30 tracks
+@item 50 opponents to race against
+@item Lighting, smoke, skidmarks and glowing brake disks graphics
+@item Simple damage model and collisions
+@item Tire and wheel properties (springs, dampers, stiffness, etc.)
+@item Aerodynamics (ground effect, spoilers, etc.)
+@end itemize
+The difficulty level can be configured, impacting how much damage is caused by
+collisions and the level of traction the car has on the track, which makes the
+game fun for both novice and experts.")
+    (license (list license:gpl2+        ;source and most assets
+                   license:fdl1.2+))))  ;how_to_drive.html, faq.html
+
 (define-public quakespasm
   (package
     (name "quakespasm")
@@ -8965,6 +9184,128 @@ civilized than your own.")
                    license:cc-by-sa3.0
                    license:cc-by-sa4.0
                    license:public-domain))))
+
+(define speed-dreams-version "2.3.0")
+(define speed-dreams-svn-revision "8786")
+(define (speed-dreams-source-tarball name sha256sum)
+  (origin
+    (method url-fetch)
+    (uri (string-append "mirror://sourceforge/speed-dreams/"
+                        speed-dreams-version "/"
+                        "speed-dreams-src-" name "-" speed-dreams-version "-r"
+                        speed-dreams-svn-revision ".tar.xz"))
+    (sha256 (base32 sha256sum))))
+
+;;; We use the release tarballs instead of the SVN repository for their
+;;; reduced weight (the tarballs do not provide the sources of the 3D models
+;;; used, which are heavy, for example).
+(define speed-dreams-base-tarball       ;about 240 MiB
+  (speed-dreams-source-tarball
+   "base" "190480qzkllykl07s6bxd5wdbjgavs7haw6mk0hgdm7bs6rqqk0d"))
+
+(define speed-dreams-hq-cars-and-tracks-tarball ;about 670 MiB
+  (speed-dreams-source-tarball
+   "hq-cars-and-tracks" "16zcgwax3n0gf79hw1dg42lzsyxbnxfw6hjxdi919q5hxgm9cgsr"))
+
+(define speed-dreams-more-hq-cars-and-tracks-tarball ;about 760 MiB
+  (speed-dreams-source-tarball
+   "more-hq-cars-and-tracks"
+   "1acwiacf77qk5azyg3bbxsydk3wsp5fvgwwnhxpk273mwszjkh56"))
+
+;;; Although these are marked as 'WIP', the game throws (non-fatal) errors
+;;; when it fails finding some "drivers" included within this pack.
+(define speed-dreams-wip-cars-and-tracks-tarball ;about 400 MiB
+  (speed-dreams-source-tarball
+   "wip-cars-and-tracks"
+   "0wqd9bpis9bg87rsqk0dyvljax4zrp9h57mz7z3zrn6fayl1nh1q"))
+
+;;; This is to allow selecting the legacy Simu V2 engine (configurable in the
+;;; game options).
+(define speed-dreams-unmaintained-tarball ;about 60 KiB
+  (speed-dreams-source-tarball
+   "unmaintained" "1cxcrjm2508najpz2b65i8gxgvgiq7fcp13xvicpiqp6xhq3hsyi"))
+
+(define-public speed-dreams
+  (package
+    (name "speed-dreams")
+    (version speed-dreams-version)
+    (source speed-dreams-base-tarball)
+    (build-system cmake-build-system)
+    (arguments
+     (list
+      #:tests? #f                       ;no test suite
+      #:build-type "Release"
+      #:configure-flags
+      #~(list
+         "-DOPTION_OFFICIAL_ONLY=ON"                    ;build with content
+         (string-append "-DSD_BINDIR=" #$output "/bin") ;instead of 'games'
+         (string-append "-DSD_DATADIR=" #$output "/share/speed-dreams-2")
+         ;; Libdir defaults to a 'lib64/games' prefix.
+         (string-append "-DSD_LIBDIR=" #$output "/lib/speed-dreams-2")
+         ;; Use system-provided Expat and FreeSOLID
+         ;; libraries instead of the bundled ones.
+         "-DOPTION_3RDPARTY_EXPAT=ON"
+         "-DOPTION_3RDPARTY_SOLID=ON"
+         ;; Drivers and other shared objects are linked to private/internal
+         ;; shared libraries; have their location on the RUNPATH to satisfy
+         ;; the validate-runpath phase.
+         (string-append "-DCMAKE_MODULE_LINKER_FLAGS=-Wl,-rpath="
+                        #$output "/lib/speed-dreams-2/lib")
+         ;; The following flag is to avoid bogus RUNPATH warnings from the
+         ;; validate-runpath phase; without it, -rpath links referring to the
+         ;; build directory would be baked in driver modules.
+         "-DCMAKE_BUILD_RPATH_USE_ORIGIN=ON")
+      #:phases
+      #~(modify-phases %standard-phases
+          (add-after 'unpack 'extract-cars-and-tracks-data
+            (lambda _
+              ;; XXX: The current working directory is inside the cmake/
+              ;; sudbirectory following the unpack phase, for some reason.
+              (chdir "..")
+              (invoke "tar" "-xvf" #$speed-dreams-hq-cars-and-tracks-tarball)
+              (invoke "tar" "-xvf" #$speed-dreams-more-hq-cars-and-tracks-tarball)
+              (invoke "tar" "-xvf" #$speed-dreams-wip-cars-and-tracks-tarball)
+              (invoke "tar" "-xvf" #$speed-dreams-unmaintained-tarball)))
+          (add-after 'install 'install-desktop-entry
+            (lambda* (#:key outputs #:allow-other-keys)
+              (make-desktop-entry-file
+               (string-append #$output
+                              "/share/applications/speed-dreams.desktop")
+               #:name "Speed Dreams 2"
+               #:comment "3D racing cars simulator"
+               #:exec (search-input-file outputs "bin/speed-dreams-2")
+               #:icon (search-input-file
+                       outputs "share/speed-dreams-2/data/icons/icon.png")
+               #:categories '("Game" "Simulation")))))))
+    (native-inputs
+     (list pkg-config))
+    (inputs
+     (list curl
+           enet
+           expat
+           freeglut
+           freesolid
+           freetype
+           libjpeg-turbo
+           libogg
+           libpng
+           libvorbis
+           openal
+           openscenegraph
+           plib
+           sdl2
+           sdl2-mixer
+           zlib))
+    (home-page "https://sourceforge.net/projects/speed-dreams/")
+    (synopsis "Car racing simulator")
+    (description "Speed Dreams is a car racing simulator featuring
+high-quality 3D graphics and an accurate physics engine, aiming for maximum
+realism.  Initially forked from TORCS, it features improvements to the
+graphics and physics simulation, and supports modern input methods such as
+gamepads by use of the SDL library.  It features more than 20 tracks and more
+than 80 cars to race with.")
+    (license (list license:gpl2+        ;game code
+                   license:lal1.3))))   ;assets
 
 (define-public stepmania
   (package
@@ -11908,7 +12249,7 @@ and unsafe rides.  Which path will you take?")
 (define-public ultrastar-deluxe
   (package
     (name "ultrastar-deluxe")
-    (version "2023.9.0")
+    (version "2024.10.0")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -11917,7 +12258,7 @@ and unsafe rides.  Which path will you take?")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "0sm0f67hpsys072yvp5phhza686ivbb18qlfy62vsdv0v9cizxia"))
+                "16q6b5nnjx5baq4m30ys47970kjgp06xihyd6qyb08s0yk2f54jz"))
               (patches (search-patches "ultrastar-deluxe-no-freesans.patch"))
               (modules '((guix build utils)))
               (snippet
@@ -11966,13 +12307,13 @@ and unsafe rides.  Which path will you take?")
                (substitute* (string-append
                              (assoc-ref outputs "out")
                              "/share/ultrastardx/fonts/fonts.ini")
-                 (("=NotoSans/") (string-append "=" #$font-google-noto
+                 (("=NotoSans/") (string-append "=" #$font-google-noto:ttf
                                                 "/share/fonts/truetype/"))
                  (("=DejaVu/") (string-append "=" #$font-dejavu
                                               "/share/fonts/truetype/"))))))))
-    (inputs (list ffmpeg-5
+    (inputs (list ffmpeg
                   font-dejavu
-                  font-google-noto
+                  (list font-google-noto "ttf")
                   ; Not needed, since we don’t have freesans.
                   ;font-wqy-microhei
                   freetype
