@@ -2071,6 +2071,7 @@ which speak the Qualcomm MSM Interface (QMI) protocol.")
         (git-reference
          (url "https://gitlab.freedesktop.org/mobile-broadband/ModemManager")
          (commit version)))
+       (patches (search-patches "modem-manager-fix-test-wrapper.patch"))
        (file-name (git-file-name name version))
        (sha256
         (base32
