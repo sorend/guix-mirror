@@ -1844,7 +1844,7 @@ Analysis and Reporting Technology) functionality.")
     (inputs
      (list acl
            bash-minimal
-           cryptsetup
+           cryptsetup-minimal
            kmod
            libatasmart
            libblockdev
