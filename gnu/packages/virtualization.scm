@@ -1131,7 +1131,7 @@ commodity hardware.")
      (list autoconf automake jq))
     (inputs
      (list btrfs-progs
-           cryptsetup
+           cryptsetup-minimal
            e2fsprogs
            f2fs-tools
            lvm2
