@@ -296,7 +296,10 @@ Python 3.3 and later, rather than on Python 2.")
               ;; By default 'make install' creates hard links for
               ;; things in 'libexec/git-core', which leads to huge
               ;; nars; see <https://bugs.gnu.org/21949>.
-              "NO_INSTALL_HARDLINKS=indeed")
+              "NO_INSTALL_HARDLINKS=indeed"
+              #$@(if (or (target-hurd64?) (%current-target-system))
+                     #~("-Wno-implicit-function-declaration")
+                     #~()))
       #:phases
       #~(modify-phases %standard-phases
           #$@(if (%current-target-system)
@@ -305,7 +308,7 @@ Python 3.3 and later, rather than on Python 2.")
                       (lambda _
                         (substitute* "config.mak.uname"
                           (("uname_S := .*" all)
-                           (if (equal? #$(%current-target-system) "i586-pc-gnu")
+                           (if #$(target-hurd?)
                                "uname_S := GNU\n"
                                all))))))
                  ;; We do not have a full bash when cross-compiling.
@@ -518,7 +521,8 @@ everything from small to very large projects with speed and efficiency.")
                                       "CVE-2022-30949"
                                       "CVE-2022-36882"
                                       "CVE-2022-36883"
-                                      "CVE-2022-36884"))))
+                                      "CVE-2022-36884"))
+                  (upstream-name . "git")))
     (license license:gpl2)
     (home-page "https://git-scm.com/")))
 
@@ -1170,7 +1174,7 @@ write native speed custom Git applications in any language with bindings.")
 (define-public libgit2-1.8
   (package
     (inherit libgit2-1.7)
-    (version "1.8.1")
+    (version "1.8.3")
     (source (origin
               (inherit (package-source libgit2-1.7))
               (uri (git-reference
@@ -1179,7 +1183,7 @@ write native speed custom Git applications in any language with bindings.")
               (file-name (git-file-name "libgit2" version))
               (sha256
                (base32
-                "1mh55804cvxl2cyl4clinajzgfn3zmlhacnv1pdvdj4w6z2w4si7"))
+                "11jyxy6ckl19ayqpq5s3nlbcd0s1q4sdy8884m4pjrbzgxg6y1ds"))
               (patches
                (search-patches "libgit2-uninitialized-proxy-settings.patch"))
 	      (snippet
@@ -1822,7 +1826,7 @@ lot easier.")
 (define-public stgit-2
   (package
     (name "stgit")
-    (version "2.4.0")
+    (version "2.4.12")
     (source
      (origin
        (method git-fetch)
@@ -1831,7 +1835,7 @@ lot easier.")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "0cgv7chxqkjaqmzi4691in26j2fm8r0vanw8xzb9cqnz6350wvvj"))
+        (base32 "0kp3gwmxcjvphg1s0san0vyis8dsdaf02xsflc2b7kkg8m0r0mi3"))
        (modules '((guix build utils)))
        (snippet
         '(begin (substitute* (find-files "." "^Cargo\\.toml$")
@@ -1848,10 +1852,10 @@ lot easier.")
                        ("rust-curl" ,rust-curl-0.4)
                        ("rust-encoding_rs" ,rust-encoding-rs-0.8)
                        ("rust-flate2" ,rust-flate2-1)
-                       ("rust-gix" ,rust-gix-0.54)
+                       ("rust-gix" ,rust-gix-0.66)
                        ("rust-indexmap" ,rust-indexmap-2)
                        ("rust-is-terminal" ,rust-is-terminal-0.4)
-                       ("rust-nom" ,rust-nom-7)
+                       ("rust-jiff" ,rust-jiff-0.1)
                        ("rust-serde" ,rust-serde-1)
                        ("rust-serde-json" ,rust-serde-json-1)
                        ("rust-strsim" ,rust-strsim-0.10)
@@ -1859,7 +1863,7 @@ lot easier.")
                        ("rust-tempfile" ,rust-tempfile-3)
                        ("rust-termcolor" ,rust-termcolor-1)
                        ("rust-thiserror" ,rust-thiserror-1)
-                       ("rust-time" ,rust-time-0.3))
+                       ("rust-winnow" ,rust-winnow-0.6))
        #:install-source? #f
        #:phases
        (modify-phases %standard-phases
@@ -2069,23 +2073,26 @@ wrappers, to be used for optional gitolite extensions."
                (delete 'configure)
                (delete 'build)
                (add-before 'install 'patch-scripts
-                 (lambda* _
+                 (lambda* (#:key inputs #:allow-other-keys)
                    ;; This seems to take care of every shell script that
                    ;; invokes Perl.
                    (substitute* (find-files ".")
                      ((" perl -")
-                      (string-append " " #$perl "/bin/perl" " -")))
+                      (string-append
+                       " " (search-input-file inputs "bin/perl") " -")))
 
                    (substitute* (find-files "src/triggers" ".*")
                      ((" sed ")
-                      (string-append " " #$sed "/bin/sed" " ")))
+                      (string-append
+                       " " (search-input-file inputs "bin/sed") " ")))
 
                    (substitute*
                        '("src/triggers/post-compile/update-gitweb-access-list"
                          "src/triggers/post-compile/ssh-authkeys-split"
                          "src/triggers/upstream")
                      ((" grep ")
-                      (string-append " " #$grep "/bin/grep" " ")))
+                      (string-append
+                       " " (search-input-file inputs "bin/grep") " ")))
 
                    ;; Avoid references to the store in authorized_keys.
                    ;; This works because gitolite-shell is in the PATH.
@@ -2093,25 +2100,29 @@ wrappers, to be used for optional gitolite extensions."
                      (("\\$glshell \\$user")
                       "gitolite-shell $user"))))
                (add-before 'install 'patch-source
-                 (lambda* _
+                 (lambda* (#:key inputs #:allow-other-keys)
                    ;; Gitolite uses cat to test the readability of the
                    ;; pubkey
                    (substitute* "src/lib/Gitolite/Setup.pm"
                      (("\"cat ")
-                      (string-append "\"" #$coreutils "/bin/cat" " "))
+                      (string-append
+                       "\"" (search-input-file inputs "bin/cat") " "))
                      (("\"ssh-keygen")
-                      (string-append "\"" #$openssh "/bin/ssh-keygen")))
+                      (string-append
+                       "\"" (search-input-file inputs "bin/ssh-keygen"))))
 
                    (substitute* '("src/lib/Gitolite/Hooks/PostUpdate.pm"
                                   "src/lib/Gitolite/Hooks/Update.pm")
                      (("/usr/bin/perl")
-                      (string-append #$perl "/bin/perl")))
+                      (search-input-file inputs "bin/perl")))
 
                    (substitute* "src/lib/Gitolite/Common.pm"
                      (("\"ssh-keygen")
-                      (string-append "\"" #$openssh "/bin/ssh-keygen"))
+                      (string-append
+                       "\"" (search-input-file inputs "bin/ssh-keygen")))
                      (("\"logger\"")
-                      (string-append "\"" #$inetutils "/bin/logger\"")))
+                      (string-append
+                       "\"" (search-input-file inputs "bin/logger") "\"")))
 
                    (substitute* "src/lib/Gitolite/Cache.pm"
                      (("/usr/sbin/redis-server") "redis-server"))
@@ -2131,17 +2142,23 @@ wrappers, to be used for optional gitolite extensions."
                                           (string-append bindir "/" script)))
                                '("gitolite" "gitolite-shell")))))
                (add-after 'install 'wrap-scripts
-                 (lambda* _
+                 (lambda* (#:key inputs #:allow-other-keys)
                    (for-each (lambda (file-name)
                                (wrap-program (string-append #$output file-name)
                                  `("PATH" ":" prefix
-                                   ,(map (lambda (dir)
+                                   ,(append
+                                     (map (lambda (command)
+                                            (dirname
+                                             (search-input-file
+                                              inputs
+                                              (string-append "bin/" command))))
+                                          '("chmod" ;coreutils
+                                            "find"
+                                            "git"))
+                                     (map (lambda (dir)
                                            (string-append dir "/bin"))
                                          (list #$output
-                                               #$coreutils
-                                               #$findutils
-                                               #$git
-                                               #$@extra-inputs)))))
+                                               #$@extra-inputs))))))
                              '("/bin/gitolite" "/bin/gitolite-shell")))))))
     (inputs
      (append (list bash-minimal coreutils findutils git inetutils openssh perl)
@@ -3239,7 +3256,7 @@ email header.")
                ;; This ensures git is present when called.
                (add-after 'unpack 'hardcode-git-bin
                  (lambda* (#:key inputs #:allow-other-keys)
-                   (substitute* (find-files "b4" "\\.py$")
+                   (substitute* (find-files "src/b4" "\\.py$")
                      (("\\['git'")
                       (string-append
                        "['" (search-input-file inputs "bin/git") "'"))))))))

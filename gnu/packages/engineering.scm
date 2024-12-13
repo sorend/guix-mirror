@@ -15,7 +15,7 @@
 ;;; Copyright © 2019 Steve Sprang <scs@stevesprang.com>
 ;;; Copyright © 2019 John Soo <jsoo1@asu.edu>
 ;;; Copyright © 2020 Brice Waegeneire <brice@waegenei.re>
-;;; Copyright © 2020,2021 Vincent Legoll <vincent.legoll@gmail.com>
+;;; Copyright © 2020,2021,2024 Vincent Legoll <vincent.legoll@gmail.com>
 ;;; Copyright © 2020, 2023 Marius Bakke <marius@gnu.org>
 ;;; Copyright © 2020, 2021 Ekaitz Zarraga <ekaitz@elenq.tech>
 ;;; Copyright © 2020 B. Wilson <elaexuotee@wilsonb.com>
@@ -2930,10 +2930,37 @@ full programmatic control over your models.")
 OpenSCAD code.  It supports syntax highlighting, indenting and refilling of
 comments.")))
 
+(define-public ondsel-solver
+  (let ((commit "2e3659c4bce3e6885269e0cb3d640261b2a91108")
+        (revision "1"))
+    (package
+      (name "ondsel-solver")
+      ;; There's no tagged release
+      (version (git-version "0.0.0" revision commit))
+      (source
+       (origin
+         (method git-fetch)
+         (uri (git-reference
+               (url "https://github.com/Ondsel-Development/OndselSolver")
+               (commit commit)))
+         (file-name (git-file-name name version))
+         (sha256
+          (base32 "1bgk3asyz47r1kvdgcz8q7sh1g29przdsx9ib1jqqbc0nv8ww68v"))))
+      (build-system cmake-build-system)
+      (arguments
+       `(#:tests? #f)) ;; Tests require Google's gtest and gmock
+      ;; The company is shutting down, so https://ondsel.com may not exist for long
+      (home-page "https://github.com/Ondsel-Development/OndselSolver")
+      (synopsis "Assembly Constraints and Multibody Dynamics code")
+      (description
+       "The OndselSolver library for assembly constraints and multibody
+dynamics is used by FreeCAD 1.0.0 for its new Assembly workbench.")
+      (license license:lgpl2.1+))))
+
 (define-public freecad
   (package
     (name "freecad")
-    (version "0.21.2")
+    (version "1.0.0")
     (source
      (origin
        (method git-fetch)
@@ -2942,12 +2969,19 @@ comments.")))
              (commit version)))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "0s720q6vxlh78jzahqp69nl8wagb42l05dym5aqhfnr31dx666hc"))
-       ;; https://github.com/FreeCAD/FreeCAD/pull/11496
-       (patches (search-patches "freecad-vtk-9.3.patch"))))
+        (base32 "0wwymcfgi0cybj7m6awflk8c7n6iy97lpgpfhfncx3zwvjrxv588"))
+       (modules '((guix build utils)))
+       (snippet
+        '(begin
+           ;; not required, because 3D mouse support if OFF
+           (delete-file-recursively "src/3rdParty/3Dconnexion")
+           (delete-file-recursively "src/3rdParty/GSL")           ;; c++-gsl
+           (delete-file-recursively "src/3rdParty/OndselSolver")  ;; ondsel-solver
+           (delete-file-recursively "src/3rdParty/OpenGL")))))    ;; glext.h from mesa
     (build-system qt-build-system)
     (native-inputs
-     (list doxygen
+     (list c++-gsl
+           doxygen
            graphviz
            qttools-5
            pkg-config
@@ -2977,6 +3011,7 @@ comments.")))
            libxmu
            lz4
            netcdf
+           ondsel-solver
            opencascade-occt
            openmpi
            proj
@@ -2999,14 +3034,19 @@ comments.")))
            tbb-2020                     ; Same version as opencascade-occt
            vtk
            xerces-c
+           yaml-cpp
            zlib))
     (arguments
-     `(#:tests? #f                      ; Project has no tests
+     `(#:tests? #f  ;; Project has tests, but they are a pain to build
        #:configure-flags
        ,#~(list
            "-DBUILD_QT5=ON"
            "-DBUILD_FLAT_MESH:BOOL=ON"
            "-DBUILD_ENABLE_CXX_STD:STRING=C++17"
+           "-DENABLE_DEVELOPER_TESTS=OFF"  ;; see the above: #:tests? comment
+           "-DFREECAD_USE_EXTERNAL_ONDSELSOLVER=ON"  ;; unbundle ondsel-solver
+           ;; Do not try to install modules into system python
+           "-DINSTALL_TO_SITEPACKAGES=OFF"
            (string-append "-DCMAKE_INSTALL_LIBDIR=" #$output "/lib"))
        #:phases
        (modify-phases %standard-phases
@@ -4251,6 +4291,34 @@ larger project called Cura.")
     (description "This package contains binary data for Cura releases, like
 compiled translations.  Prebuilt Firmware files are removed.")
     (license license:agpl3)))
+
+(define-public udis86
+  (let ((commit "5336633af70f3917760a6d441ff02d93477b0c86")
+        (revision "0"))
+    (package
+      (name "udis86")
+      (version (git-version "1.7.2" revision commit))
+      (source (origin
+                (method git-fetch)
+                (uri (git-reference
+                      (url "https://github.com/canihavesomecoffee/udis86")
+                      (commit commit)))
+                (file-name (git-file-name name version))
+                (sha256
+                 (base32
+                  "0y5z1169wff578jylpafsww4px4y6gickhcs885a9c660d8xs9qy"))))
+      (build-system gnu-build-system)
+      (native-inputs (list autoconf automake libtool python-minimal-wrapper))
+      ;; Fork of <https://github.com/vmt/udis86>.
+      (home-page "https://github.com/canihavesomecoffee/udis86")
+      (synopsis "Disassembler library for x86 and x86-64")
+      (description
+       "Udis86 is a disassembler for the x86 and x86-64 class of instruction
+set architectures.  It consists of a C library called @code{libudis86} which
+provides a clean and simple interface to decode and inspect a stream of raw
+binary data as disassembled instructions in a structured manner, and a command
+line tool called @command{udcli} that incorporates the library.")
+      (license license:bsd-2))))
 
 (define-public uranium
   (package

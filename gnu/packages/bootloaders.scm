@@ -192,6 +192,14 @@
                        (setenv "BUILD_FREETYPE_CFLAGS"
                                (string-append "-I" freetype
                                               "/include/freetype2"))))))
+               #$@(if (target-hurd64?)
+                      #~((add-after 'unpack 'apply-hurd64-patch
+                           (lambda _
+                             (let ((patch
+                                    #$(local-file
+                                       (search-patch "grub-hurd64.patch"))))
+                               (invoke "patch" "--force" "-p1" "-i" patch)))))
+                      #~())
                (add-before 'check 'disable-flaky-test
                  (lambda _
                    ;; This test is unreliable. For more information, see:
@@ -758,7 +766,8 @@ tree binary files.  These are board description files used by Linux and BSD.")
               (patches
                (list %u-boot-rockchip-inno-usb-patch
                      %u-boot-build-without-libcrypto-patch
-                     %u-boot-allow-disabling-openssl-patch))
+                     %u-boot-allow-disabling-openssl-patch
+                     (search-patch "u-boot-calloc-visibility.patch")))
               (method url-fetch)
               (uri (string-append
                     "https://ftp.denx.de/pub/u-boot/"
@@ -1937,9 +1946,9 @@ order to add a suitable bootloader menu entry.")
   ;;
   ;; TODO: Bump this timestamp at each modifications of the package (not only
   ;; for updates) by running: date +%s.
-  (let ((timestamp "1706118389")
-        (commit "de8a0821c7bc737e724fa3dfb6d89dc36f591d7a")
-        (revision "2"))
+  (let ((timestamp "1733491642")
+        (commit "24db39fb2983ca83ab5c6ee37cb57a4f7f6f94e6")
+        (revision "3"))
     (package
       (name "ipxe")
       (version (git-version "1.21.1" revision commit))
@@ -1951,7 +1960,7 @@ order to add a suitable bootloader menu entry.")
                 (file-name (git-file-name name version))
                 (sha256
                  (base32
-                  "0xiffdmf8hpmsw7nm9wp10wd0rs4avm2m3q5ncx0r5zfykannlbd"))))
+                  "0b2h4bsdgnyjna6piwfqqn985vqfjmbz80jh0n7hrnncp2v53qj6"))))
       (build-system gnu-build-system)
       (arguments
        (list

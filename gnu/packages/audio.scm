@@ -104,6 +104,7 @@
   #:use-module (gnu packages guile)
   #:use-module (gnu packages icu4c)
   #:use-module (gnu packages image)
+  #:use-module (gnu packages lesstif)
   #:use-module (gnu packages libbsd)
   #:use-module (gnu packages libffi)
   #:use-module (gnu packages libusb)
@@ -3571,14 +3572,14 @@ different audio devices such as ALSA or PulseAudio.")
 (define-public qjackctl
   (package
     (name "qjackctl")
-    (version "0.9.8")
+    (version "1.0.3")
     (source (origin
               (method url-fetch)
               (uri (string-append "mirror://sourceforge/qjackctl/qjackctl/"
                                   version "/qjackctl-" version ".tar.gz"))
               (sha256
                (base32
-                "1rvxgxd7bbv7yazcpw3ily0jlra8ms5c0kkf7cybgivahw59zk87"))))
+                "0wzimnxb9yjj155l0hqb57smf0158a4bbzi6bj11pp60njld4zqn"))))
     (build-system cmake-build-system)
     (arguments
      '(#:tests? #f))                    ; no check target
@@ -3586,10 +3587,10 @@ different audio devices such as ALSA or PulseAudio.")
      (list alsa-lib
            jack-1
            portaudio
-           qtbase-5
-           qtsvg-5))
+           qtbase
+           qtsvg))
     (native-inputs
-     (list pkg-config qttools-5))
+     (list pkg-config qttools))
     (home-page "https://qjackctl.sourceforge.io/")
     (synopsis "Jack server control application")
     (description "Control a Jack server.  Allows you to plug various sources
@@ -5143,37 +5144,41 @@ on the ALSA software PCM plugin.")
 (define-public snd
   (package
     (name "snd")
-    (version "20.9")
+    (version "24.9")
     (source (origin
               (method url-fetch)
               (uri (string-append "ftp://ccrma-ftp.stanford.edu/pub/Lisp/"
                                   "snd-" version ".tar.gz"))
               (sha256
                (base32
-                "0jxkycxn6jcbs4gklk9sk3gfr0y26dz1m71nxah9rnx80wnzj6hr"))))
+                "1bbc7ld9n8v9y2l9ysdjxxhd2qzm00fpn6lj2hxsmxcpwfldwi6w"))))
     (build-system glib-or-gtk-build-system)
     (arguments
-     `(#:tests? #f                      ; no tests
-       #:out-of-source? #f              ; for the 'install-doc' phase
-       #:configure-flags
-       (let* ((out (assoc-ref %outputs "out"))
-              (docdir (string-append out "/share/doc/"
-                                     ,name "-" ,version)))
-         (list "--with-alsa" "--with-jack" "--with-gmp"
-               (string-append "--with-doc-dir=" docdir)))
-       #:phases
-       (modify-phases %standard-phases
-         (add-after 'install 'install-doc
-           (lambda* (#:key outputs #:allow-other-keys)
-             (let* ((out (assoc-ref outputs "out"))
-                    (doc (string-append out "/share/doc/"
-                                        ,name "-" ,version)))
-               (for-each
-                (lambda (f)
-                  (install-file f doc))
-                (find-files "." "\\.html$"))
-               (copy-recursively "pix" (string-append doc "/pix"))
-               #t))))))
+     (list
+      #:tests? #f                       ; no tests
+      #:out-of-source? #f               ; for the 'install-doc' phase
+      #:configure-flags
+      #~(let ((docdir (string-append #$output "/share/doc/"
+                                     #$name "-" #$version)))
+          (list "--with-alsa"
+                "--with-jack"
+                "--with-gmp"
+                "--with-gui"
+                (string-append "--with-doc-dir=" docdir)))
+      #:phases
+      #~(modify-phases %standard-phases
+          (add-after 'install 'install-s7
+            (lambda _
+              (install-file "s7.h" (string-append #$output "/include"))))
+          (add-after 'install 'install-doc
+            (lambda _
+              (let ((doc (string-append #$output "/share/doc/"
+                                        #$name "-" #$version)))
+                (for-each
+                 (lambda (f)
+                   (install-file f doc))
+                 (find-files "." "\\.html$"))
+                (copy-recursively "pix" (string-append doc "/pix"))))))))
     (native-inputs
      (list pkg-config))
     (inputs
@@ -5182,9 +5187,9 @@ on the ALSA software PCM plugin.")
            flac
            gmp
            gsl
-           gtk+
-           jack-1
+           jack-2
            libsamplerate
+           motif
            mpc
            mpfr
            mpg123
@@ -6521,7 +6526,7 @@ and DSD streams.")
 (define-public qpwgraph
   (package
     (name "qpwgraph")
-    (version "0.6.3")
+    (version "0.8.0")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -6530,7 +6535,7 @@ and DSD streams.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "04ddcrc1r9il275jzcmr3wpii1is0s3hifc3a3h4aamxf1facdcr"))))
+                "036qzc2sjxa1lvysf7shyjkp1jyjkpalgxf74bgyzm89phqac7cc"))))
     (build-system cmake-build-system)
     (arguments
      (list #:tests? #f))                ; no tests

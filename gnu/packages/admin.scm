@@ -31,7 +31,7 @@
 ;;; Copyright © 2019, 2021, 2022 Guillaume Le Vaillant <glv@posteo.net>
 ;;; Copyright © 2019, 2020, 2021 Mathieu Othacehe <m.othacehe@gmail.com>
 ;;; Copyright © 2020 Oleg Pykhalov <go.wigust@gmail.com>
-;;; Copyright © 2020, 2023 Janneke Nieuwenhuizen <janneke@gnu.org>
+;;; Copyright © 2020, 2023, 2024 Janneke Nieuwenhuizen <janneke@gnu.org>
 ;;; Copyright © 2020, 2021, 2022 Michael Rohleder <mike@rohleder.de>
 ;;; Copyright © 2020 Vincent Legoll <vincent.legoll@gmail.com>
 ;;; Copyright © 2020 Morgan Smith <Morgan.J.Smith@outlook.com>
@@ -414,6 +414,18 @@ interface and is based on GNU Guile.")
               (replace "guile-fibers"
                 (this-package-native-input "guile-fibers"))))))
 
+(define-public shepherd-1.0
+  (package
+    (inherit shepherd-0.10)
+    (version "1.0.0")
+    (source (origin
+              (method url-fetch)
+              (uri (string-append "mirror://gnu/shepherd/shepherd-"
+                                  version ".tar.gz"))
+              (sha256
+               (base32
+                "0z4yxl8g0k3b6k4x7b3ks10x31hs46j5kmw0ah5cr417n0rszrp8"))))))
+
 (define-public shepherd shepherd-0.10)
 
 (define-public guile2.2-shepherd
@@ -426,7 +438,7 @@ interface and is based on GNU Guile.")
 (define-public shepherd-run
   (package
     (name "shepherd-run")
-    (version "0.1.0")
+    (version "0.2.0")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -435,7 +447,7 @@ interface and is based on GNU Guile.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "033l8ignsrr6p2wgwcyqlswpbf58kyl8cf7zwkz028gqfq4arkr8"))))
+                "0mvn5qi4bq9nsb1462pbzssb1z5w2s160lqd2ps3rjjc4z3f3gjj"))))
     (build-system gnu-build-system)
     (arguments
      (list
@@ -1044,7 +1056,17 @@ re-executing them as necessary.")
                              "\\\""))
       ;; On some systems, 'libls.sh' may fail with an error such as:
       ;; "Failed to tell switch -a apart from -A".
-      #:parallel-tests? #f))
+      #:parallel-tests? #f
+      #:phases (if (target-hurd64?)
+                   #~(modify-phases %standard-phases
+                       (add-after 'unpack 'apply-hurd64-patch
+                         (lambda _
+                           (let ((patch
+                                  #$(local-file
+                                     (search-patch
+                                      "inetutils-hurd64.patch"))))
+                             (invoke "patch" "--force" "-p1" "-i" patch)))))
+                   #~%standard-phases)))
     (inputs
      (list coreutils
            shadow                     ;for login (used in telnetd and rlogind)
@@ -5763,7 +5785,7 @@ on a GUI toolkit.")
 (define-public libseat
   (package
     (name "libseat")
-    (version "0.8.0")
+    (version "0.9.1")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -5772,15 +5794,15 @@ on a GUI toolkit.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "02wzrgp8di6hqmicnm2fim6jnvbn62wy248ikvdvrhiywrb7i931"))))
+                "1q1ih1f9v5240nlas1gz44giwq4k88p3yikfq7w0a4sw58yr6pz8"))))
     (build-system meson-build-system)
     (arguments
-     `(#:configure-flags '("-Dlibseat-logind=elogind"
-                           "-Dserver=disabled")))
+     (list #:configure-flags #~(list "-Dlibseat-logind=elogind"
+                                     "-Dserver=disabled")))
     (native-inputs
-     `(("pkg-config" ,pkg-config)))
+     (list pkg-config))
     (propagated-inputs
-     `(("elogind" ,elogind)))
+     (list elogind))
     (home-page "https://sr.ht/~kennylevinsen/seatd")
     (synopsis "Seat management library")
     (description
@@ -5793,16 +5815,16 @@ allows applications to use whatever seat management is available.")
     (inherit libseat)
     (name "seatd")
     (arguments
-     `(#:configure-flags '("-Dlibseat-logind=elogind")
-       #:phases
-       (modify-phases %standard-phases
-         (add-after 'install 'remove-libs
-           (lambda* (#:key outputs #:allow-other-keys)
-             (with-directory-excursion (assoc-ref outputs "out")
-               (for-each delete-file-recursively '("lib" "include"))))))))
+     (list #:configure-flags #~(list "-Dlibseat-logind=elogind")
+           #:phases
+           #~(modify-phases %standard-phases
+               (add-after 'install 'remove-libs
+                 (lambda* (#:key outputs #:allow-other-keys)
+                   (with-directory-excursion (assoc-ref outputs "out")
+                     (for-each delete-file-recursively '("lib" "include"))))))))
     (native-inputs
-     `(("pkg-config" ,pkg-config)
-       ("scdoc" ,scdoc)))
+     (list pkg-config
+           scdoc))
     (inputs '())
     (synopsis "Seat management daemon")
     (description
@@ -6222,54 +6244,59 @@ file or files to several hosts.")
 (define-public du-dust
   (package
     (name "du-dust")
-    (version "0.8.6")
-    (source (origin
-              (method url-fetch)
-              (uri (crate-uri "du-dust" version))
-              (file-name (string-append name "-" version ".tar.gz"))
-              (sha256
-               (base32
-                "1w52xdz1vi6awsvf4lph791zv13phjvz4ypmxr7f6pgxd3crr77c"))))
+    (version "1.1.1")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (crate-uri "du-dust" version))
+       (file-name (string-append name "-" version ".tar.gz"))
+       (sha256
+        (base32 "0qr6ikq2ds8bq35iw480qyhf3d43dj61wiwp8587n3mgqf5djx8w"))))
     (build-system cargo-build-system)
     (arguments
-     `(#:cargo-test-flags
-       (list "--release" "--"
-             "--skip=test_apparent_size")
-       #:install-source? #f
-       #:cargo-inputs (("rust-ansi-term" ,rust-ansi-term-0.12)
-                       ("rust-atty" ,rust-atty-0.2)
-                       ("rust-clap" ,rust-clap-3)
-                       ("rust-clap-complete" ,rust-clap-complete-3)
-                       ("rust-clap-mangen" ,rust-clap-mangen-0.1)
-                       ("rust-config-file" ,rust-config-file-0.2)
-                       ("rust-directories" ,rust-directories-4)
-                       ("rust-lscolors" ,rust-lscolors-0.13)
-                       ("rust-rayon" ,rust-rayon-1)
-                       ("rust-regex" ,rust-regex-1)
-                       ("rust-serde" ,rust-serde-1)
-                       ("rust-stfu8" ,rust-stfu8-0.2)
-                       ("rust-sysinfo" ,rust-sysinfo-0.27)
-                       ("rust-terminal-size" ,rust-terminal-size-0.2)
-                       ("rust-thousands" ,rust-thousands-0.2)
-                       ("rust-unicode-width" ,rust-unicode-width-0.1)
-                       ("rust-winapi-util" ,rust-winapi-util-0.1))
-       #:cargo-development-inputs (("rust-assert-cmd" ,rust-assert-cmd-2)
-                                   ("rust-tempfile" ,rust-tempfile-3))
-       #:phases
-       (modify-phases %standard-phases
-         (add-after 'install 'install-extras
-           (lambda* (#:key outputs #:allow-other-keys)
-             (let* ((out (assoc-ref outputs "out"))
-                    (share (string-append out "/share")))
-               (install-file "man-page/dust.1"
-                             (string-append share "/man/man1"))
-               (mkdir-p (string-append out "/etc/bash_completion.d"))
-               (copy-file "completions/dust.bash"
-                          (string-append out "/etc/bash_completion.d/dust"))
-               (install-file "completions/dust.fish"
-                             (string-append share "/fish/vendor_completions.d"))
-               (install-file "completions/_dust"
-                             (string-append share "/zsh/site-functions"))))))))
+     (list #:cargo-test-flags `(list "--release" "--"
+                                     "--skip=test_apparent_size")
+           #:install-source? #f
+           #:cargo-inputs `(("rust-ansi-term" ,rust-ansi-term-0.12)
+                            ("rust-chrono" ,rust-chrono-0.4)
+                            ("rust-clap" ,rust-clap-4)
+                            ("rust-clap-complete" ,rust-clap-complete-4)
+                            ("rust-clap-mangen" ,rust-clap-mangen-0.2)
+                            ("rust-config-file" ,rust-config-file-0.2)
+                            ("rust-ctrlc" ,rust-ctrlc-3)
+                            ("rust-directories" ,rust-directories-4)
+                            ("rust-filesize" ,rust-filesize-0.2)
+                            ("rust-lscolors" ,rust-lscolors-0.13)
+                            ("rust-rayon" ,rust-rayon-1)
+                            ("rust-regex" ,rust-regex-1)
+                            ("rust-serde" ,rust-serde-1)
+                            ("rust-serde-json" ,rust-serde-json-1)
+                            ("rust-stfu8" ,rust-stfu8-0.2)
+                            ("rust-sysinfo" ,rust-sysinfo-0.27)
+                            ("rust-terminal-size" ,rust-terminal-size-0.2)
+                            ("rust-thousands" ,rust-thousands-0.2)
+                            ("rust-unicode-width" ,rust-unicode-width-0.1)
+                            ("rust-winapi-util" ,rust-winapi-util-0.1))
+           #:cargo-development-inputs `(("rust-assert-cmd" ,rust-assert-cmd-2)
+                                        ("rust-tempfile" ,rust-tempfile-3))
+           #:phases #~(modify-phases %standard-phases
+                        (add-after 'install 'install-extras
+                          (lambda* (#:key outputs #:allow-other-keys)
+                            (let* ((out (assoc-ref outputs "out"))
+                                   (share (string-append out "/share")))
+                              (install-file "man-page/dust.1"
+                                            (string-append share "/man/man1"))
+                              (mkdir-p (string-append out
+                                        "/etc/bash_completion.d"))
+                              (copy-file "completions/dust.bash"
+                                         (string-append out
+                                          "/etc/bash_completion.d/dust"))
+                              (install-file "completions/dust.fish"
+                                            (string-append share
+                                             "/fish/vendor_completions.d"))
+                              (install-file "completions/_dust"
+                                            (string-append share
+                                             "/zsh/site-functions"))))))))
     (home-page "https://github.com/bootandy/dust")
     (synopsis "Graphical disk usage analyzer")
     (description "This package provides a graphical disk usage analyzer in

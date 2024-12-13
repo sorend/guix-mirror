@@ -1520,8 +1520,7 @@ QUIC.  For Go 1.20.")
            go-golang-org-x-net
            go-golang-org-x-sys))
     (home-page "https://github.com/refraction-networking/utls")
-    (synopsis "Fork of the Go standard TLS library, providing low-level access
-to the ClientHello for mimicry purposes")
+    (synopsis "Fork of the Go standard TLS library")
     (description "uTLS is a fork of “crypto/tls”, which provides ClientHello
 fingerprinting resistance, low-level access to handshake, fake session tickets
 and some other features.  Handshake is still performed by “crypto/tls”, this
@@ -1690,7 +1689,7 @@ ssh-agent process using the sample server.")
       (propagated-inputs (list go-golang-org-x-crypto
                                go-filippo-io-edwards25519))
       (home-page "https://gitlab.com/yawning/edwards25519-extra")
-      (synopsis "edwards25519-extra")
+      (synopsis "Extensions to Go standard library' Ed25519 and curve25519 implementation")
       (description "This package provides extensions to the Go standard
 library's Ed25519 and curve25519 implementations, primarily extracted from
 @@url{https://github.com/oasisprotocol/curve25519-voi,curve25519-voi}.  This
@@ -1726,6 +1725,61 @@ format, as defined in RFC 5208 and RFC 5958.  It can handle both unencrypted
 PKCS#8 PrivateKeyInfo format and EncryptedPrivateKeyInfo format with
 PKCS#5 (v2.0) algorithms.")
     (license license:expat)))
+
+(define-public go-github-com-zeebo-blake3
+  (package
+    (name "go-github-com-zeebo-blake3")
+    (version "0.2.4")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/zeebo/blake3")
+             (commit (string-append "v" version))))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "117p973ccgalaqg7byj0qcd1xapysplql9np1sr9jkca500khcgf"))))
+    (build-system go-build-system)
+    (arguments
+     (list
+      #:import-path "github.com/zeebo/blake3"))
+    (native-inputs (list go-github-com-zeebo-assert))
+    (propagated-inputs
+     (list go-github-com-klauspost-cpuid-v2
+           go-github-com-zeebo-pcg))
+    (home-page "https://github.com/zeebo/blake3")
+    (synopsis "Pure Go implementation of BLAKE3")
+    (description
+     "@code{blake3} is an implementation of
+@url{https://en.wikipedia.org/wiki/BLAKE_(hash_function)#BLAKE3, BLAKE3} with AVX2
+and SSE4.1 acceleration.")
+    (license license:cc0)))
+
+(define-public go-github-com-zeebo-pcg
+  (package
+    (name "go-github-com-zeebo-pcg")
+    (version "1.0.1")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/zeebo/pcg")
+             (commit (string-append "v" version))))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "02vyy2zc4jdcyf22dxw8dxcp1gwzy8j5qd6yxw324qyh2w557nh5"))))
+    (build-system go-build-system)
+    (arguments
+     (list
+      #:import-path "github.com/zeebo/pcg"))
+    (native-inputs (list go-github-com-zeebo-assert))
+    (home-page "https://github.com/zeebo/pcg")
+    (synopsis "PCG random number generator")
+    (description
+     "@code{pcg} is a random number generator that uses
+@url{https://en.wikipedia.org/wiki/Permuted_congruential_generator, Permuted
+Congruential Generator} (PCG) algorithm.")
+    (license license:cc0)))
 
 (define-public go-lukechampine-com-blake3
   (package

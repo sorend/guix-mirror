@@ -40,7 +40,7 @@
 ;;; Copyright © 2019, 2020 Florian Pelz <pelzflorian@pelzflorian.de>
 ;;; Copyright © 2020 Timotej Lazar <timotej.lazar@araneo.si>
 ;;; Copyright © 2020 Pierre Neidhardt <mail@ambrevar.xyz>
-;;; Copyright © 2020, 2021, 2023 Janneke Nieuwenhuizen <janneke@gnu.org>
+;;; Copyright © 2020, 2021, 2023, 2024 Janneke Nieuwenhuizen <janneke@gnu.org>
 ;;; Copyright © 2018, 2019, 2020 Björn Höfling <bjoern.hoefling@bjoernhoefling.de>
 ;;; Copyright © 2020, 2021 Paul Garlick <pgarlick@tourbillion-technology.com>
 ;;; Copyright © 2020, 2022 Michael Rohleder <mike@rohleder.de>
@@ -67,6 +67,7 @@
 ;;; Copyright © 2023 Evgeny Pisemsky <mail@pisemsky.site>
 ;;; Copyright © 2024 Tomas Volf <~@wolfsden.cz>
 ;;; Copyright © 2024 Zheng Junjie <873216071@qq.com>
+;;; Copyright © 2024 Artyom V. Poptsov <poptsov.artyom@gmail.com>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -345,7 +346,7 @@ and its related documentation.")
 (define-public miniflux
   (package
     (name "miniflux")
-    (version "2.2.1")
+    (version "2.2.3")
     (source
      (origin
        (method git-fetch)
@@ -354,7 +355,7 @@ and its related documentation.")
              (commit version)))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "08z8z1a1mfvk1q7jbi6kpgq5463hmi92s51anb1ppyr54h02b2vg"))))
+        (base32 "0bllgjv7cdqrk3dm98dmp7mx0wmcbh410jcdcvid7z5qkr0fiy07"))))
     (build-system go-build-system)
     (arguments
      (list
@@ -1694,7 +1695,7 @@ for efficient socket-like bidirectional reliable communication channels.")
 (define-public wabt
   (package
     (name "wabt")
-    (version "1.0.34")
+    (version "1.0.36")
     (source
      (origin
        (method git-fetch)
@@ -1704,7 +1705,7 @@ for efficient socket-like bidirectional reliable communication channels.")
              (recursive? #true)))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "1vxvc34b7a7lkrmzdb5cjv0b54vhiyr33sy0i2ps5jrmg5rqqmia"))
+        (base32 "1gypy9bn2nvmfa469fi6kwsyw11j0vqkxm7givs3gidjpsy1bk0a"))
        (modules '((guix build utils)))
        (snippet
         '(delete-file-recursively "third_party/gtest/"))))
@@ -5256,13 +5257,13 @@ CDF, Atom 0.3, and Atom 1.0 feeds.")
 (define-public python-tibanna
   (package
     (name "python-tibanna")
-    (version "4.0.0")
+    (version "5.4.3")
     (source (origin
               (method url-fetch)
               (uri (pypi-uri "tibanna" version))
               (sha256
                (base32
-                "185jr5b1dfgh82xcjal0y9wbzds37s0yhx0hp8awlvw26v72awv2"))))
+                "11pbyw881qaj08syc9mwr301rm3jhy6vyci98pxin2dwvyzkgwhd"))))
     (build-system pyproject-build-system)
     (arguments
      ;; Tests require AWS credentials and access to the internet.
@@ -5284,8 +5285,8 @@ Cloud.")
     (license license:expat)))
 
 (define-public guix-data-service
-  (let ((commit "a204bda36d0433b5835375cbdc9e640a2a196674")
-        (revision "54"))
+  (let ((commit "64aeeffd8eb5b03da706d7bf57d1a2964585e6d1")
+        (revision "55"))
     (package
       (name "guix-data-service")
       (version (string-append "0.0.1-" revision "." (string-take commit 7)))
@@ -5297,7 +5298,7 @@ Cloud.")
                 (file-name (git-file-name name version))
                 (sha256
                  (base32
-                  "0f86sxxm0gnbkkb3x0kzrf9ld561y3mch4nkjylbmqdihh0609f0"))))
+                  "0jcjl5vhzwl1hc37w6xnmxlal8j5jlfykycx5wvdrc1wb7111s8v"))))
       (build-system gnu-build-system)
       (arguments
        (list
@@ -5605,8 +5606,7 @@ JSON, XML, properties, CSV and TSV.")
     (build-system go-build-system)
     (arguments
      (list
-      #:import-path "github.com/itchyny/gojq/cmd/gojq"
-      #:unpack-path "github.com/itchyny/gojq"))
+      #:import-path "github.com/itchyny/gojq"))
     (inputs
      (list go-github-com-google-go-cmp
            go-github-com-itchyny-timefmt-go
@@ -5627,7 +5627,48 @@ processor.")
     (arguments
      (ensure-keyword-arguments
       (package-arguments go-github-com-itchyny-gojq)
-      (list #:install-source? #f)))))
+      (list #:import-path "github.com/itchyny/gojq/cmd/gojq"
+            #:unpack-path "github.com/itchyny/gojq"
+            #:install-source? #f)))))
+
+(define-public go-jqp
+  (package
+    (name "go-jqp")
+    (version "0.7.0")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/noahgorstein/jqp")
+             (commit (string-append "v" version))))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "11xqh4113gkzp32hd4dg4cvjp40q3hxfh3889wd4bw2snl0alvcb"))))
+    (build-system go-build-system)
+    (arguments
+     (list
+      #:go go-1.22
+      #:embed-files #~(list ".*.xml")
+      #:install-source? #f
+      #:import-path "github.com/noahgorstein/jqp"))
+    (inputs
+     (list go-github-com-spf13-viper
+           go-github-com-spf13-cobra
+           go-github-com-muesli-termenv
+           go-github-com-itchyny-gojq
+           go-github-com-itchyny-timefmt-go
+           go-github-com-charmbracelet-lipgloss
+           go-github-com-charmbracelet-bubbletea
+           go-github-com-charmbracelet-bubbles
+           go-github-com-atotto-clipboard
+           go-github-com-alecthomas-chroma-v2))
+    (home-page "https://github.com/noahgorstein/jqp")
+    (synopsis "TUI playground to experiment with jq")
+    (description
+     "This package provides an interactive TUI to explor the @code{jq} command
+line utility.  The command accepts an optional query argument which will be
+executed against the input JSON or newline-delimited JSON (NDJSON).")
+    (license license:expat)))
 
 (define-public pup
   (let ((revision "1")
@@ -5879,6 +5920,8 @@ NetSurf project.")
              (setenv "XDG_DATA_DIRS"
                      (string-append (assoc-ref inputs "shared-mime-info")
                                     "/share"))
+             ;; This test fails: "Cannot read from a file without refname".
+             (rename-file "t/po.t" "t/po.t-")
              ;; CC is needed by IkiWiki/Wrapper.pm.
              (setenv "CC" "gcc")))
          (add-after 'install 'wrap-programs
@@ -8847,7 +8890,7 @@ bookmarks directly.  It can also present them in a web interface with
                       (string-append #$output path))))))))
     (inputs (list buku rofi))
     (home-page "https://github.com/carnager/buku_run")
-    (synopsis "rofi frontend for buku bookmarks manager")
+    (synopsis "@command{rofi} frontend for buku bookmarks manager")
     (description
      "This package provides a rofi frontend for the buku bookmark manager.")
     (license license:gpl3+)))

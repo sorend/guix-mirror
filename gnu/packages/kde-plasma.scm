@@ -1831,7 +1831,7 @@ KF5/Qt5 to KF6/Qt6")
     (arguments
      (list #:qtbase qtbase))
     (home-page "https://invent.kde.org/libraries/mpvqt")
-    (synopsis "A libmpv wrapper for QtQuick2 and QML")
+    (synopsis "libmpv wrapper for QtQuick2 and QML")
     (description "This package provides a libmpv wrapper for QtQuick2 and QML.")
     (license license:lgpl2.1+)))
 
@@ -2261,12 +2261,7 @@ integration of Qt applications when running on a KDE Plasma workspace.")
                 "1q85ynvgrz58bgpscmz0wa8llfvzcarnzknh026gcapkih84gbql"))))
     (build-system qt-build-system)
     (arguments
-     (list #:qtbase qtbase
-           #:phases #~(modify-phases %standard-phases
-                        (replace 'check
-                          (lambda* (#:key tests? #:allow-other-keys)
-                            (when tests?
-                              (invoke "ctest" "-E" "mobileproviderstest")))))))
+     (list #:qtbase qtbase))
     (native-inputs (list extra-cmake-modules pkg-config))
     (home-page "https://invent.kde.org/plasma/plasma-nm")
     (inputs (list kconfigwidgets
@@ -2281,6 +2276,7 @@ integration of Qt applications when running on a KDE Plasma workspace.")
                   knotifications
                   kirigami
                   libplasma
+                  mobile-broadband-provider-info
                   modemmanager-qt
                   network-manager
                   qca-qt6

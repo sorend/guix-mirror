@@ -18,6 +18,7 @@
 ;;; along with GNU Guix.  If not, see <http://www.gnu.org/licenses/>.
 
 (define-module (gnu system hurd)
+  #:use-module (ice-9 match)
   #:use-module (guix gexp)
   #:use-module (guix profiles)
   #:use-module (guix utils)
@@ -51,6 +52,8 @@
             %desktop-services/hurd
             %hurd-default-operating-system
             %hurd-default-operating-system-kernel
+            %hurd64-default-operating-system
+            %hurd64-default-operating-system-kernel
             %setuid-programs/hurd))
 
 ;;; Commentary:
@@ -68,11 +71,19 @@
                         (%current-target-system #f))
         gnumach)))
 
+(define %hurd64-default-operating-system-kernel
+  (if (system-hurd?)
+      gnumach
+      ;; A cross-built GNUmach does not work
+      (with-parameters ((%current-system "x86_64-linux")
+                        (%current-target-system #f))
+        gnumach)))
+
 (define %base-packages/hurd
   ;; Note: the Shepherd comes before the Hurd, not just because its duty is to
   ;; shepherd the herd, but also because we want its 'halt' and 'reboot'
   ;; commands to take precedence.
-  (list shepherd-0.10 hurd netdde bash coreutils file findutils grep sed
+  (list shepherd-1.0 hurd netdde bash coreutils file findutils grep sed
         diffutils patch gawk tar gzip bzip2 xz lzip
         guile-3.0-latest guile-colorized guile-readline
         net-base nss-certs inetutils less procps shadow sudo which
@@ -142,3 +153,9 @@
     (essential-services (hurd-default-essential-services this-operating-system))
     (privileged-programs '())
     (setuid-programs %setuid-programs/hurd)))
+
+(define %hurd64-default-operating-system
+  (operating-system
+    (inherit %hurd-default-operating-system)
+    (kernel %hurd64-default-operating-system-kernel)))
+

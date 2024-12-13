@@ -125,6 +125,7 @@
   #:use-module (gnu packages datamash)
   #:use-module (gnu packages dbm)
   #:use-module (gnu packages documentation)
+  #:use-module (gnu packages django)
   #:use-module (gnu packages elf)
   #:use-module (gnu packages emacs)
   #:use-module (gnu packages file)
@@ -423,13 +424,13 @@ triangulations.")
 (define-public units
   (package
    (name "units")
-   (version "2.23")
+   (version "2.24")
    (source (origin
             (method url-fetch)
             (uri (string-append "mirror://gnu/units/units-" version
                                 ".tar.gz"))
             (sha256 (base32
-                     "0w3kl58y7fq9paaq8ayn5gwylc4n8jbk6lf42kkcj9ar4i8v8myr"))))
+                     "00n9l329814nww1pnp9nlaas8lfvblpcf5j750lhpwmcvx72ql0y"))))
    (build-system gnu-build-system)
    (inputs
      (list bash-minimal       ;for wrap-program
@@ -677,28 +678,18 @@ precision floating point numbers.")
 (define-public gsl
   (package
     (name "gsl")
-    (version "2.7.1")
+    (version "2.8")
     (source (origin
               (method url-fetch)
               (uri (string-append "mirror://gnu/gsl/gsl-"
                                   version ".tar.gz"))
               (sha256
                (base32
-                "0jxkxrnpys2j3rh8bzx0bmnh4w6xm28jd57rgxsjp0s863agpc6w"))))
-    (outputs '("out" "static"))
+                "141i8ag2qazyqqk17bfr2l7mr1asxm1da7avi5a66b332pnyx6ba"))))
+    (outputs '("out" "static" "debug"))
     (build-system gnu-build-system)
     (arguments
-     (list ;; FIXME: Setting CFLAGS=-fPIC is not only unnecessary, it's also
-           ;; harmful because it removes the default '-O2 -g', meaning that the
-           ;; library ends up being compiled as -O0.  Consequently, some
-           ;; numerical tests fail, notably on i686-linux.  TODO: Remove
-           ;; 'CFLAGS=-fPIC' for all systems and revisit or remove
-           ;; 'disable-failing-tests' phases accordingly.
-           #:make-flags (if (and (not (%current-target-system))
-                                 (string=? (%current-system) "i686-linux"))
-                            #~'()
-                            #~(list "CFLAGS=-fPIC"))
-           #:phases
+     (list #:phases
            #~(modify-phases %standard-phases
                #$@(cond
                    ((and (target-riscv64?)
@@ -1126,7 +1117,8 @@ large scale eigenvalue problems.")
      "LAPACK is a Fortran 90 library for solving the most commonly occurring
 problems in numerical linear algebra.")
     (license (license:non-copyleft "file://LICENSE"
-                                "See LICENSE in the distribution."))))
+                                "See LICENSE in the distribution."))
+    (properties '((tunable? . #t)))))
 
 (define-public clapack
   (package
@@ -1308,6 +1300,33 @@ in the terminal or with an external viewer.")
     (description
      "Giza is a lightweight scientific plotting library built on top of
 @code{cairo} that provides uniform output to multiple devices.")
+    (license license:gpl2+)))
+
+(define-public perl-pgplot
+  (package
+    (name "perl-pgplot")
+    (version "2.34")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (string-append "mirror://cpan/authors/id/E/ET/ETJ/PGPLOT-" version
+                           ".tar.gz"))
+       (sha256
+        (base32 "1j0hjnhi0rkihviab2s6ninwfm71s73zh89pds1mpg9kf3c1w97z"))))
+    (build-system perl-build-system)
+    (arguments
+     `(#:phases
+       (modify-phases %standard-phases
+        (add-after 'unpack 'setenv
+         (lambda* (#:key inputs #:allow-other-keys)
+           (setenv "PGPLOT_DIR" (string-append (assoc-ref inputs "giza") "/lib")))))))
+    (inputs (list giza libx11))
+    (native-inputs (list perl-devel-checklib perl-extutils-f77 gfortran))
+    (home-page "https://metacpan.org/release/PGPLOT")
+    (synopsis "Scientific plotting library (using giza)")
+    (description "This package provides PGPLOT bindings for Perl.  It uses
+giza instead of PGPLOT for the implementation, though.")
+    ;; Since giza is GPL2+, so is this.
     (license license:gpl2+)))
 
 (define-public gnuplot
@@ -1726,7 +1745,14 @@ extremely large and complex data collections.")
                 ;; modifies the test reference.
                 (substitute* "test/test_check_version.sh.in"
                   (("TESTING\\(\\).*" all)
-                   (string-append all "\nSKIP; exit 0\n")))))))))))
+                   (string-append all "\nSKIP; exit 0\n")))))
+            (add-after 'patch-configure 'patch-configure-build-settings
+              (lambda _
+                (substitute* "src/H5build_settings.autotools.c.in"
+                  ;; Don't record the build-time kernel version to make the
+                  ;; library file reproducible.
+                  (("@UNAME_INFO@")
+                   "Linux"))))))))))
 
 (define-public hdf5
   ;; Default version of HDF5.
@@ -3414,8 +3440,9 @@ September 2004}")
                 (substitute* (find-files "." "^petsc(conf|machineinfo).h$")
                   ;; Prevent build directory from leaking into compiled code
                   (((getcwd)) out)
-                  (("Machine characteristics: Linux-[0-9]+\\.[0-9]+\\.[0-9]+")
-                    "Machine characteristics: Linux-x.x.x"))
+                  (("Machine characteristics: Linux-[0-9]+\\.[0-9]+\\.[0-9]+-arch[0-9]+-[0-9]+")
+                    "Machine characteristics: Linux-x.x.x-archx-x")
+                  (("([[:graph:]]+)/bin/make") "\"make"))
                 (substitute* (find-files "." "petscvariables")
                   ;; Do not expose build machine characteristics, set to defaults.
                   (("MAKE_NP = [[:digit:]]+") "MAKE_NP = 2")
@@ -3455,7 +3482,8 @@ September 2004}")
                 (("([[:graph:]]+)/bin/make") "make")
                 (("([[:graph:]]+)/bin/diff") "diff")
                 (("([[:graph:]]+)/bin/sed") "sed")
-                (("([[:graph:]]+)/bin/gfortran") "gfortran")))))
+                (("([[:graph:]]+)/bin/gfortran") "gfortran")
+                (("([[:graph:]]+)/bin/gcov") "gcov")))))
 
           ;; Some of the tests get linked with '-L$prefix/lib -lpetsc' (even
           ;; though that's unnecessary because they also explicitly link
@@ -5400,7 +5428,8 @@ parts of it.")
     (home-page "https://www.openblas.net/")
     (synopsis "Optimized BLAS library based on GotoBLAS")
     (description
-     "OpenBLAS is a BLAS library forked from the GotoBLAS2-1.13 BSD version.")
+     "OpenBLAS is a Basic Linear Algebra Subprograms (BLAS) library forked
+from the GotoBLAS2-1.13 BSD version.")
     (license license:bsd-3)))
 
 (define-public openblas-ilp64
@@ -8376,7 +8405,7 @@ linear algebra primitives specifically targeting graph analytics.")
 (define-public dune-common
   (package
     (name "dune-common")
-    (version "2.9.0")
+    (version "2.10.0")
     (source
      (origin
        (method url-fetch)
@@ -8384,7 +8413,7 @@ linear algebra primitives specifically targeting graph analytics.")
                            version "/dune-common-" version ".tar.gz"))
        (sha256
         (base32
-         "04pzk8q0bibci8z5xlwndhh3y3vs63mw7kad62lbzfwrr5121hrd"))
+         "1pdgxlxb570fm7smk1zv9b3iq1wzjg6g0s4361xs2w5qrf6drh4l"))
        (patches (search-patches "dune-common-skip-failing-tests.patch"))))
     (build-system cmake-build-system)
     (arguments
@@ -8414,7 +8443,7 @@ Differences} (FD).")
 (define-public dune-geometry
   (package
     (name "dune-geometry")
-    (version "2.9.0")
+    (version "2.10.0")
     (source
      (origin
        (method url-fetch)
@@ -8422,7 +8451,7 @@ Differences} (FD).")
                            version "/dune-geometry-" version ".tar.gz"))
        (sha256
         (base32
-         "1bl1abipcf7zysmyyy2ikfx0nip55kasrb1bbkh11ghdilxrwwqy"))))
+         "00vkidb931zvpq3nmw8ikyg8pr3jqisfq2qxwj9hqzj7634qms98"))))
     (build-system cmake-build-system)
     (arguments
      `(#:phases
@@ -8455,17 +8484,15 @@ This package contains the basic DUNE geometry classes.")
 (define-public dune-uggrid
   (package
     (name "dune-uggrid")
-    (version "2.9.0")
+    (version "2.10.0")
     (source
      (origin
-       (method git-fetch)
-       (uri (git-reference
-         (url "https://gitlab.dune-project.org/staging/dune-uggrid.git")
-         (commit (string-append "v" version))))
-       (file-name (git-file-name name version))
+       (method url-fetch)
+       (uri (string-append "https://dune-project.org/download/"
+                           version "/dune-uggrid-" version ".tar.gz"))
        (sha256
         (base32
-         "1xwmiabb25nydi0yzhd64vq6fm3razix6k87afhq88q0ywzll65x"))))
+         "1wm1jy8ssfzpskhk7z34ahmw0q0iyna0dgph8kskv6j2i8v7skip"))))
     (build-system cmake-build-system)
     (arguments
      `(#:phases
@@ -8495,7 +8522,7 @@ This package contains the DUNE UG grid classes.")
 (define-public dune-grid
   (package
     (name "dune-grid")
-    (version "2.9.0")
+    (version "2.10.0")
     (source
      (origin
        (method url-fetch)
@@ -8503,9 +8530,7 @@ This package contains the DUNE UG grid classes.")
                            version "/dune-grid-" version ".tar.gz"))
        (sha256
         (base32
-         "17l2vlr8q3rfifxv80r3jlzamx478xn0vfjkrl3ns1akk7miycq8"))
-       (patches (search-patches
-                  "dune-grid-add-missing-include-cassert.patch"))))
+         "0mh06g3sryx3s0d7zgzsz6j18vbzb0f46wq7aw6ahj2hswb7rsrg"))))
     (build-system cmake-build-system)
     (arguments
      `(#:phases
@@ -8543,7 +8568,7 @@ This package contains the basic DUNE grid classes.")
 (define-public dune-istl
   (package
     (name "dune-istl")
-    (version "2.9.0")
+    (version "2.10.0")
     (source
      (origin
        (method url-fetch)
@@ -8551,8 +8576,7 @@ This package contains the basic DUNE grid classes.")
                            version "/dune-istl-" version ".tar.gz"))
        (sha256
         (base32
-         "0smghqr400xl84j0laabgwaj2p5jlj3n3s85bm7qp9m2vjz6rav6"))
-       (patches (search-patches "dune-istl-fix-solver-playground.patch"))))
+         "0rk95rkj87gpb3gn40jl532rybs2lxkhn7g6b30m9kbzz7yfjfbc"))))
     (build-system cmake-build-system)
     (arguments
      `(#:phases
@@ -8605,7 +8629,7 @@ aggregation-based algebraic multigrid.")
 (define-public dune-localfunctions
   (package
     (name "dune-localfunctions")
-    (version "2.9.0")
+    (version "2.10.0")
     (source
      (origin
        (method url-fetch)
@@ -8613,7 +8637,7 @@ aggregation-based algebraic multigrid.")
                            version "/dune-localfunctions-" version ".tar.gz"))
        (sha256
         (base32
-         "02zl49q40ifmic221fxlhi8zj9pybdyjavzvgn1zwh636ysgjbsp"))))
+         "0a5hyd7fps18178dq41nxa21h0i9ah6sw7di8qkc4i1rh052rzc1"))))
     (build-system cmake-build-system)
     (arguments
      `(#:phases
@@ -8663,7 +8687,7 @@ assemble global function spaces on finite-element grids.")
 (define-public dune-alugrid
   (package
     (name "dune-alugrid")
-    (version "2.9.0")
+    (version "2.10.0")
     (source
      (origin
        (method git-fetch)
@@ -8673,7 +8697,7 @@ assemble global function spaces on finite-element grids.")
        (file-name (git-file-name name version))
        (sha256
         (base32
-         "0s41jinsfpm56nx41vkmyv3y9n072ssw9hxjm7di64zcszgpjmzd"))))
+         "0289vqf9azhgqda04qa5prn201xnsd9i0r8gy6jn0g6wfy9bcpav"))))
     (build-system cmake-build-system)
     (arguments
      `(#:phases
@@ -8715,12 +8739,12 @@ cubes.")
 
 (define-public dune-subgrid
   ; dune-subgrid does not tag its releases.
-  ; The following commit is a few commits past the releases/2.9 branch
-  ; to include some additional commits fixing compatibility with dune-uggrid.
-  (let ((commit "e83f3f919c2602425467ed767f279bc9c356c436"))
+  ; The following commit is the last commit on the releases/2.10 branch
+  ; as of 2024-11-14.
+  (let ((commit "e71cc9c2514356c7cd989f0c13661f10c37c58df"))
     (package
       (name "dune-subgrid")
-      (version (git-version "2.9.0" "1" commit))
+      (version (git-version "2.10.0" "1" commit))
       (source
        (origin
          (method git-fetch)
@@ -8730,7 +8754,7 @@ cubes.")
          (file-name (git-file-name name version))
          (sha256
           (base32
-            "1dv4zg5j17bldpgg02ycg9fbfmnc1kffixgzbkkz86f2dmwgh2b6"))))
+            "1vahmj2r9r684n8rgnqqb8zhi3wibkxjsv1kql804azx71dslx0d"))))
       (build-system cmake-build-system)
       (arguments
        `(#:phases
@@ -8763,17 +8787,15 @@ provides the full grid interface including adaptive mesh refinement.")
 (define-public dune-typetree
   (package
     (name "dune-typetree")
-    (version "2.9.0")
+    (version "2.10.0")
     (source
      (origin
-       (method git-fetch)
-       (uri (git-reference
-             (url "https://gitlab.dune-project.org/staging/dune-typetree.git")
-             (commit (string-append "v" version))))
-       (file-name (git-file-name name version))
+       (method url-fetch)
+       (uri (string-append "https://dune-project.org/download/"
+                           version "/dune-typetree-" version ".tar.gz"))
        (sha256
         (base32
-         "1qcnl8giivnn8zprszdwrqw4q29sv3c2pr8dlrz616j10i4r8p18"))))
+         "0k756c543r79jz51jfnvi6knnxv7y19xg69yb15b0hrv4gq015pf"))))
     (build-system cmake-build-system)
     (arguments
      `(#:phases
@@ -8805,17 +8827,15 @@ operating on statically typed trees of objects.")
 (define-public dune-functions
   (package
     (name "dune-functions")
-    (version "2.9.0")
+    (version "2.10.0")
     (source
      (origin
-       (method git-fetch)
-       (uri (git-reference
-             (url "https://gitlab.dune-project.org/staging/dune-functions.git")
-             (commit (string-append "v" version))))
-       (file-name (git-file-name name version))
+       (method url-fetch)
+       (uri (string-append "https://dune-project.org/download/"
+                           version "/dune-functions-" version ".tar.gz"))
        (sha256
         (base32
-         "0pmi9vk0pdq9qp3xvknsndg8l6f2xkjr1rwbfbzsl9aj0qv9rn2p"))))
+         "1v2yyiqacspa7fkz5pbhd9hcz8rk5bhyhlhwvr3jjgmniiy0x2hp"))))
     (build-system cmake-build-system)
     (arguments
      `(#:phases
@@ -10463,3 +10483,163 @@ architecture.")
 +and canonical forms of graphs.  It has both a command line user interface as
 +well as C++ and C programming language APIs.")
     (license license:lgpl3)))
+
+(define-public python-mathics-scanner
+  (package
+    (name "python-mathics-scanner")
+    (version "1.3.1")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/Mathics3/mathics-scanner.git")
+             (commit "1.3.1")))
+       (sha256
+        (base32
+         "1i632v3f64q3v1i0p0x850mjhgad49fl24dl6r20r4wa1mhalmp0"))))
+    (build-system pyproject-build-system)
+    (propagated-inputs (list python-chardet python-click python-pyyaml))
+    (native-inputs (list python-pytest))
+    (home-page "https://mathics.org/")
+    (synopsis
+     "Character tables and tokenizer for Mathics and the Wolfram language")
+    (description
+     "This package provides character tables and a tokenizer for Mathics and
+the Wolfram language.")
+    (license license:gpl3+)))
+
+(define-public python-mathics-pygments
+  (package
+    (name "python-mathics-pygments")
+    (version "1.0.3")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (pypi-uri "mathics_pygments" version))
+       (sha256
+        (base32 "1q54c8mb9pgw8ncbs9hln183nxvvxq0d8495c8zakccsfswvznx2"))))
+    (build-system pyproject-build-system)
+    (propagated-inputs (list python-mathics-scanner python-pygments))
+    (home-page "http://github.com/Mathics3/mathics-pygments/")
+    (synopsis "Wolfram language lexer for Pygments")
+    (description "This package provides a Wolfram language lexer for Pygments.")
+    (license license:expat)))
+
+(define-public python-mathics-core
+  (package
+    (name "python-mathics-core")
+    (version "7.0.0")
+    (source (origin
+              (method git-fetch)
+              (uri (git-reference
+                     (url "https://github.com/Mathics3/mathics-core.git")
+                     (commit version)))
+              (file-name (git-file-name name version))
+              (sha256
+               (base32
+                "0hhk2qq6swnprf9hliazwi3858sv3b3015g0mnm4ycdk5fsc7y57"))))
+    (arguments
+     `(;; <https://github.com/pytest-dev/pytest/pull/10173> is missing .closed
+       #:test-flags '("-s")
+       #:phases
+       (modify-phases %standard-phases
+         (add-after 'unpack 'patch-bugs
+           (lambda _
+             (substitute* "pyproject.toml"
+              (("\"autoload/\\*.m\",")
+               ;; They forgot to install autoload/rules/*.m
+               "\"autoload/*.m\", \"autoload/rules/*.m\","))
+             ;; Prevent internet access by tests.
+             (substitute* "mathics/builtin/files_io/files.py"
+              (("https://raw.githubusercontent.com/Mathics3/mathics-core/master/README.rst")
+               (string-append (getcwd) "/README.rst")))))
+         (add-before 'check 'prepare-locales
+           (lambda _
+             ;; Otherwise 210 tests fail because the real output would use
+             ;; unicode arrow characters.  With this, only 18 (symbolic) tests fail.
+             (setenv "MATHICS_CHARACTER_ENCODING" "ASCII"))))))
+    (build-system pyproject-build-system)
+    (native-inputs (list python-pytest))
+    (inputs (list llvm))
+    (propagated-inputs (list python-mpmath
+                             python-pint
+                             python-palettable
+                             python-sympy
+                             python-numpy
+                             python-mathics-scanner
+                             python-pillow
+                             python-dateutil
+                             python-requests
+                             python-llvmlite
+                             python-scipy))
+    (synopsis "Computer algebra system")
+    (description "This package provides a computer algebra system--an alternative
+to Wolfram.")
+    (home-page "https://mathics.org/")
+    (license license:gpl3)))
+
+(define-public python-mathicsscript
+  (package
+    (name "python-mathicsscript")
+    (version "7.0.0")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (pypi-uri "mathicsscript" version))
+       (sha256
+        (base32 "15ppg8sj03j63664npdqiv1lfk2mqnrqjb5817zjyy04z9s0kp7l"))))
+    (build-system pyproject-build-system)
+    (arguments
+     `(#:phases
+       (modify-phases %standard-phases
+         (add-before 'check 'setenv
+           (lambda _
+             (setenv "HOME" "/tmp"))))))
+    (propagated-inputs (list python-click
+                             python-colorama
+                             python-columnize
+                             python-mathics-pygments
+                             python-mathics-scanner
+                             python-mathics-core
+                             python-networkx
+                             python-prompt-toolkit
+                             python-pygments
+                             python-term-background))
+    (native-inputs (list python-pytest))
+    (home-page "https://mathics.org/")
+    (synopsis "Command-line interface to Mathics3")
+    (description "This package provides a command-line interface to
+Mathics3.")
+    (license license:gpl3)))
+
+(define-public python-mathics-django
+  (package
+    (name "python-mathics-django")
+    (version "7.0.0")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (pypi-uri "Mathics-Django" version))
+       (sha256
+        (base32 "02ccq0kx9i9b339p48j6xixr5wqj58dp8rhcik07b7vrfvznnxdi"))))
+    (build-system pyproject-build-system)
+    (arguments
+     `(#:phases
+       (modify-phases %standard-phases
+         (delete 'check)
+         (add-after 'build 'check
+           (lambda _
+             (setenv "PYTHONPATH" (getcwd))
+             (setenv "DJANGO_SETTINGS_MODULE" "mathics_django.settings")
+             (invoke "django-admin" "test"))))))
+    (native-inputs (list python-pytest))
+    (propagated-inputs (list python-django-4.2
+                             python-mathics-scanner
+                             python-mathics-core
+                             python-networkx-next
+                             python-pygments
+                             python-requests))
+    (home-page "https://mathics.org/")
+    (synopsis "A Django front end for Mathics3.")
+    (description "This package provides a Django front end for Mathics3.")
+    (license license:gpl3)))

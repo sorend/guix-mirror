@@ -76,6 +76,7 @@
 ;;; Copyright © 2024 dan <i@dan.games>
 ;;; Copyright © 2024 Wamm K. D. <jaft.r@outlook.com>
 ;;; Copyright © 2024 Ashish SHUKLA <ashish.is@lostca.se>
+;;; Copyright © 2024 Josep Bigorra <jjbigorra@gmail.com>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -118,17 +119,21 @@
   #:use-module (gnu packages build-tools)
   #:use-module (gnu packages calendar)
   #:use-module (gnu packages check)
+  #:use-module (gnu packages cmake)
   #:use-module (gnu packages compression)
+  #:use-module (gnu packages cpp)
   #:use-module (gnu packages crates-io)
   #:use-module (gnu packages crates-graphics)
   #:use-module (gnu packages datastructures)
   #:use-module (gnu packages docbook)
   #:use-module (gnu packages documentation)
+  #:use-module (gnu packages engineering)
   #:use-module (gnu packages flex)
   #:use-module (gnu packages fontutils)
   #:use-module (gnu packages freedesktop)
   #:use-module (gnu packages fribidi)
   #:use-module (gnu packages gawk)
+  #:use-module (gnu packages gcc)
   #:use-module (gnu packages gettext)
   #:use-module (gnu packages gl)
   #:use-module (gnu packages glib)
@@ -211,7 +216,7 @@ the leaves of a full binary tree.")
 (define-public cage
   (package
     (name "cage")
-    (version "0.1.5")
+    (version "0.2.0")
     (source
      (origin
        (method git-fetch)
@@ -219,12 +224,12 @@ the leaves of a full binary tree.")
              (url "https://github.com/cage-kiosk/cage")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
-       (sha256 (base32 "11sg9x08zl2nr7a723h462knz5lf58sgvkhv1mgc9z3hhkhvbsja"))))
+       (sha256 (base32 "0y7vqyvzphpzm0bnkrhs7qqbjpcb0sn0nlwif9y43l5kmp7ns8fr"))))
     (build-system meson-build-system)
     (native-inputs (list pkg-config scdoc
                          ;; for wayland-scanner
                          wayland))
-    (inputs (list wayland wlroots-0.16 libxkbcommon))
+    (inputs (list wayland wlroots libxkbcommon))
     (home-page "https://github.com/cage-kiosk/cage")
     (synopsis "Wayland kiosk")
     (description "This package provides a Wayland @dfn{kiosk}, which runs a
@@ -313,6 +318,81 @@ or musca).
 @end itemize")
     (home-page "https://herbstluftwm.org")
     (license license:bsd-2)))
+
+(define-public hyprland
+  (package
+    (name "hyprland")
+    (version "0.45.2")
+    (source (origin
+              (method url-fetch)
+              (uri (string-append "https://github.com/hyprwm/Hyprland"
+                                  "/releases/download/v" version
+                                  "/source-v" version ".tar.gz"))
+              (modules '((guix build utils)))
+              (snippet
+               '(begin
+                  ;; Remove bundled sources and hyprpm utility.
+                  (substitute* "CMakeLists.txt"
+                    (("^add_subdirectory\\(hyprpm\\).*") ""))
+                  (for-each delete-file-recursively
+                            '("hyprpm"
+                              "subprojects"))))
+              (sha256
+               (base32
+                "1jqnly8h72v20fsz1075ib7gl7272g5svqw7qpqhx6243w1320np"))))
+    (build-system cmake-build-system)
+    (arguments
+     (list #:cmake cmake-3.30
+           #:tests? #f                  ;No tests.
+           #:phases
+           #~(modify-phases %standard-phases
+               (add-after 'unpack 'fix-path
+                 (lambda* (#:key inputs #:allow-other-keys)
+                   (substitute* "src/xwayland/Server.cpp"
+                     (("Xwayland( \\{\\})" _ suffix)
+                      (string-append
+                       (search-input-file inputs "bin/Xwayland")
+                       suffix)))
+                   (substitute* (find-files "src" "\\.cpp$")
+                     (("/usr/local(/bin/Hyprland)" _ path)
+                      (string-append #$output path))
+                     (("/usr") #$output)
+                     (("\\<(addr2line|cat|lspci|nm)\\>" cmd)
+                      (search-input-file
+                       inputs (string-append "bin/" cmd)))))))))
+    (native-inputs
+     (list gcc-14
+           hyprwayland-scanner
+           (module-ref (resolve-interface
+                  '(gnu packages commencement))
+                 'ld-wrapper)
+           pkg-config))
+    (inputs
+     (list aquamarine
+           binutils
+           cairo
+           hyprcursor
+           hyprland-protocols
+           hyprlang
+           hyprutils
+           libinput-minimal
+           libxcursor
+           libxkbcommon
+           mesa
+           pango
+           pciutils
+           udis86
+           wayland
+           wayland-protocols
+           xcb-util-errors
+           xcb-util-wm
+           xorg-server-xwayland))
+    (home-page "https://hyprland.org/")
+    (synopsis "Dynamic tiling Wayland compositor")
+    (description
+     "Hyprland is a dynamic tiling Wayland compositor that doesn't sacrifice on
+its looks.")
+    (license license:bsd-3)))
 
 (define-public i3status
   (package
@@ -1831,7 +1911,7 @@ modules for building a Wayland compositor.")
 (define-public wl-mirror
   (package
     (name "wl-mirror")
-    (version "0.16.2")
+    (version "0.17.0")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -1840,7 +1920,7 @@ modules for building a Wayland compositor.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "1jdycr9vf5skbf55kbm2hc3zl3qg58x3bb6xqkf9qx14m4ramcdj"))))
+                "1szzaahpq0ihpabjh4djkrmhlp0z3g39pdsmrcg7jdz6qw49pj8k"))))
     (build-system cmake-build-system)
     (arguments
      (list #:tests? #f                  ;No tests.
@@ -1877,16 +1957,16 @@ region on the fly.
 (define-public wmenu
   (package
     (name "wmenu")
-    (version "0.1.7")
+    (version "0.1.9")
     (source (origin
               (method git-fetch)
               (uri (git-reference
-                    (url "https://git.sr.ht/~adnano/wmenu")
+                    (url "https://codeberg.org/adnano/wmenu")
                     (commit version)))
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "0wjn68r5cx4zvw7sby6sk2ip5h4fn0jbgb1nasm9nsgjpv63pnpm"))))
+                "1f46v4zbywh7fsz5dgkhaa62lmv7gydybwr7qym37gg10jz42pjc"))))
     (build-system meson-build-system)
     (native-inputs (append (if (%current-target-system)
                                ;; for wayland-scanner
@@ -1895,7 +1975,7 @@ region on the fly.
                                '())
                            (list pkg-config scdoc)))
     (inputs (list cairo pango wayland libxkbcommon wayland-protocols))
-    (home-page "https://git.sr.ht/~adnano/wmenu")
+    (home-page "https://codeberg.org/adnano/wmenu")
     (synopsis "Dynamic menu for Wayland")
     (description "@command{wmenu} is a dynamic menu for Wayland, which reads a list
 of newline-separated items from stdin.  When the user selects an item and presses
@@ -1959,7 +2039,7 @@ narrow the items to those matching the tokens in the input.")
   (package
     (inherit sway)
     (name "swayfx")
-    (version "0.3.2")
+    (version "0.4")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -1968,7 +2048,7 @@ narrow the items to those matching the tokens in the input.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "13d8icd45j937jgkidr7cyjys4nnvxh4ilp7ml0i2ml39ipv01qv"))))
+                "0651gbkszc8wwkiiw983m3815cfyk4c9v4mpd1nqf27a0f6qjgsm"))))
     (build-system meson-build-system)
     (inputs (list basu
                   cairo
@@ -1979,9 +2059,10 @@ narrow the items to those matching the tokens in the input.")
                   libxkbcommon
                   pango
                   pcre2
+                  scenefx
                   swaybg
                   wayland
-                  wlroots-0.16))
+                  wlroots-0.17))
     (home-page "https://github.com/WillPower3309/swayfx")
     (synopsis "Sway Fork with extra options and effects")
     (description
@@ -3687,6 +3768,66 @@ Type=Application~%"
 used for multimedia keys.")
     (license license:gpl3+)))
 
+(define-public grimblast
+  (let ((commit "9d67858b437d4a1299be496d371b66fc0d3e01f6")
+        (revision "1"))
+    (package
+      (name "grimblast")
+      (version (git-version "0.1" revision commit))
+      (source (origin
+                (method git-fetch)
+                (uri (git-reference
+                      (url "https://github.com/hyprwm/contrib")
+                      (commit commit)))
+                (file-name (git-file-name name version))
+                (sha256
+                 (base32
+                  "1v0v5j7ingx80b5zpyz8ilfhz0kh9dcssnx6iwwl45zzgp915cpv"))))
+      (build-system gnu-build-system)
+      (arguments
+       (list #:tests? #f                ;No tests.
+             #:make-flags
+             #~(list (string-append "PREFIX=" #$output))
+             #:phases
+             #~(modify-phases %standard-phases
+                 (delete 'configure)
+                 (add-after 'unpack 'chdir
+                   (lambda _
+                     (chdir "grimblast")))
+                 (add-after 'chdir 'fix-paths
+                   (lambda* (#:key inputs #:allow-other-keys)
+                     (substitute* "grimblast"
+                       (((string-append "\\<(" (string-join
+                                                '("date"
+                                                  "grim"
+                                                  "slurp"
+                                                  "hyprctl"
+                                                  "hyprpicker"
+                                                  "wl-copy"
+                                                  "jq"
+                                                  "notify-send")
+                                                "|")
+                                        ")\\>")
+                         cmd)
+                        (search-input-file
+                         inputs (string-append "bin/" cmd)))))))))
+      (native-inputs (list scdoc))
+      (inputs
+       (list coreutils-minimal
+             grim
+             jq
+             libnotify
+             slurp
+             hyprland
+             hyprpicker
+             wl-clipboard))
+      (home-page "https://github.com/hyprwm/contrib")
+      (synopsis "Screenshot utility for Hyprland")
+      (description
+       "This package provides a Hyprland version of @code{grimshot} for
+screenshoting.")
+      (license license:expat))))
+
 (define-public grimshot
   (package
     (name "grimshot")
@@ -3968,4 +4109,33 @@ battery efficient---polling is only done when absolutely necessary.")
     (description "The package provides a library for managing the
 configuration files of Wayifre.  It can set key and mouse bindings,
 configure input, and customize Wayfire plugins.")
+    (license license:expat)))
+
+(define-public scenefx
+  (package
+    (name "scenefx")
+    (version "0.1")
+    (source (origin
+              (method git-fetch)
+              (uri (git-reference
+                    (url "https://github.com/wlrfx/scenefx")
+                    (commit version)))
+              (file-name (git-file-name name version))
+              (sha256
+               (base32
+                "1r7f8bprsn0mwlkmc8d14nr3iibljfyxypb4i06v66ghlngaw6dw"))))
+    (build-system meson-build-system)
+    (native-inputs (list pkg-config
+                         ;; for wayland-scanner.
+                         wayland))
+    (inputs (list pixman
+                  mesa
+                  libxkbcommon
+                  libdrm
+                  wlroots-0.17))
+    (home-page "https://github.com/wlrfx/scenefx")
+    (synopsis "Drop-in replacement for the wlroots scene API")
+    (description
+     "A drop-in replacement for the wlroots scene API that allows wayland
+compositors to render surfaces with eye-candy effects.")
     (license license:expat)))

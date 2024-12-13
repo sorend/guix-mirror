@@ -20,12 +20,13 @@
 ;;; Copyright © 2022 Paul A. Patience <paul@apatience.com>
 ;;; Copyright © 2022 Wiktor Żelazny <wzelazny@vurv.cz>
 ;;; Copyright © 2022 Eric Bavier <bavier@posteo.net>
-;;; Copyright © 2022 Antero Mejr <antero@mailbox.org>
+;;; Copyright © 2022, 2024 Antero Mejr <antero@mailbox.org>
 ;;; Copyright © 2022 jgart <jgart@dismail.de>
 ;;; Copyright © 2023, 2024 Troy Figiel <troy@troyfigiel.com>
 ;;; Copyright © 2024 Sharlatan Hellseher <sharlatanus@gmail.com>
 ;;; Copyright © 2024 Marco Baggio <marco.baggio@mdc-berlin.de>
 ;;; Copyright © 2024 Nicolas Graves <ngraves@ngraves.fr>
+;;; Copyright © 2024 Rick Huijzer <ikbenrickhuyzer@gmail.com>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -599,6 +600,54 @@ implements several methods for sequential model-based optimization.
 @code{skopt} aims to be accessible and easy to use in many contexts.")
     (license license:bsd-3)))
 
+(define-public python-scikit-surprise
+  (package
+    (name "python-scikit-surprise")
+    (version "1.1.4")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/NicolasHug/Surprise")
+             (commit (string-append "v" version))))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "15ckx2i41vs21sa3yqyj12zr0h4zrcdf3lrwcy2c1cq2bjq7mnvz"))))
+    (build-system pyproject-build-system)
+    (arguments
+     (list
+      #:phases
+      #~(modify-phases %standard-phases
+          (add-before 'check 'set-home
+            (lambda _
+              ;; Change from /homeless-shelter to /tmp for write
+              ;; permission.
+              (setenv "HOME" "/tmp"))))))
+    (native-inputs
+     (list python-cython-3
+           python-pandas
+           python-pytest
+           python-setuptools
+           python-wheel))
+    (propagated-inputs
+     (list python-joblib
+           python-numpy
+           python-scikit-learn))
+    (home-page "https://surpriselib.com/")
+    (synopsis "Recommender system library for Scikit-learn")
+    (description
+     "This package provides a Python library for building and analyzing
+recommender systems that deal with explicit rating data.  It was designed with
+the following purposes in mind:
+@itemize
+@item Provide tools to handle downloaded or user-provided datasets.
+@item Provide ready-to-use prediction algorithms and similarity measures.
+@item Provide a base for creating custom algorithims.
+@item Provide tools to evaluate, analyse and compare algorithm performance.
+@item Provide documentation with precise details regarding library algorithms.
+@end itemize")
+    (license license:bsd-3)))
+
 (define-public python-scikit-survival
   (let ((revision "1")
         ;; We need a later commit for support of a more recent sklearn and
@@ -894,6 +943,32 @@ density maps, both for interactive and non-interactive use.")
 @item Compatible Relaxation (CR)
 @item Krylov methods such as CG, GMRES, FGMRES, BiCGStab, MINRES, etc.
 @end itemize")
+    (license license:expat)))
+
+(define-public python-pyet
+  (package
+    (name "python-pyet")
+    (version "1.3.1")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (pypi-uri "pyet" version))
+       (sha256
+        (base32 "1dblsx0bv1g453hcx5vwij1zgankwgwvhwllqkn47k578h038xvy"))))
+    (build-system pyproject-build-system)
+    (native-inputs
+     (list python-mock
+           python-pytest
+           python-setuptools
+           python-wheel))
+    (propagated-inputs
+     (list python-pandas
+           python-xarray))
+    (home-page "https://github.com/pyet-org/pyet")
+    (synopsis "Python package for evapotranspiration calculation")
+    (description
+     "This package provides a Python library for calculating
+Evapotranspiration using various standard methods.")
     (license license:expat)))
 
 (define-public python-tspex
@@ -1810,7 +1885,7 @@ and visualization with these data structures.")
                              python-xarray))
     (native-inputs (list python-pytest python-poetry-core))
     (home-page "https://github.com/astropenguin/xarray-dataclasses/")
-    (synopsis "xarray data creation made easy by dataclass")
+    (synopsis "Data creation made easy by dataclass")
     (description "@code{xarray-dataclasses} is a Python package that makes it
 easy to create @code{xarray}'s @code{DataArray} and @code{Datase} objects that
 are \"typed\" (i.e. fixed dimensions, data type, coordinates, attributes, and

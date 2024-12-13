@@ -550,7 +550,7 @@ Performance is achieved by using the LLVM JIT compiler.")
   (deprecated-package "guile-aiscm-next" guile-aiscm))
 
 (define-public llama-cpp
-  (let ((tag "b3907"))
+  (let ((tag "b4137"))
     (package
       (name "llama-cpp")
       (version (string-append "0.0.0-" tag))
@@ -562,14 +562,14 @@ Performance is achieved by using the LLVM JIT compiler.")
                (commit tag)))
          (file-name (git-file-name name tag))
          (sha256
-          (base32 "0vpqng1lq1r09vi7s1mhqgqgkxn69spp19c2s68i6kk3zbcl7i9b"))))
+          (base32 "0agm0188f9y2pr15v83a2fm0k9b8wag96qb3ryq4l2g6nkysiqlj"))))
       (build-system cmake-build-system)
       (arguments
        (list
         #:configure-flags
         #~(list "-DBUILD_SHARED_LIBS=ON"
-                "-DLLAMA_BLAS=ON"
-                "-DLLAMA_BLAS_VENDOR=OpenBLAS"
+                "-DGGML_BLAS=ON"
+                "-DGGML_BLAS_VENDOR=OpenBLAS"
                 (string-append "-DBLAS_INCLUDE_DIRS="
                                #$(this-package-input "openblas")
                                "/include")
@@ -577,12 +577,12 @@ Performance is achieved by using the LLVM JIT compiler.")
                                #$(this-package-input "openblas")
                                "/lib/libopenblas.so")
 
-                "-DLLAMA_NATIVE=OFF" ;no '-march=native'
-                "-DLLAMA_FMA=OFF"    ;and no '-mfma', etc.
-                "-DLLAMA_AVX2=OFF"
-                "-DLLAMA_AVX512=OFF"
-                "-DLLAMA_AVX512_VBMI=OFF"
-                "-DLLAMA_AVX512_VNNI=OFF")
+                "-DGGML_NATIVE=OFF" ;no '-march=native'
+                "-DGGML_FMA=OFF"    ;and no '-mfma', etc.
+                "-DGGML_AVX2=OFF"
+                "-DGGML_AVX512=OFF"
+                "-DGGML_AVX512_VBMI=OFF"
+                "-DGGML_AVX512_VNNI=OFF")
 
         #:modules '((ice-9 textual-ports)
                     (guix build utils)
@@ -836,7 +836,7 @@ sample proximities between pairs of cases.")
       (properties `((upstream-name . "RcppML")))
       (build-system r-build-system)
       (propagated-inputs (list r-matrix r-rcpp))
-      (native-inputs (list r-knitr))
+      (native-inputs (list r-knitr r-testthat))
       (home-page "https://github.com/zdebruine/RcppML")
       (synopsis "Rcpp machine learning Library")
       (description
@@ -5422,32 +5422,34 @@ Python.")
 (define-public python-hmmlearn
   (package
     (name "python-hmmlearn")
-    (version "0.2.8")
+    (version "0.3.3")
     (source
      (origin
        (method url-fetch)
        (uri (pypi-uri "hmmlearn" version))
        (sha256
         (base32
-         "1yd5l9ra37mks41mn5bigav7xpb161a9yqlcnz4ir076vkik2sb9"))))
-    (build-system python-build-system)
+         "1v24rkqjjf67w2rys25qxa3vk30bf23m7zn1ilihqzi5qp25sg0x"))))
+    (properties
+     '((updater-extra-native-inputs . ("pybind11" "python-setuptools-scm"))))
+    (build-system pyproject-build-system)
     (arguments
      (list
       #:phases
-      #~(modify-phases %standard-phases
-          (replace 'check
-            (lambda* (#:key tests? #:allow-other-keys)
-              (when tests?
-                (with-directory-excursion (string-append #$output "/lib")
-                  (invoke "python" "-m" "pytest"))))))))
+      '(modify-phases %standard-phases
+         (add-after 'unpack 'set-core-count
+           (lambda _
+             ;; "Could not find the number of physical cores", so we tell it
+             ;; how many cores to use.
+             (setenv "LOKY_MAX_CPU_COUNT" "1")))
+         (add-before 'check 'build-extensions
+           (lambda _
+             (invoke "python" "setup.py" "build_ext" "--inplace"))))))
     (propagated-inputs
-     (list pybind11
-           python-numpy
-           python-scikit-learn
-           python-scipy
-           python-setuptools-scm))
+     (list python-numpy python-scikit-learn python-scipy))
     (native-inputs
-     (list python-pytest))
+     (list pybind11 python-pytest python-setuptools-scm
+           util-linux)) ;for lscpu
     (home-page "https://github.com/hmmlearn/hmmlearn")
     (synopsis "Hidden Markov Models with scikit-learn like API")
     (description

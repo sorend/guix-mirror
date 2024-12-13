@@ -2,7 +2,7 @@
 ;;; Copyright © 2015 Ludovic Courtès <ludo@gnu.org>
 ;;; Copyright © 2017 Thomas Danckaert <post@thomasdanckaert.be>
 ;;; Copyright © 2018, 2020 Tobias Geerinckx-Rice <me@tobias.gr>
-;;; Copyright © 2018 Efraim Flashner <efraim@flashner.co.il>
+;;; Copyright © 2018, 2024 Efraim Flashner <efraim@flashner.co.il>
 ;;; Copyright © 2019 Leo Famulari <leo@famulari.name>
 ;;; Copyright © 2019 Eric Bavier <bavier@member.fsf.org>
 ;;; Copyright © 2023 Maxim Cournoyer <maxim.cournoyer@gmail.com>
@@ -168,7 +168,7 @@ of parts of the Windows API.")
 (define-public xrdp
   (package
     (name "xrdp")
-    (version "0.10.0")
+    (version "0.10.1")
     (source (origin
               (method url-fetch)
               (uri (string-append
@@ -176,7 +176,7 @@ of parts of the Windows API.")
                     version "/xrdp-" version ".tar.gz"))
               (sha256
                (base32
-                "1nakn842p759xxd9713335ms3h8dmr33xbmylnbk2j03m4dhvlnx"))))
+                "10rgc9bfharwj7bq5k4qp4x00w214h6c6f861zi301h84125ylx2"))))
     (build-system gnu-build-system)
     (inputs (list check
                   fuse-2
@@ -195,14 +195,18 @@ of parts of the Windows API.")
                   pixman
                   python
                   python-libxml2))
-    (native-inputs (list bison
-                         cmocka
-                         flex
-                         gettext-minimal
-                         intltool
-                         nasm
-                         pkg-config
-                         pixman))
+    (native-inputs
+     (append
+       (list bison
+             cmocka
+             flex
+             gettext-minimal
+             intltool)
+       (if (target-x86?)
+           (list nasm)
+           '())
+       (list pkg-config
+             pixman)))
     (arguments
      (list #:configure-flags #~(list "--enable-strict-locations=yes"
                                      "--enable-fuse=yes"
@@ -230,15 +234,16 @@ variety of RDP clients:
 (define-public xorgxrdp
   (package
     (name "xorgxrdp")
-    (version "0.9.19")
+    (version "0.10.2")
     (source (origin
-              (method url-fetch)
-              (uri (string-append
-                    "https://github.com/neutrinolabs/xorgxrdp/releases/download/v"
-                    version "/xorgxrdp-" version ".tar.gz"))
+              (method git-fetch)
+              (uri (git-reference
+                    (url "https://github.com/neutrinolabs/xorgxrdp")
+                    (commit (string-append "v" version))))
+              (file-name (git-file-name name version))
               (sha256
                (base32
-                "0m8lvdnhfvwwqrr56difgy3mblplp23x6iy12kl4r8i87ic4rky1"))))
+                "1dcxn0v88426j4n7irhy6h3qb21202v5xs1vr7j8xvs3sxihc2f7"))))
     (build-system gnu-build-system)
     (inputs (list check
                   imlib2
@@ -254,10 +259,17 @@ variety of RDP clients:
                   xdpyinfo
                   xorg-server
                   xrdp))
-    (native-inputs (list nasm
-                         intltool
-                         pkg-config
-                         pixman))
+    (native-inputs
+     (append
+       (list autoconf
+             automake
+             intltool
+             libtool)
+       (if (target-x86?)
+           (list nasm)
+           '())
+       (list pkg-config
+             pixman)))
     (arguments
      (list #:configure-flags #~(list "--enable-strict-locations=yes"
                                      (string-append "XRDP_CFLAGS=-I"

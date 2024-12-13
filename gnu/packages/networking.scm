@@ -2815,7 +2815,7 @@ the bandwidth, loss, and other parameters.")
 (define-public nethogs
   (package
     (name "nethogs")
-    (version "0.8.7")
+    (version "0.8.8")
     (source
      (origin
        (method git-fetch)
@@ -2824,7 +2824,7 @@ the bandwidth, loss, and other parameters.")
              (commit (string-append "v" version))))
        (hash
         (content-hash
-         (base32 "10shdwvfj90lp2fxz9260342a1c2n1jbw058qy5pyq5kh3xwr9b8")
+         (base32 "0iaiv1hqahbxyjqqcjvsn8yhvjxdmxjnhqqgijc1a841ck44q9gv")
          sha256))
        (file-name (git-file-name name version))))
     (build-system gnu-build-system)
@@ -4647,7 +4647,7 @@ network.")
 (define-public ngtcp2
   (package
     (name "ngtcp2")
-    (version "1.8.1")
+    (version "1.9.0")
     (source
      (origin
        (method url-fetch)
@@ -4655,7 +4655,7 @@ network.")
                            "releases/download/v" version "/"
                            "ngtcp2-" version ".tar.gz"))
        (sha256
-        (base32 "1vlc2xhvymnxgp4a12m4pja9z5ckzrqkv79z966bb3wva3949dbj"))))
+        (base32 "1nyaai8arhal8pi8yzw06kcq4c8bpqgz9mv9wd2897xgjrxmgrvb"))))
     (build-system gnu-build-system)
     (arguments
      (list
@@ -4674,7 +4674,7 @@ QUIC protocol.")
 (define-public yggdrasil
   (package
     (name "yggdrasil")
-    (version "0.5.9")
+    (version "0.5.10")
     (source
      (origin
        (method git-fetch)
@@ -4685,7 +4685,7 @@ QUIC protocol.")
          (recursive? #t)))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "0flaix9la53gf496i6jxwi5gliszim25vlm2cc91ipgz7nzslasz"))
+        (base32 "0dd5181p07xshbd7q6p0hf3cvq1ahq6q36qjij0vzdil8dka6fmx"))
       (patches (search-patches "yggdrasil-extra-config.patch"))))
     (build-system go-build-system)
     (arguments

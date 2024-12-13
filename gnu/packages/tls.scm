@@ -300,7 +300,11 @@ protocols, as well as to parse and write X.509, PKCS #12, OpenPGP and other
 required structures.")
     (license license:lgpl2.1+)
     (properties
-     '((release-monitoring-url . "https://gnutls.org/download.html")))))
+     ;; Since gnutls.org doesn't have a page with a direct link to the
+     ;; tarball, defer to fellow LFS hackers.
+     '((release-monitoring-url
+        . "https://www.linuxfromscratch.org/blfs/view/svn/postlfs/gnutls.html")
+       (upstream-name . "gnutls")))))
 
 (define-deprecated/public-alias gnutls-latest gnutls)
 
@@ -589,11 +593,22 @@ OpenSSL for TARGET."
                                            "/bin/perl"))))
             #$@(if (target-hurd?)
                    #~((delete 'patch-configure))
+                   #~())
+            #$@(if (target-hurd64?)
+                   #~((add-after 'unpack 'apply-hurd-patch
+                        (lambda _
+                          (let ((patch-file
+                                 #$(local-file
+                                    (search-patch "openssl-hurd64.patch"))))
+                            (invoke "patch" "--force" "-p1" "-i"
+                                    patch-file)))))
                    #~())))
        ((#:configure-flags flags #~'())
-        (if (system-hurd?)
-            #~(append #$flags '("hurd-x86")) ;must not be used when
-                                             ;cross-compiling!
+        (if (system-hurd?)              ;must not be used when
+            #~(append #$flags           ;cross-compiling!
+                      #$(if (target-hurd64?)
+                            #~'("hurd-x86_64")
+                            #~'("hurd-x86")))
             flags))))
     (license license:asl2.0)))
 
@@ -1179,7 +1194,7 @@ compatibility is also supported.")
 (define-public wolfssl
   (package
     (name "wolfssl")
-    (version "5.7.2")
+    (version "5.7.4")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -1188,7 +1203,7 @@ compatibility is also supported.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "06ani81s99vk0bkdscavcmhr1p2dnc8ry2p1smqalbw32j01acsm"))))
+                "0k7bdr5r9x8sb9qxvgmvhj1rb7rb1r0rap4bp82g8qbh9pa5dnzx"))))
     (build-system gnu-build-system)
     (arguments
      '(#:configure-flags

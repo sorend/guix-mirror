@@ -297,7 +297,7 @@ to @code{cabal repl}).")
 (define-public git-annex
   (package
     (name "git-annex")
-    (version "10.20240831")
+    (version "10.20241031")
     (source
      (origin
        ;; hackage release doesn't include everything needed for extra bits.
@@ -307,7 +307,7 @@ to @code{cabal repl}).")
               (commit version)))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "1g6paxjpdjmzr623p7cf6chh42g5azwlzlnxgljhyhdmz6bxj5fr"))))
+        (base32 "0x05mgxwn8a1czc98bp242828khw94f232slfbzvx86xx0z3c3d9"))))
     (build-system haskell-build-system)
     (properties '((upstream-name . "git-annex")))
     (arguments
@@ -460,6 +460,8 @@ to @code{cabal repl}).")
            ghc-safesemaphore
            ghc-sandi
            ghc-securemem
+           ghc-servant-client
+           ghc-servant-server
            ghc-socks
            ghc-split
            ghc-stm-chans
@@ -918,7 +920,7 @@ is programmed in Haskell.")
            ghc-random
            ghc-vector))
     (home-page "https://joeyh.name/code/scroll/")
-    (synopsis "scroll(6), a roguelike game")
+    (synopsis "Roguelike game")
     (description
      "You're a bookworm that's stuck on a scroll.  You have to dodge between
 words and use spells to make your way down the page as the scroll is read.  Go

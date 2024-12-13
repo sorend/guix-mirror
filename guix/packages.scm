@@ -10,6 +10,7 @@
 ;;; Copyright © 2022 Maxime Devos <maximedevos@telenet.be>
 ;;; Copyright © 2022 jgart <jgart@dismail.de>
 ;;; Copyright © 2023 Simon Tournier <zimon.toutoune@gmail.com>
+;;; Copyright © 2024 Janneke Nieuwenhuizen <janneke@gnu.org>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -419,7 +420,7 @@ from forcing GEXP-PROMISE."
 (define %64bit-supported-systems
   ;; This is the list of 64-bit system types that are supported.
   '("x86_64-linux" "mips64el-linux" "aarch64-linux" "powerpc64le-linux"
-    "riscv64-linux"))
+    "riscv64-linux" "x86_64-gnu"))
 
 (define %supported-systems
   ;; This is the list of system types that are supported.  By default, we
@@ -428,14 +429,15 @@ from forcing GEXP-PROMISE."
 
 (define %hurd-systems
   ;; The GNU/Hurd systems for which support is being developed.
-  '("i586-gnu"))
+  '("i586-gnu" "x86_64-gnu"))
 
 (define %cuirass-supported-systems
   ;; This is the list of system types for which build machines are available.
   ;;
   ;; XXX: MIPS is unavailable in CI:
   ;; <https://lists.gnu.org/archive/html/guix-devel/2017-03/msg00790.html>.
-  (fold delete %supported-systems '("mips64el-linux" "powerpc-linux" "riscv64-linux")))
+  (fold delete %supported-systems '("mips64el-linux" "powerpc-linux"
+                                    "riscv64-linux" "x86_64-gnu")))
 
 (define (maybe-add-input-labels inputs)
   "Add labels to INPUTS unless it already has them."
@@ -1611,14 +1613,16 @@ package and returns its new name after rewrite."
   (package-mapping rewrite cut?
                    #:deep? deep?))
 
-(define* (package-input-rewriting/spec replacements #:key (deep? #t))
+(define* (package-input-rewriting/spec replacements
+                                       #:key (deep? #t) (replace-hidden? #f))
   "Return a procedure that, given a package, applies the given REPLACEMENTS to
 all the package graph, including implicit inputs unless DEEP? is false.
 
 REPLACEMENTS is a list of spec/procedures pair; each spec is a package
 specification such as \"gcc\" or \"guile@2\", and each procedure takes a
 matching package and returns a replacement for that package.  Matching
-packages that have the 'hidden?' property set are not replaced."
+packages that have the 'hidden?' property set are not replaced unless
+REPLACE-HIDDEN? is set to true."
   (define table
     (fold (lambda (replacement table)
             (match replacement
@@ -1647,7 +1651,8 @@ packages that have the 'hidden?' property set are not replaced."
 
   (define (rewrite p)
     (if (or (assq-ref (package-properties p) replacement-property)
-            (hidden-package? p))
+            (and (not replace-hidden?)
+                 (hidden-package? p)))
         p
         (match (find-replacement p)
           (#f p)

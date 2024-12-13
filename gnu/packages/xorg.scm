@@ -36,7 +36,7 @@
 ;;; Copyright © 2021 Lu Hui <luhux76@gmail.com>
 ;;; Copyright © 2022 Petr Hodina <phodina@protonmail.com>
 ;;; Copyright © 2023 Zheng Junjie <873216071@qq.com>
-;;; Copyright © 2023 Janneke Nieuwenhuizen <janneke@gnu.org>
+;;; Copyright © 2023, 2024 Janneke Nieuwenhuizen <janneke@gnu.org>
 ;;; Copyright © 2023, 2024 John Kehayias <john.kehayias@protonmail.com>
 ;;; Copyright © 2023, 2024 Kaelyn Takata <kaelyn.alexi@protonmail.com>
 ;;;
@@ -263,6 +263,18 @@ which can be read by any architecture.")
      "This package provides the headers and specification documents defining
 the core protocol and (many) extensions for the X Window System.")
     (license license:x11)))
+
+(define-public xorgproto-2024
+  (package
+    (inherit xorgproto)
+    (version "2024.1")
+        (source (origin
+              (method url-fetch)
+              (uri (string-append "mirror://xorg/individual/proto"
+                                  "/xorgproto-" version ".tar.xz"))
+              (sha256
+               (base32
+                "0nfbbi4j130m2gxzp20hp642xizbbl68jpbzahiq8nw183yja8ip"))))))
 
 (define-public bigreqsproto
   (package
@@ -1157,16 +1169,17 @@ themselves.")
             "12glp4w1kgvmqn89lk19cgr6jccd3awxra4dxisp7pagi06rsk11"))))
     (build-system gnu-build-system)
     (arguments
-     '(;; Make sure libpciaccess can read compressed 'pci.ids' files as
-       ;; provided by pciutils.
-       #:configure-flags
-       (list "--with-zlib"
+     (list
+      ;; Make sure libpciaccess can read compressed 'pci.ids' files as
+      ;; provided by pciutils.
+      #:configure-flags
+      #~(list "--with-zlib"
              (string-append "--with-pciids-path="
                             (assoc-ref %build-inputs "pciutils")
                             "/share/hwdata"))
 
        #:phases
-       (modify-phases %standard-phases
+       #~(modify-phases %standard-phases
          (add-after 'install 'add-L-zlib
            (lambda* (#:key inputs outputs #:allow-other-keys)
              ;; Provide '-LZLIB/lib' next to '-lz' in the .la file.
@@ -1175,7 +1188,15 @@ themselves.")
                (substitute* (string-append out "/lib/libpciaccess.la")
                  (("-lz")
                   (string-append "-L" zlib "/lib -lz")))
-               #t))))))
+               #t)))
+         #$@(if (target-hurd64?)
+                #~((add-after 'unpack 'apply-hurd64-patch
+                     (lambda _
+                       (let ((patch-file
+                              #$(local-file
+                                 (search-patch "libpciaccess-hurd64.patch"))))
+                         (invoke "patch" "--force" "-p1" "-i" patch-file)))))
+                #~()))))
     (inputs
      (list zlib pciutils))                   ;for 'pci.ids.gz'
     (native-inputs
@@ -5017,7 +5038,7 @@ by the Xorg server.")
 (define-public xorg-server
   (package
     (name "xorg-server")
-    (version "21.1.12")
+    (version "21.1.14")
     (source
      (origin
        (method url-fetch)
@@ -5025,7 +5046,7 @@ by the Xorg server.")
                            "/xserver/xorg-server-" version ".tar.xz"))
        (sha256
         (base32
-         "03x954bygi6sdynk5yy3yvsfhg6i9gjhisn3x9jxvk5mw4mnw08y"))
+         "0dgfajrnkr8d61z1fjn249s3q1pm23v9w2f1aqb7sx64pp7048cg"))
        (patches
         (list
          ;; See:
@@ -5273,7 +5294,7 @@ EGLStream families of extensions.")
 (define-public xorg-server-xwayland
   (package
     (name "xorg-server-xwayland")
-    (version "23.2.5")
+    (version "24.1.4")
     (source
      (origin
        (method url-fetch)
@@ -5281,7 +5302,7 @@ EGLStream families of extensions.")
                            "/xserver/xwayland-" version ".tar.xz"))
        (sha256
         (base32
-         "145xykwmyqkaa8zrbn5fnvnff67iral9mc5raamglnbsd3r7zv1k"))))
+         "1x1lmw1br3dxxfppfny1vkmk2l2vk5248i3k05smb7w1mgdphsnr"))))
     (inputs (list font-dejavu
                   dbus
                   egl-wayland
@@ -5299,7 +5320,7 @@ EGLStream families of extensions.")
                   wayland-protocols
                   xkbcomp
                   xkeyboard-config
-                  xorgproto
+                  xorgproto-2024
                   xtrans))
     (native-inputs (cons pkg-config
                          (if (%current-target-system)
@@ -5311,8 +5332,7 @@ EGLStream families of extensions.")
     (build-system meson-build-system)
     (arguments
      `(#:configure-flags
-       (list "-Dxwayland_eglstream=true"
-             (string-append "-Dxkb_dir="
+       (list (string-append "-Dxkb_dir="
                             (assoc-ref %build-inputs "xkeyboard-config")
                             "/share/X11/xkb")
              (string-append "-Dxkb_bin_dir="
@@ -6156,7 +6176,7 @@ basic eye-candy effects.")
 (define-public xpra
   (package
     (name "xpra")
-    (version "6.1.2")
+    (version "6.2.1")
     (source
      (origin
        (method git-fetch)
@@ -6165,7 +6185,7 @@ basic eye-candy effects.")
            (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "0zw1zsv5348bbykg6qaz2bn5ayrz5xgmnpfhi4i8pjlw0k7z8raa"))
+        (base32 "1nvbf38dca1cj3b2k9wnjwgh1ny301ls3cbm4pxvvx18bmr51m2d"))
        (patches (search-patches "xpra-6.0-systemd-run.patch"
                                 "xpra-6.1-install_libs.patch"))))
     (build-system python-build-system)

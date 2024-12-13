@@ -519,7 +519,7 @@ server and embedded PowerPC, and S390 guests.")
   (package
     (inherit american-fuzzy-lop)
     (name "aflplusplus")
-    (version "4.21c")
+    (version "4.30c")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -528,7 +528,7 @@ server and embedded PowerPC, and S390 guests.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "0f6gd8r1fyc4lgdkldx4mg1b72h1xdvpdrb2c44r3y4f2i3hzb0c"))))
+                "1lmpyf1gwz78pqxw9iqxhxzanbrid33ihq9xzmnk8c4yv449sdks"))))
     (arguments
      (substitute-keyword-arguments (package-arguments american-fuzzy-lop)
        ((#:make-flags _ ''())
@@ -997,7 +997,7 @@ engineering.")
            (lambda _
              (chdir "src"))))))
     (inputs
-     (list qtbase-5 qtcharts))
+     (list qtbase-5 qtcharts-5))
     (synopsis "GUI frontend for GDB")
     (description "This package provides a frontend to GDB, the GNU debugger.")
     (home-page "https://github.com/epasveer/seer")

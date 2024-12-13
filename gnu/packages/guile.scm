@@ -4,7 +4,7 @@
 ;;; Copyright © 2014, 2016, 2018 David Thompson <davet@gnu.org>
 ;;; Copyright © 2014, 2017, 2018 Mark H Weaver <mhw@netris.org>
 ;;; Copyright © 2015, 2017 Christine Lemmer-Webber <cwebber@dustycloud.org>
-;;; Copyright © 2016, 2023 Janneke Nieuwenhuizen <janneke@gnu.org>
+;;; Copyright © 2016, 2023, 2024 Janneke Nieuwenhuizen <janneke@gnu.org>
 ;;; Copyright © 2016, 2017 Leo Famulari <leo@famulari.name>
 ;;; Copyright © 2016, 2019, 2020 Ricardo Wurmus <rekado@elephly.net>
 ;;; Copyright © 2017 Andy Wingo <wingo@igalia.com>
@@ -615,11 +615,11 @@ GNU@tie{}Guile.  Use the @code{(ice-9 readline)} module and call its
                            #:deep? #f))
 
 (define-public guile-for-guile-emacs
-  (let ((commit "15ca78482ac0dd2e3eb36dcb31765d8652d7106d")
-        (revision "1"))
-    (package (inherit guile-2.2)
+  (let ((commit "4b9b8277733729f5b825f78fadfead9fc3630e7e")
+        (revision "0"))
+    (package (inherit guile-next)
       (name "guile-for-guile-emacs")
-      (version (git-version "2.1.2" revision commit))
+      (version (git-version "3.0.7-81" revision commit))
       (source (origin
                 (method git-fetch)
                 (uri (git-reference
@@ -628,32 +628,7 @@ GNU@tie{}Guile.  Use the @code{(ice-9 readline)} module and call its
                 (file-name (git-file-name name version))
                 (sha256
                  (base32
-                  "1l7ik4q4zk7vq4m3gnwizc0b64b1mdr31hxqlzxs94xaf2lvi7s2"))))
-      (arguments
-       (substitute-keyword-arguments (package-arguments guile-2.2)
-         ((#:phases phases)
-          #~(modify-phases #$phases
-             (replace 'bootstrap
-               (lambda _
-                 ;; Disable broken tests.
-                 ;; TODO: Fix them!
-                 (substitute* "test-suite/tests/gc.test"
-                   (("\\(pass-if \"after-gc-hook gets called\"" m)
-                    (string-append "#;" m)))
-                 (substitute* "test-suite/tests/version.test"
-                   (("\\(pass-if \"version reporting works\"" m)
-                    (string-append "#;" m)))
-
-                 (patch-shebang "build-aux/git-version-gen")
-                 (invoke "sh" "autogen.sh")))))))
-      (native-inputs
-       (modify-inputs (package-native-inputs guile-2.2)
-         (prepend autoconf
-                  automake
-                  libtool
-                  flex
-                  texinfo
-                  gettext-minimal))))))
+                  "0fgkcv29581kqkxqq6y48xly72970qs7016qhs6c4ilygg0gyfqb")))))))
 
 
 ;;;
@@ -962,8 +937,18 @@ Guile's foreign function interface.")
          "1whgmwkr1v8m63p4aaqn8blwl9vcrswwhbfv4bm0aghl5a6rryd7"))))
     (build-system gnu-build-system)
     (arguments
-     '(#:make-flags
-       '("GUILE_AUTO_COMPILE=0"))) ;to prevent guild warnings
+     (list
+      #:make-flags #~'("GUILE_AUTO_COMPILE=0") ;prevent guild warnings
+      #:phases (if (or (%current-target-system) (target-hurd64?))
+                   #~(modify-phases %standard-phases
+                       (add-after 'unpack 'apply-hurd64-patch
+                         (lambda _
+                           (let ((patch
+                                  #$(local-file
+                                     (search-patch
+                                      "guile-lzlib-hurd64.patch"))))
+                             (invoke "patch" "--force" "-p1" "-i" patch)))))
+                   #~%standard-phases)))
     (native-inputs (list autoconf automake pkg-config guile-3.0))
     (inputs (list guile-3.0 lzlib))
     (synopsis "Guile bindings to lzlib")

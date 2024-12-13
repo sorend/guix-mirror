@@ -372,22 +372,23 @@ Conferencing} and @acronym{ICB, Internet Citizen's Band}.")
 (define-public weechat
   (package
     (name "weechat")
-    (version "4.4.3")
+    (version "4.4.4")
     (source (origin
-              (method url-fetch)
-              (uri (string-append "https://weechat.org/files/src/weechat-"
-                                  version ".tar.xz"))
+              (method git-fetch)
+              (uri (git-reference
+                    (url "https://github.com/weechat/weechat")
+                    (commit (string-append "v" version))))
+              (file-name (git-file-name name version))
               (sha256
                (base32
-                "1ypbiyyh7wxd7sd3spkx0xfjld2kxca30z95334jibr4vkw14mi9"))))
+                "18v622ddgvqpplpa5jg25b9cqjzm8fk8saqhfmld2pgslaqgkcq4"))))
     (build-system cmake-build-system)
     (outputs '("out" "doc"))
     (native-inputs
-     `(("gettext-minimal" ,gettext-minimal)
-       ("pkg-config" ,pkg-config)
-       ,@(if (target-x86?)
-           `(("ruby-asciidoctor" ,ruby-asciidoctor))
-           '())))
+     (append (list gettext-minimal pkg-config)
+             (if (target-x86?)
+                 (list ruby-asciidoctor)
+                 '())))
     (inputs
      (list aspell
            curl
@@ -405,25 +406,25 @@ Conferencing} and @acronym{ICB, Internet Citizen's Band}.")
            tcl
            cjson))
     (arguments
-     `(#:configure-flags
-       (list "-DENABLE_PHP=OFF"
-             ,@(if (target-x86?)
-                 '("-DENABLE_MAN=ON"
-                   "-DENABLE_DOC=ON"
-                   "-DENABLE_DOC_INCOMPLETE=ON")
-                '()))
-       #:phases
-       (modify-phases %standard-phases
-         ,@(if (target-x86?)
-             '((add-after 'install 'move-doc
-                 (lambda* (#:key outputs #:allow-other-keys)
-                   (let* ((out (assoc-ref outputs "out"))
-                         (doc (assoc-ref outputs "doc"))
-                         (from (string-append out "/share/doc/weechat"))
-                         (to (string-append doc "/share/doc/weechat")))
-                     (mkdir-p (string-append doc "/share/doc"))
-                     (rename-file from to)))))
-             '()))))
+     (list #:configure-flags
+           #~(list "-DENABLE_PHP=OFF"
+                   #$@(if (target-x86?)
+                          #~("-DENABLE_MAN=ON"
+                             "-DENABLE_DOC=ON"
+                             "-DENABLE_DOC_INCOMPLETE=ON")
+                          #~()))
+           #:phases
+           #~(modify-phases %standard-phases
+               #$@(if (target-x86?)
+                      #~((add-after 'install 'move-doc
+                           (lambda* (#:key outputs #:allow-other-keys)
+                             (let* ((out (assoc-ref outputs "out"))
+                                    (doc (assoc-ref outputs "doc"))
+                                    (from (string-append out "/share/doc/weechat"))
+                                    (to (string-append doc "/share/doc/weechat")))
+                               (mkdir-p (string-append doc "/share/doc"))
+                               (rename-file from to)))))
+                      #~()))))
     (synopsis "Extensible chat client")
     (description "WeeChat (Wee Enhanced Environment for Chat) is an
 @dfn{Internet Relay Chat} (IRC) client, which is designed to be light and fast.
@@ -795,7 +796,7 @@ other enhancements and bug fixes.")
     (native-inputs
      (list pkg-config))
     (home-page "http://epicsol.org")
-    (synopsis "Epic5 IRC Client")
+    (synopsis "IRC Client")
     (description
      "EPIC is a IRC client that has been under active development for
 over 20 years.  It is stable and mature, and offers an excellent ircII
@@ -1143,7 +1144,7 @@ what.")
 (define-public soju
   (package
     (name "soju")
-    (version "0.8.1")
+    (version "0.8.2")
     (source
      (origin
        (method git-fetch)
@@ -1152,7 +1153,7 @@ what.")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "10qc0g78yhsg6fnnb046jr0s592isw0r0mvydy6frgnx9rxac6k6"))))
+        (base32 "1dk9w87ksjvbhnchyyl4yhdlhjnc9s9hpzhykfiyh935g75zv66c"))))
     (build-system go-build-system)
     (arguments
      (list
@@ -1164,7 +1165,7 @@ what.")
             (lambda* (#:key import-path #:allow-other-keys)
               (with-directory-excursion (string-append "src/" import-path)
                 (substitute* "Makefile"
-                  ;; Do not set dfault config path.
+                  ;; Do not set default config path.
                   ((".*config_path.*:.*") "")
                   (("-X.*=.*config_path.*' ") "")
                   ((".*cp -f.*config_path.*") "")
@@ -1185,6 +1186,7 @@ what.")
      (list go-git-sr-ht-emersion-go-scfg
            go-git-sr-ht-emersion-go-sqlite3-fts5
            go-git-sr-ht-sircmpwn-go-bare
+           go-github-com-coder-websocket
            go-github-com-emersion-go-sasl
            go-github-com-lib-pq
            go-github-com-mattn-go-sqlite3
@@ -1196,7 +1198,6 @@ what.")
            go-golang-org-x-time
            go-google-golang-org-protobuf
            go-gopkg-in-irc-v4
-           go-nhooyr-io-websocket
            scdoc))
     (home-page "https://git.sr.ht/~emersion/soju")
     (synopsis "User-friendly IRC bouncer")

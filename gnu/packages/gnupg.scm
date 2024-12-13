@@ -1,5 +1,5 @@
 ;;; GNU Guix --- Functional package management for GNU
-;;; Copyright © 2012-2021, 2023 Ludovic Courtès <ludo@gnu.org>
+;;; Copyright © 2012-2021, 2023, 2024 Ludovic Courtès <ludo@gnu.org>
 ;;; Copyright © 2013, 2015, 2018 Andreas Enge <andreas@enge.fr>
 ;;; Copyright © 2014, 2018 Eric Bavier <bavier@member.fsf.org>
 ;;; Copyright © 2014, 2015, 2016, 2020 Mark H Weaver <mhw@netris.org>
@@ -22,7 +22,7 @@
 ;;; Copyright © 2021 Nikita Domnitskii <nikita@domnitskii.me>
 ;;; Copyright © 2021 Aleksandr Vityazev <avityazev@posteo.org>
 ;;; Copyright © 2022, 2023 Maxim Cournoyer <maxim.cournoyer@gmail.com>
-;;; Copyright © 2023 Janneke Nieuwenhuizen <janneke@gnu.org>
+;;; Copyright © 2023, 2024 Janneke Nieuwenhuizen <janneke@gnu.org>
 ;;; Copyright © 2024 Zheng Junjie <873216071@qq.com>
 ;;;
 ;;; This file is part of GNU Guix.
@@ -144,9 +144,25 @@
                                     ;; configuration, as this is not correct for
                                     ;; all architectures.
                                     (_ #t)))
-                            (#t #t)))))))
+                            (#t #t)))))
+              #$@(if (target-hurd64?)
+                     #~((add-after 'unpack 'apply-hurd64-patch
+                         (lambda _
+                           (let ((patch
+                                  #$(local-file
+                                     (search-patch
+                                      "libgpg-error-hurd64.patch"))))
+                             (invoke "patch" "--force" "-p1" "-i" patch)))))
+                     #~())))
           ((system-hurd?)
-           #~((add-after 'unpack 'skip-tests
+           #~((add-after 'unpack 'apply-hurd64-patch
+                         (lambda _
+                           (let ((patch
+                                  #$(local-file
+                                     (search-patch
+                                      "libgpg-error-hurd64.patch"))))
+                             (invoke "patch" "--force" "-p1" "-i" patch))))
+              (add-after 'unpack 'skip-tests
                 (lambda _
                   (substitute* "tests/t-syserror.c"
                     (("(^| )main *\\(.*" all)
@@ -160,9 +176,7 @@
 for all GnuPG components.  Among these are GPG, GPGSM, GPGME,
 GPG-Agent, libgcrypt, Libksba, DirMngr, Pinentry, SmartCard
 Daemon and possibly more in the future.")
-    (license license:lgpl2.0+)
-    (properties '((ftp-server . "ftp.gnupg.org")
-                  (ftp-directory . "/gcrypt/libgpg-error")))))
+    (license license:lgpl2.0+)))
 
 (define-public libgcrypt
   (package
@@ -217,9 +231,7 @@ Daemon and possibly more in the future.")
 standard cryptographic building blocks such as symmetric ciphers, hash
 algorithms, public key algorithms, large integer functions and random number
 generation.")
-    (license license:lgpl2.0+)
-    (properties '((ftp-server . "ftp.gnupg.org")
-                  (ftp-directory . "/gcrypt/libgcrypt")))))
+    (license license:lgpl2.0+)))
 
 (define-public libassuan
   (package
@@ -250,9 +262,7 @@ generation.")
 protocol.  This protocol is used for IPC between most newer
 GnuPG components.  Both, server and client side functions are
 provided.")
-    (license license:lgpl2.0+)
-    (properties '((ftp-server . "ftp.gnupg.org")
-                  (ftp-directory . "/gcrypt/libassuan")))))
+    (license license:lgpl2.0+)))
 
 (define-public libksba
   (package
@@ -283,9 +293,7 @@ provided.")
      "KSBA (pronounced Kasbah) is a library to make X.509 certificates
 as well as the CMS easily accessible by other applications.  Both
 specifications are building blocks of S/MIME and TLS.")
-    (license license:gpl3+)
-    (properties '((ftp-server . "ftp.gnupg.org")
-                  (ftp-directory . "/gcrypt/libksba")))))
+    (license license:gpl3+)))
 
 (define-public npth
   (package
@@ -307,9 +315,7 @@ threads implementation.
 In contrast to GNU Pth is is based on the system's standard threads
 implementation.  This allows the use of libraries which are not
 compatible to GNU Pth.")
-    (license (list license:lgpl3+ license:gpl2+)) ; dual license
-    (properties '((ftp-server . "ftp.gnupg.org")
-                  (ftp-directory . "/gcrypt/npth")))))
+    (license (list license:lgpl3+ license:gpl2+)))) ;dual license
 
 (define-public gnupg
   (package
@@ -404,9 +410,7 @@ features powerful key management and the ability to access public key
 servers.  It includes several libraries: libassuan (IPC between GnuPG
 components), libgpg-error (centralized GnuPG error values), and
 libskba (working with X.509 certificates and CMS data).")
-    (license license:gpl3+)
-    (properties '((ftp-server . "ftp.gnupg.org")
-                  (ftp-directory . "/gcrypt/gnupg")))))
+    (license license:gpl3+)))
 
 (define-public gnupg-1
   (package (inherit gnupg)
@@ -463,9 +467,7 @@ Because the direct use of GnuPG from an application can be a complicated
 programming task, it is suggested that all software should try to use GPGME
 instead.  This way bug fixes or improvements can be done at a central place
 and every application benefits from this.")
-    (license license:lgpl2.1+)
-    (properties '((ftp-server . "ftp.gnupg.org")
-                  (ftp-directory . "/gcrypt/gpgme")))))
+    (license license:lgpl2.1+)))
 
 (define-public gpgme-1.23
   (hidden-package
@@ -886,9 +888,9 @@ including tools for signing keys, keyring analysis, and party preparation.
      "Pinentry provides a console that allows users to enter a passphrase when
 @code{gpg} is run and needs it.")
     (license license:gpl2+)
-    (properties '((ftp-server . "ftp.gnupg.org")
-                  (ftp-directory . "/gcrypt/pinentry")
-                  (upstream-name . "pinentry")))))
+    (properties
+     '((release-monitoring-url . "https://gnupg.org/ftp/gcrypt/pinentry/")
+       (upstream-name . "pinentry")))))
 
 (define-public pinentry-emacs
   (package
@@ -1134,9 +1136,7 @@ however, pgpdump produces more detailed and easier to understand output.")
      "GPA, the GNU Privacy Assistant, is a graphical user interface for
 @uref{https://gnupg.org, GnuPG}.  It can be used to encrypt, decrypt, and sign
 files, to verify signatures, and to manage the private and public keys.")
-    (license license:gpl3+)
-    (properties '((ftp-server . "ftp.gnupg.org")
-                  (ftp-directory . "/gcrypt/gpa")))))
+    (license license:gpl3+)))
 
 (define-public parcimonie
   (package

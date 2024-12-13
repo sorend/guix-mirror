@@ -779,7 +779,7 @@ pragmas in your code.")
     (inputs (list ghc-base-compat))
     (native-inputs (list ghc-hspec ghc-quickcheck hspec-discover))
     (home-page "https://hackage.haskell.org/package/base-compat-batteries")
-    (synopsis "base-compat with extra batteries")
+    (synopsis "Extra batteries included base-compat")
     (description
      "This library provides functions available in later
 versions of @code{base} to a wider range of compilers, without requiring
@@ -6559,7 +6559,7 @@ lenses and traversals for those who require Haskell 98.")
      `(#:cabal-revision ("1"
                          "1dbjhd6k7ypqa9f4h9v2xndgb4mjhfli3n1vjm8r8ga0kfndbqfn")))
     (home-page "https://github.com/kcsongor/generic-lens")
-    (synopsis "Generically derive traversals, lenses and prisms.")
+    (synopsis "Generically derive traversals, lenses and prisms")
     (description
      "This library uses GHC.Generics to derive efficient optics (traversals,
 lenses and prisms) for algebraic data types in a type-directed way, with a
@@ -6583,7 +6583,7 @@ is the shared internal logic of the @code{generic-lens} and
     (inputs (list ghc-generic-lens-core ghc-profunctors))
     (native-inputs (list ghc-lens ghc-inspection-testing ghc-hunit ghc-doctest))
     (home-page "https://github.com/kcsongor/generic-lens")
-    (synopsis "Generically derive traversals, lenses and prisms.")
+    (synopsis "Generically derive traversals, lenses and prisms")
     (description
      "This library uses @code{GHC.Generics} to derive efficient
 optics (traversals, lenses and prisms) for algebraic data types in a
@@ -11426,7 +11426,7 @@ colored text.")
                   ghc-pretty-show
                   ghc-blaze-html))
     (home-page "https://github.com/jgm/skylighting")
-    (synopsis "syntax highlighting library")
+    (synopsis "Syntax highlighting library")
     (description
      "Skylighting is a syntax highlighting library with support for over one hundred
 languages.  It derives its tokenizers from XML syntax definitions used by KDE's
@@ -15980,7 +15980,7 @@ highlighting and display the results in Brick-based interfaces.")
     (inputs (list ghc-http-client ghc-http-types ghc-aeson ghc-network-uri
                   ghc-case-insensitive))
     (home-page "https://hackage.haskell.org/package/git-lfs")
-    (synopsis "git-lfs protocol")
+    (synopsis "Git Large File Storage protocol")
     (description "An implementation of the git-lfs protocol.")
     (license license:agpl3)))
 
@@ -16038,7 +16038,7 @@ tracking down existing ones.")
                          ghc-tasty-hunit
                          ghc-tasty-quickcheck))
     (home-page "https://github.com/jcpetruzza/barbies#readme")
-    (synopsis "Classes for working with types that can change clothes.")
+    (synopsis "Classes for working with types that can change clothes")
     (description
      "Types that are parametric on a functor are like Barbies that have an outfit for
 each role.  This package provides the basic abstractions to work with them
@@ -16126,7 +16126,7 @@ dependencies.")
      `(#:cabal-revision ("3"
                          "1f2bvl41by904lnr0dk6qgasqwadq2w48l7fj51bp2h8bqbkdjyc")))
     (home-page "https://github.com/fumieval/witherable")
-    (synopsis "filterable traversable")
+    (synopsis "Filterable traversable")
     (description
      "This package provides a stronger variant of `traverse` which can remove elements
 and generalised mapMaybe, catMaybes, filter")
@@ -16209,7 +16209,7 @@ Documentation is at
      `(#:cabal-revision ("1"
                          "1f8h0lv34cmqaxccg2yf6q4s8r5g2s8q8s9kql212iggd2l3vv77")))
     (home-page "https://github.com/cchalmers/pcg-random")
-    (synopsis "Haskell bindings to the PCG random number generator.")
+    (synopsis "Haskell bindings to the PCG random number generator")
     (description
      "PCG is a family of simple fast space-efficient statistically good algorithms for
 random number generation.  Unlike many general-purpose RNGs, they are also hard
@@ -16300,9 +16300,8 @@ benchmarks](https://hackage.haskell.org/package/random-bytestring-0.1.3.2/src/be
     (build-system haskell-build-system)
     (properties '((upstream-name . "ordered-containers")))
     (home-page "https://hackage.haskell.org/package/ordered-containers")
-    (synopsis
-     "Set- and Map-like types that remember the order elements were inserted")
     (description "")
+    (synopsis "Haskell types")
     (license license:bsd-3)))
 
 (define-public ghc-cabal-syntax
@@ -16318,7 +16317,7 @@ benchmarks](https://hackage.haskell.org/package/random-bytestring-0.1.3.2/src/be
     (build-system haskell-build-system)
     (properties '((upstream-name . "Cabal-syntax")))
     (home-page "https://www.haskell.org/cabal/")
-    (synopsis "A library for working with .cabal files")
+    (synopsis "Library for working with .cabal files")
     (description
      "This library provides tools for reading and manipulating the .cabal file format.
 .  Version 3.6 (unlike the following versions) is a dummy package that prevents
@@ -16346,7 +16345,7 @@ requiring Cabal or Cabal-syntax >= 3.7")
     (properties '((upstream-name . "tasty-hslua")))
     (inputs (list ghc-hslua-core ghc-tasty ghc-tasty-hunit))
     (home-page "https://hslua.org/")
-    (synopsis "Tasty helpers to test HsLua.")
+    (synopsis "Tasty helpers to test HsLua")
     (description
      "Various tasty helpers and utilities to test HsLua oparations.  Built on top of
 tasty-hunit.")
@@ -16373,7 +16372,7 @@ tasty-hunit.")
                          ghc-tasty-hunit
                          ghc-tasty-quickcheck))
     (home-page "https://hslua.org/")
-    (synopsis "Marshalling of values between Haskell and Lua.")
+    (synopsis "Marshalling of values between Haskell and Lua")
     (description
      "This package provides functions to marshal values from Haskell to Lua, and /vice
 versa/. .  This package is part of HsLua, a Haskell framework built around the
@@ -16394,7 +16393,7 @@ embeddable scripting language <https://lua.org Lua>.")
     (properties '((upstream-name . "lua-arbitrary")))
     (inputs (list ghc-lua ghc-quickcheck))
     (home-page "https://hslua.org/")
-    (synopsis "Arbitrary instances for Lua types.")
+    (synopsis "Arbitrary instances for Lua types")
     (description
      "This package provides instances for QuickCheck's \\\"Arbitrary\\\" typeclass.")
     (license license:expat)))
@@ -16472,7 +16471,7 @@ Haskell program.")
     (native-inputs (list ghc-quickcheck ghc-quickcheck-instances ghc-tasty
                          ghc-tasty-quickcheck))
     (home-page "https://hslua.org/")
-    (synopsis "Allow aeson data types to be used with Lua.")
+    (synopsis "Allow aeson data types to be used with Lua")
     (description
      "This package provides instances to push and receive any datatype encodable as
 JSON to and from the Lua stack.")
@@ -16496,7 +16495,7 @@ JSON to and from the Lua stack.")
      `(#:cabal-revision ("1"
                          "0m2651z81n8s6hb8id7y6k2kprsgwnj7pcd6p8lmdpkzzz3wwd0c")))
     (home-page "https://github.com/tarleb/gridtables")
-    (synopsis "Parser for reStructuredText-style grid tables.")
+    (synopsis "Parser for reStructuredText-style grid tables")
     (description
      "This package provides a parser for plain-text representations of tables.  This
 package supports table headers, cells spanning multiple columns or rows, as well
@@ -16674,13 +16673,99 @@ readRequestBodyWith .  mapContentMedia > [ (\"application/json\", parseJson) > ,
                   ghc-vault))
     (native-inputs (list ghc-hspec ghc-quickcheck-instances hspec-discover))
     (home-page "http://docs.servant.dev/")
-    (synopsis "A family of combinators for defining webservices APIs")
+    (synopsis "Family of combinators for defining webservices APIs")
     (description
      "This package provides a family of combinators for defining webservices APIs and
 serving them .  You can learn about the basics in the
 <http://docs.servant.dev/en/stable/tutorial/index.html tutorial>. .
 <https://github.com/haskell-servant/servant/blob/master/servant/CHANGELOG.md
 CHANGELOG>")
+    (license license:bsd-3)))
+
+(define-public ghc-servant-client
+  (package
+    (name "ghc-servant-client")
+    (version "0.19")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (hackage-uri "servant-client" version))
+       (sha256
+        (base32 "1bdapsr6il0f019ss8wsxndpc8cd5czj40xczay5qhl7fqnxg5pa"))))
+    (build-system haskell-build-system)
+    (properties '((upstream-name . "servant-client")))
+    (inputs (list ghc-servant
+                  ghc-servant-client-core
+                  ghc-base-compat
+                  ghc-http-client
+                  ghc-http-media
+                  ghc-http-types
+                  ghc-kan-extensions
+                  ghc-monad-control
+                  ghc-semigroupoids
+                  ghc-transformers-base
+                  ghc-transformers-compat))
+    (native-inputs (list ghc-aeson
+                         ghc-http-api-data
+                         ghc-sop-core
+                         ghc-wai
+                         ghc-warp
+                         ghc-entropy
+                         ghc-hspec
+                         ghc-hspec-discover
+                         ghc-hunit
+                         ghc-network
+                         ghc-quickcheck
+                         ghc-servant-server
+                         ghc-tdigest
+                         ghc-markdown-unlit))
+    (arguments
+     `(#:cabal-revision ("6"
+                         "0lakjnpvsiai08c5nddgzrnr0a139rr37cyq31hqcbwnsy553l1y")))
+    (home-page "http://docs.servant.dev/")
+    (synopsis "Automatic derivation of querying functions for servant")
+    (description
+     "This library lets you derive automatically Haskell functions that let you query
+each endpoint of a <http://hackage.haskell.org/package/servant servant>
+webservice. .  See <http://docs.servant.dev/en/stable/tutorial/Client.html the
+client section of the tutorial>. .
+<https://github.com/haskell-servant/servant/blob/master/servant-client/CHANGELOG.md
+CHANGELOG>.")
+    (license license:bsd-3)))
+
+(define-public ghc-servant-client-core
+  (package
+    (name "ghc-servant-client-core")
+    (version "0.19")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (hackage-uri "servant-client-core" version))
+       (sha256
+        (base32 "0cisc5cyl367cwrch1gr812aspd36a21hkwi6mwj708rpspwvrmc"))))
+    (build-system haskell-build-system)
+    (properties '((upstream-name . "servant-client-core")))
+    (inputs (list ghc-constraints
+                  ghc-servant
+                  ghc-aeson
+                  ghc-base-compat
+                  ghc-base64-bytestring
+                  ghc-free
+                  ghc-http-media
+                  ghc-http-types
+                  ghc-network-uri
+                  ghc-safe
+                  ghc-sop-core))
+    (native-inputs (list ghc-hspec ghc-hspec-discover ghc-quickcheck))
+    (arguments
+     `(#:cabal-revision ("5"
+                         "147ws71hwp8zck7ph8kcyh18524s8g0b7qvxjsvsm1yvw77c60gh")))
+    (home-page "http://docs.servant.dev/")
+    (synopsis
+     "Core functionality and class for client function generation for servant APIs")
+    (description
+     "This library provides backend-agnostic generation of client functions.  For more
+information, see the README.")
     (license license:bsd-3)))
 
 (define-public ghc-servant-server
@@ -16726,7 +16811,7 @@ CHANGELOG>")
                          hspec-discover))
     (home-page "http://docs.servant.dev/")
     (synopsis
-     "A family of combinators for defining webservices APIs and serving them")
+     "Family of combinators for defining webservices APIs and serving them")
     (description
      "This package provides a family of combinators for defining webservices APIs and
 serving them .  You can learn about the basics in the
@@ -16850,7 +16935,7 @@ are unsure which variant to use, use the one in \"Data.Some\" module.")
                   ghc-hslua-objectorientation))
     (native-inputs (list ghc-tasty-hslua ghc-tasty ghc-tasty-hunit))
     (home-page "https://hslua.org/")
-    (synopsis "Utilities to build Lua modules.")
+    (synopsis "Utilities to build Lua modules")
     (description
      "Utilities to package up Haskell functions and values into a Lua module. .  This
 package is part of HsLua, a Haskell framework built around the embeddable
@@ -16872,7 +16957,7 @@ scripting language <https://lua.org Lua>.")
     (inputs (list ghc-hslua-core ghc-hslua-marshalling ghc-hslua-packaging))
     (native-inputs (list ghc-tasty ghc-tasty-hunit ghc-tasty-lua))
     (home-page "https://hslua.org/")
-    (synopsis "Lua module to work with version specifiers.")
+    (synopsis "Lua module to work with version specifiers")
     (description "Wrapper for the Data.Version.Version Haskell type.")
     (license license:expat)))
 
@@ -17050,6 +17135,34 @@ such as ala'.")
     (description
      "Lighweight pure data validation based on Applicative and Selective functors.")
     (license license:mpl2.0)))
+
+(define-public ghc-tdigest
+  (package
+    (name "ghc-tdigest")
+    (version "0.2.1.1")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (hackage-uri "tdigest" version))
+       (sha256
+        (base32 "1dvkf7cs8dcr13wza5iyq2qgvz75r33mzgfmhdihw62xzxsqb6d3"))))
+    (build-system haskell-build-system)
+    (properties '((upstream-name . "tdigest")))
+    (inputs (list ghc-base-compat ghc-reducers ghc-semigroupoids ghc-vector
+                  ghc-vector-algorithms))
+    (native-inputs (list ghc-semigroups ghc-tasty ghc-tasty-quickcheck))
+    (arguments
+     `(#:cabal-revision ("3"
+                         "0a39vwf37hkh06rn79blr3bw7ij05pgpxrkc9cldgdd5p4gvn1qn")))
+    (home-page "https://github.com/phadej/haskell-tdigest#readme")
+    (synopsis "On-line accumulation of rank-based statistics")
+    (description
+     "This package provides a new data structure for accurate on-line accumulation of
+rank-based statistics such as quantiles and trimmed means. .  See original
+paper: \"Computing extremely accurate quantiles using t-digest\" by Ted Dunning
+and Otmar Ertl for more details
+<https://github.com/tdunning/t-digest/blob/07b8f2ca2be8d0a9f04df2feadad5ddc1bb73c88/docs/t-digest-paper/histo.pdf>.")
+    (license license:bsd-3)))
 
 (define-public ghc-tomland
   (package

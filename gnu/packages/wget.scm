@@ -24,6 +24,7 @@
 
 (define-module (gnu packages wget)
   #:use-module ((guix licenses) #:prefix license:)
+  #:use-module (guix gexp)
   #:use-module (gnu packages)
   #:use-module (gnu packages bash)
   #:use-module (gnu packages compression)
@@ -128,26 +129,26 @@ online pastebin services.")
 (define-public wget2
   (package
     (name "wget2")
-    (version "2.1.0")
+    (version "2.2.0")
     (source (origin
               (method url-fetch)
               (uri (string-append "mirror://gnu/wget/wget2-" version ".tar.gz"))
               (sha256
                (base32
-                "1rz294dld9zmd5fmsrjgfyj7nlpmg1x7gckdzl9r7bbb3hcwapd0"))))
+                "0mykji96ap5acdh416x1d7c3h657mj6iy7zlllyd69pvny2rqfrb"))))
     (build-system gnu-build-system)
     (arguments
-     `(#:phases (modify-phases %standard-phases
-                  (add-after 'unpack 'skip-network-tests
-                    (lambda _
-                      (substitute* "tests/Makefile.in"
-                        (("test-gpg-verify-no-file\\$\\(EXEEXT)") "")
-                        (("test-gpg-valid\\$\\(EXEEXT)") "")
-                        (("test-gpg-styles\\$\\(EXEEXT)") "")))))
-       #:configure-flags
-       '("--enable-static=no"
-         "--with-bzip2=yes"
-         "--with-lzma=yes")))
+     (list #:phases #~(modify-phases %standard-phases
+                        (add-after 'unpack 'skip-network-tests
+                          (lambda _
+                            (substitute* "tests/Makefile.in"
+                              (("test-gpg-verify-no-file\\$\\(EXEEXT)") "")
+                              (("test-gpg-valid\\$\\(EXEEXT)") "")
+                              (("test-gpg-styles\\$\\(EXEEXT)") "")))))
+           #:configure-flags
+           #~(list "--enable-static=no"
+                   "--with-bzip2=yes"
+                   "--with-lzma=yes")))
     (inputs (list brotli
                   bzip2
                   gnutls/dane

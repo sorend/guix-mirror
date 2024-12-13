@@ -743,7 +743,12 @@ and utilities for PacBio C++ applications.")
       (properties `((upstream-name . "anndataR")))
       (build-system r-build-system)
       (propagated-inputs (list r-matrix r-r6))
-      (native-inputs (list r-knitr))
+      (native-inputs
+       (list r-knitr
+             r-rhdf5
+             r-seuratobject
+             r-singlecellexperiment
+             r-testthat))
       (home-page "https://github.com/scverse/anndataR")
       (synopsis "AnnData interoperability in R")
       (description
@@ -792,7 +797,7 @@ directly access various slots (e.g. X, obs, var), or convert the data into
                                r-stringr
                                r-tibble
                                r-tidyselect))
-      (native-inputs (list r-knitr))
+      (native-inputs (list r-knitr r-testthat))
       (home-page "https://github.com/biobakery/anpan")
       (synopsis "Quantifying microbial strain-host associations")
       (description
@@ -819,6 +824,8 @@ association testing, and pathway-level random effects models.")
                   "08l04iqf54b5995gc7rvqqd7w327fwqs7qjyhc9y5cqfj8yv4c48"))))
       (properties `((upstream-name . "bedtorch")))
       (build-system r-build-system)
+      ;; Some of the tests attempt to download files off the internet.
+      (arguments (list #:tests? #false))
       (propagated-inputs
        (list r-assertthat
              r-curl
@@ -835,6 +842,7 @@ association testing, and pathway-level random effects models.")
              r-s4vectors
              r-stringr
              r-tidyr))
+      (native-inputs (list r-testthat))
       (home-page "https://github.com/haizi-zh/bedtorch/")
       (synopsis "R package for fast BED-file manipulation")
       (description
@@ -912,6 +920,8 @@ storage savings and increased read speeds.")
                   "0bca593dnxz6xdywpdi0ipli0paln2b3bfxxj0csnmj55ryrz428"))))
       (properties `((upstream-name . "btools")))
       (build-system r-build-system)
+      ;; There are no tests.
+      (arguments (list #:tests? #false))
       (propagated-inputs
        (list r-biomformat
              r-coin
@@ -1053,7 +1063,13 @@ simultaneously considered.")
              r-illuminaio
              r-mblm
              r-quadprog))
-      (native-inputs (list r-knitr))
+      (native-inputs
+       (list r-enmix
+             r-illuminahumanmethylationepicanno-ilm10b4-hg19
+             r-knitr
+             r-minfi
+             r-stringi
+             r-testthat))
       (home-page "https://github.com/hhhh5/ewastools/")
       (synopsis
        "Quality control toolset for the Illumina Infinium DNA methylation")
@@ -1245,7 +1261,9 @@ with DNA methylation micro-array data.")
                (file-name (string-append "js-headroom-jquery-" version ".js"))
                (sha256
                 (base32
-                 "1jz1ampd9k8p32m6bid4yrr66bkngd8blj2q0774hl91rszhjqrv")))))))
+                 "1jz1ampd9k8p32m6bid4yrr66bkngd8blj2q0774hl91rszhjqrv")))))
+         ("r-devtools" ,r-devtools)
+         ("r-testthat" ,r-testthat)))
       (home-page "https://github.com/smorabit/hdWGCNA")
       (synopsis "Weighted gene co-expression network analysis")
       (description
@@ -1296,78 +1314,6 @@ RNA-seq or spatial transcriptomics.")
 It also generates an aggregate profile on a pruned K-Nearest Neighbor graph.
 This approach leads to an improved gene expression profile for quantifying
 gene regulations.")
-      (license license:expat))))
-
-(define-public r-numbat
-  (let ((commit "4ab7752e7d267a3f443756675728521a9b0a7295")
-        (revision "1"))
-    (package
-      (name "r-numbat")
-      (version (git-version "1.3.2-1" revision commit))
-      (source (origin
-                (method git-fetch)
-                (uri (git-reference
-                      (url "https://github.com/kharchenkolab/numbat")
-                      (commit commit)))
-                (file-name (git-file-name name version))
-                (sha256
-                 (base32
-                  "0wa2cz5iy570r2a57bd74jramxayvfhmxznb0vq4vyk1ia8l5jd1"))))
-      (properties `((upstream-name . "numbat")))
-      (build-system r-build-system)
-      (propagated-inputs
-       (list r-ape
-             r-catools
-             r-data-table
-             r-dendextend
-             r-dplyr
-             r-genomicranges
-             r-ggplot2
-             r-ggraph
-             r-ggtree
-             r-glue
-             r-igraph
-             r-iranges
-             r-logger
-             r-magrittr
-             r-matrix
-             r-optparse
-             r-paralleldist
-             r-patchwork
-             r-pryr
-             r-purrr
-             r-r-utils
-             r-rcpp
-             r-rcpparmadillo
-             r-rhpcblasctl
-             r-roptim
-             r-scales
-             r-scistreer
-             r-stringr
-             r-tibble
-             r-tidygraph
-             r-tidyr
-             r-vcfr
-             r-zoo))
-      (home-page "https://github.com/kharchenkolab/numbat")
-      (synopsis "Haplotype-Aware CNV Analysis from scRNA-Seq")
-      (description
-       "This package provides a computational method that infers copy number
-variations (CNVs) in cancer scRNA-seq data and reconstructs the tumor
-phylogeny.  numbat integrates signals from gene expression, allelic ratio, and
-population haplotype structures to accurately infer allele-specific CNVs in
-single cells and reconstruct their lineage relationship.  numbat can be used
-to:
-
-@enumerate
-@item detect allele-specific copy number variations from single-cells;
-@item differentiate tumor versus normal cells in the tumor microenvironment;
-@item infer the clonal architecture and evolutionary history of profiled
-tumors.
-@end enumerate
-
-numbat does not require tumor/normal-paired DNA or genotype data, but operates
-solely on the donor scRNA-data data (for example, 10x Cell Ranger output).")
       (license license:expat))))
 
 (define-public r-p2data
@@ -1606,7 +1552,7 @@ tests in large cohorts and biobanks (SAIGE-GENE+).")
                                r-reshape2
                                r-scuttle
                                r-seurat))
-      (native-inputs (list r-knitr))
+      (native-inputs (list r-knitr r-testthat))
       (home-page "https://github.com/zdebruine/singlet")
       (synopsis "Non-negative Matrix Factorization for single-cell analysis")
       (description
@@ -1727,7 +1673,7 @@ conveniently.")
              r-magrittr
              r-tidyr
              r-xts))
-      (native-inputs (list r-knitr))
+      (native-inputs (list r-knitr r-testthat))
       (home-page "https://github.com/hrbrmstr/streamgraph")
       (synopsis "Htmlwidget for building streamgraph visualizations")
       (description
@@ -3572,20 +3518,26 @@ e.g. microbiome samples, genomes, metagenomes.")
 (define-public python-pairtools
   (package
     (name "python-pairtools")
-    (version "1.0.2")
+    (version "1.1.0-fix")
     (source (origin
               (method git-fetch)
               (uri (git-reference
                     (url "https://github.com/open2c/pairtools")
-                    (commit (string-append "v" version))))
+                    (commit (string-append "pairtools-v" version))))
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "0xn4cg4jq3rfn42h8rfwg0k6xkvihjrv32gwldb9y0jp05lzw9cs"))))
-    (build-system python-build-system)
+                "0983vw4kb6frjncsnml4ahw3l7sixg1paz80s119iah2i086cw06"))))
+    (build-system pyproject-build-system)
     (arguments
-     `(#:phases
-       (modify-phases %standard-phases
+     (list
+      #:phases
+      '(modify-phases %standard-phases
+         (add-after 'unpack 'patch-setup.py
+           (lambda _
+             ;; __NUMPY_SETUP__ is undefined.
+             (substitute* "setup.py"
+               ((".*__builtins__.__NUMPY_SETUP.*") ""))))
          (add-after 'unpack 'fix-references
            (lambda _
              (substitute* '("pairtools/cli/header.py"
@@ -3598,7 +3550,11 @@ e.g. microbiome samples, genomes, metagenomes.")
                (with-directory-excursion "/tmp"
                  (invoke "pytest" "-v"))))))))
     (native-inputs
-     (list python-cython python-pytest))
+     (list python-cython
+           python-pytest
+           python-pytest-cov
+           python-setuptools
+           python-wheel))
     (propagated-inputs
      (list htslib ; for bgzip, looked up in PATH
            samtools ; looked up in PATH
@@ -3647,6 +3603,75 @@ alignments and perform the following operations:
      "This is a fast parser for minimap2 PAF (Pairwise mApping Format)
 files.")
     (license license:expat)))
+
+(define-public python-whatshap
+  (let ((revision "0")
+        (commit "5722d69404532d3172758acd04e77fce734711c7")
+        (base-version "2.3"))
+    (package
+      (name "python-whatshap")
+      (version (git-version base-version revision commit))
+      (source (origin
+                (method git-fetch)
+                (uri (git-reference
+                      (url "https://github.com/whatshap/whatshap")
+                      (commit commit)))
+                (file-name (git-file-name name version))
+                (sha256
+                 (base32
+                  "1f9jgwb2kzhn190lxzhc14ji4flmrrdqh39d0g42qzvr1i19yv7p"))))
+      (build-system pyproject-build-system)
+      (arguments
+       (list
+        #:test-flags
+        '(list "-k"
+               (string-append
+                ;; We have no solver for pulp.
+                "not test_blockcut_sensitivities3 "
+                "and not test_get_optimal_permutations2 "
+                ;; Unknown error with the test file.
+                "and not test_vcf_with_missing_headers "
+                ;; Missing test file.
+                "and not test_matrix"))
+        #:phases
+        #~(modify-phases %standard-phases
+            (add-after 'unpack 'pretend-version
+              (lambda _
+                (setenv "SETUPTOOLS_SCM_PRETEND_VERSION" #$base-version)))
+            (replace 'check
+              (lambda* (#:key tests? test-flags #:allow-other-keys)
+                (when tests?
+                  ;; Step out of source dir so python does not import from CWD.
+                  (let ((tests (string-append (getcwd) "/tests")))
+                    (with-directory-excursion "/tmp"
+                      (setenv "HOME" "/tmp")
+                      ;; Test data files are looked up relative to the current
+                      ;; directory.
+                      (mkdir-p "tests/")
+                      (copy-recursively (string-append tests "/data")
+                                        "tests/data")
+                      (apply invoke "pytest" "-vv" tests test-flags)))))))))
+      (propagated-inputs (list python-biopython
+                               python-matplotlib
+                               python-networkx
+                               python-pulp
+                               python-pyfaidx
+                               python-scipy
+                               python-xopen))
+      (native-inputs (list python-cython
+                           python-pytest
+                           python-pysam
+                           python-setuptools
+                           python-setuptools-scm
+                           python-sphinx
+                           python-sphinx-issues))
+      (home-page "https://whatshap.readthedocs.io/")
+      (synopsis "Read-based phasing of genomic variants")
+      (description
+       "WhatsHap is software for phasing genomic variants using DNA sequencing
+reads, also called read-based phasing or haplotype assembly.  It is especially
+suitable for long reads, but works also well with short reads.")
+      (license license:expat))))
 
 (define-public bioperl-minimal
   (package
@@ -3881,7 +3906,9 @@ compressed files.")
          "0wg1s927g32k25j967kfr8l30nmr4c0p4zvy5igvy7cs6chd60lh"))))
     (build-system cargo-build-system)
     (arguments
-     `(#:phases
+     `(#:tests? #f
+       #:install-source? #f
+       #:phases
        (modify-phases %standard-phases
          (add-after 'unpack 'make-writable
            (lambda _
@@ -6745,6 +6772,7 @@ data and settings.")
     (native-inputs
      (list (texlive-updmap.cfg
             (list texlive-doi
+                  texlive-etoolbox
                   texlive-examplep
                   texlive-forloop
                   texlive-listofitems
@@ -7858,9 +7886,11 @@ indexing scheme is called a @dfn{Hierarchical Graph FM index} (HGFM).")
       #:phases
       #~(modify-phases %standard-phases
           (replace 'configure
-            (lambda _
+            (lambda* (#:key inputs #:allow-other-keys)
               (let ((share (string-append #$output "/share/homer")))
                 (mkdir-p share)
+                (copy-file (assoc-ref inputs "config.txt")
+                           (string-append share "/config.txt"))
                 (substitute* "configureHomer.pl"
                   (("my \\$homeDir = \\$1;")
                    (string-append "my $homeDir = \"" share "\";"))))))
@@ -7878,13 +7908,27 @@ indexing scheme is called a @dfn{Hierarchical Graph FM index} (HGFM).")
               (mkdir-p (string-append #$output "/bin"))
               (symlink (string-append #$output "/share/homer/bin/homer2")
                        (string-append #$output "/bin/homer2"))
+              (symlink (string-append #$output "/share/homer/bin/homer")
+                       (string-append #$output "/bin/homer"))
               (for-each patch-shebang
                         (find-files (string-append #$output "/share/homer/bin")
-                                    "\\.pl$")))))))
+                                    "\\.pl$"))
+              ;; Also load config file from user's home directory.
+              (substitute* (string-append #$output "/share/homer/bin/HomerConfig.pm")
+                (("#parseConfigFile") "parseConfigFile")))))))
     (inputs
      (list perl))
     (native-inputs
-     (list perl unzip))
+     `(("perl" ,perl)
+       ("unzip" ,unzip)
+       ("config.txt"
+        ,(origin
+           (method url-fetch)
+           (uri (string-append "https://web.archive.org/web/20200531014112id_/"
+                               "http://homer.ucsd.edu/homer/update.txt"))
+           (sha256
+            (base32
+             "1hf17pk8r6b297ysd27bvxzyn8pxdhxd8wj8g0lqlifbid9fw04h"))))))
     (home-page "http://homer.ucsd.edu/homer")
     (synopsis "Motif discovery and next generation sequencing analysis")
     (description
@@ -9113,6 +9157,51 @@ experiments.")
      (list python-cython python-numpy))
     (native-inputs
      (list python-pytest))
+    (home-page "https://github.com/macs3-project/MACS")
+    (synopsis "Model based analysis for ChIP-Seq data")
+    (description
+     "MACS is an implementation of a ChIP-Seq analysis algorithm for
+identifying transcript factor binding sites named Model-based Analysis of
+ChIP-Seq (MACS).  MACS captures the influence of genome complexity to evaluate
+the significance of enriched ChIP regions and it improves the spatial
+resolution of binding sites through combining the information of both
+sequencing tag position and orientation.")
+    (license license:bsd-3)))
+
+(define-public macs-3
+  (package
+    (name "macs")
+    (version "3.0.2")
+    (source (origin
+              (method git-fetch)
+              (uri (git-reference
+                    (url "https://github.com/macs3-project/MACS")
+                    (commit (string-append "v" version))
+                    (recursive? #true)))
+              (file-name (git-file-name name version))
+              (sha256
+               (base32
+                "0x5iz6iq694z3m9zx7zdw0js2l2l40lf1as9k3jy0q4mvz02a3aw"))))
+    (properties
+     '((updater-extra-inputs . ("zlib"))))
+    (build-system pyproject-build-system)
+    (arguments
+     (list
+      #:phases
+      '(modify-phases %standard-phases
+         ;; FIXME: our version of numpy is a little too old.
+         (add-after 'unpack 'relax-requirements
+           (lambda _
+             (substitute* '("pyproject.toml" "requirements.txt" "setup.py")
+               (("numpy.*=1.25") "numpy>=1.23")))))))
+    (propagated-inputs
+     (list python-cykhash
+           python-hmmlearn
+           python-numpy
+           python-scikit-learn
+           python-scipy))
+    (native-inputs
+     (list python-cython-3 python-pytest python-setuptools zlib))
     (home-page "https://github.com/macs3-project/MACS")
     (synopsis "Model based analysis for ChIP-Seq data")
     (description
@@ -11843,6 +11932,7 @@ discovered with your analysis script.")
                                r-purrr
                                r-stringr
                                r-tidyr))
+      (native-inputs (list r-testthat))
       (home-page "https://github.com/davidsjoberg/ggsankey")
       (synopsis "Sankey, Alluvial and Sankey bump plots")
       (description
@@ -11876,6 +11966,7 @@ sankey, alluvial and sankey bump plots in @code{ggplot2}.")
              r-matrix
              r-s4vectors
              r-stringr))
+      (native-inputs (list r-testthat))
       (home-page "https://github.com/mskilab/gUtils")
       (synopsis "Additional capabilities and speed for GenomicRanges operations")
       (description
@@ -11884,8 +11975,8 @@ sankey, alluvial and sankey bump plots in @code{ggplot2}.")
       (license license:gpl2))))
 
 (define-public r-bamutils
-  (let ((commit "639dba901f16944fa1b7a8d7048701ba86a2cdb8")
-        (revision "1"))
+  (let ((commit "0a7d2d90cc720aac3fe44f964abf294f1b827f32")
+        (revision "2"))
     (package
       (name "r-bamutils")
       (version (git-version "0.0.0.9000" revision commit))
@@ -11897,9 +11988,11 @@ sankey, alluvial and sankey bump plots in @code{ggplot2}.")
                 (file-name (git-file-name name version))
                 (sha256
                  (base32
-                  "0qwby2v5rydnipvf1iv1wz9nf02yq98k0xbc4inf9mqc54jwacs0"))))
+                  "1r3y8775y2j9w92pdp42iaif7nbh260xljrhaswkz6lp71phf1yw"))))
       (properties `((upstream-name . "bamUtils")))
       (build-system r-build-system)
+      ;; See https://github.com/mskilab-org/bamUtils/issues/12
+      (arguments (list #:tests? #false))
       (propagated-inputs
        (list r-abind
              r-biocgenerics
@@ -11909,6 +12002,7 @@ sankey, alluvial and sankey bump plots in @code{ggplot2}.")
              r-gutils
              r-rsamtools
              r-variantannotation))
+      (native-inputs (list r-testthat samtools))
       (home-page "https://github.com/mskilab/bamutils/")
       (synopsis "Utility functions for manipulating BAMs")
       (description "This package provides utility functions for manipulating
@@ -11945,6 +12039,7 @@ BAM files.")
              r-rcurl
              r-rtracklayer
              r-s4vectors))
+      (native-inputs (list r-testthat))
       (home-page "https://github.com/mskilab/gTrack/")
       (synopsis "Plot tracks of complex genomic data across multiple genomic windows")
       (description
@@ -11969,6 +12064,26 @@ file formats, and ffTrack objects in multi-track panels.")
                   "105wgi5w2fhwq1grsvj6zjigwg0sny3z7zr577q8ki3qffjwdkj0"))))
       (properties `((upstream-name . "gChain")))
       (build-system r-build-system)
+      (arguments
+       (list
+        #:phases
+        '(modify-phases %standard-phases
+           (add-after 'unpack 'skip-bad-tests
+             (lambda _
+               (substitute* "tests/testthat/test_gChain.R"
+                 ;; C stack usage  7973568 is too close to the limit
+                 ((".*'testing lift\\(\\) works'.*" m)
+                  (string-append m "skip('guix')"))
+                 ;; C stack usage  7973568 is too close to the limit
+                 ((".*'testing \"\\*\" works'.*" m)
+                  (string-append m "skip('guix')"))
+                 ;; Accuracy problem
+                 ((".*'testing cgChain\\(\\) works'.*" m)
+                  (string-append m "skip('guix')"))
+                 ;; unable to find an inherited method for function ‘strand<-’
+                 ;; for signature ‘x = "GRangesList", value = "character"’
+                 ((".*'testing permute\\(\\) works'.*" m)
+                  (string-append m "skip('guix')"))))))))
       (propagated-inputs
        (list r-bamutils
              r-biostrings
@@ -11979,6 +12094,7 @@ file formats, and ffTrack objects in multi-track panels.")
              r-gutils
              r-matrix
              r-rtracklayer))
+      (native-inputs (list r-pwalign r-testthat))
       (home-page "https://github.com/mskilab/gChain/")
       (synopsis "Additional capabilities and speed for GenomicRanges operations")
       (description
@@ -12025,6 +12141,7 @@ GenomicRanges operations.")
              r-s4vectors
              r-stringr
              r-variantannotation))
+      (native-inputs (list r-bsgenome-hsapiens-ucsc-hg19))
       (home-page "https://github.com/mskilab/skitools/")
       (synopsis "Various mskilab R utilities")
       (description
@@ -12066,6 +12183,7 @@ tasks.")
              r-plyr
              r-r6
              r-zoo))
+      (native-inputs (list r-testthat))
       (home-page "https://github.com/mskilab/chromunity")
       (synopsis "Discovery of communities in Pore-C concatemers")
       (description "This is a package for the discovery of communities in
@@ -12097,7 +12215,7 @@ Pore-C concatemers.")
                                r-r6
                                r-rlang
                                r-withr))
-      (native-inputs (list r-knitr))
+      (native-inputs (list r-knitr r-testthat))
       (home-page "https://github.com/stan-dev/cmdstanr")
       (synopsis "R interface to 'CmdStan'")
       (description
@@ -12169,6 +12287,8 @@ on Illumina DNAm arrays.")
                   "02cvibyc2nwc4037ramm5cskjwyrb9ib9hkrfhmvhbslkn5ixz1v"))))
       (properties `((upstream-name . "DoubletCollection")))
       (build-system r-build-system)
+      ;; There are no tests.
+      (arguments (list #:tests? #false))
       (propagated-inputs (list r-biocgenerics
                                r-doubletfinder
                                r-gam
@@ -12188,6 +12308,7 @@ on Illumina DNAm arrays.")
                                python
                                python-scrublet
                                python-doubletdetection))
+      (native-inputs (list r-testthat))
       (home-page "https://github.com/xnnba1984/DoubletCollection")
       (synopsis "Tool for finding doublets in scRNA-seq data")
       (description
@@ -12269,7 +12390,7 @@ of microbiome data that existing correction methods have ignored so far.")
              r-stringr
              r-summarizedexperiment
              r-topgo))
-      (native-inputs (list r-knitr))
+      (native-inputs (list r-knitr r-testthat))
       (home-page "https://github.com/wmacnair/psupertime")
       (synopsis
        "Psupertime is supervised pseudotime for single cell RNAseq data")
@@ -12299,6 +12420,8 @@ differently labelled data.")
     (build-system r-build-system)
     (arguments
      (list
+      ;; The test file data/test_seurat.rds is not included.
+      #:tests? #false
       #:phases
       '(modify-phases %standard-phases
          (add-after 'unpack 'loosen-requirements
@@ -12328,7 +12451,12 @@ differently labelled data.")
            r-tidygraph
            r-tidyverse
            r-uwot))
-    (native-inputs (list r-knitr))
+    (native-inputs
+     (list r-bsgenome-hsapiens-ucsc-hg38
+           r-devtools
+           r-doparallel
+           r-ensdb-hsapiens-v86
+           r-knitr))
     (home-page "https://github.com/quadbiolab/Pando")
     (synopsis "Infer regulomes from multi-modal single-cell genomics data")
     (description
@@ -12467,6 +12595,7 @@ states in the the context of known, reference states.")
              r-reshape2
              r-rlang
              r-tidyr))
+      (native-inputs (list r-testthat))
       (home-page "https://github.com/immunogenomics/presto")
       (synopsis "Fast Functions for Differential Expression using Wilcox and AUC")
       (description "This package performs a fast Wilcoxon rank sum test and
@@ -12710,6 +12839,8 @@ function.")
         (base32 "09xgc7r6iisjkk0c0wn0q56zy0aph386kphwixfzq4422y7vlqci"))))
     (properties `((upstream-name . "sleuth")))
     (build-system r-build-system)
+    ;; FIXME: there are 10 unknown failures.
+    (arguments (list #:tests? #false))
     (propagated-inputs (list r-aggregation
                              r-data-table
                              r-dplyr
@@ -12721,7 +12852,7 @@ function.")
                              r-rhdf5
                              r-shiny
                              r-tidyr))
-    (native-inputs (list r-knitr))
+    (native-inputs (list r-knitr r-testthat))
     (home-page "https://github.com/pachterlab/sleuth")
     (synopsis "Tools for investigating RNA-Seq")
     (description
@@ -13145,6 +13276,7 @@ colors to give chromosomes, and what points to label.")
            r-rsamtools
            r-rtracklayer
            r-tidyr))
+    (native-inputs (list r-testthat))
     (home-page "https://github.com/yuifu/millefy")
     (synopsis "Make millefy plot with single-cell RNA-seq data")
     (description "@code{Millefy} is a tool for visualizing read coverage of
@@ -13217,14 +13349,12 @@ analyze genomic data resulting from various experiments.")
              r-doparallel
              r-dplyr
              r-foreach
-             ;;r-grid ;; listed in DESCRIPTION
              r-gridextra
              r-ggplot2
              r-gtable
              r-htmlwidgets
              r-igraph
              r-matrix
-             ;;r-methods ;; listed in DESCRIPTION
              r-org-hs-eg-db
              r-psych
              r-rcolorbrewer
@@ -13402,7 +13532,7 @@ read counts derived from the physical mechanism of tag cross-contamination.")
       (properties `((upstream-name . "demuxmix")))
       (build-system r-build-system)
       (propagated-inputs (list r-ggplot2 r-gridextra r-mass r-matrix))
-      (native-inputs (list r-knitr))
+      (native-inputs (list r-knitr r-testthat))
       (home-page "https://github.com/huklein/demuxmix")
       (synopsis
        "Demultiplexing oligo-barcoded scRNA-seq data using regression mixture models")
@@ -14168,6 +14298,7 @@ factors bound at the specific regions.")
                                r-sf
                                r-spatialexperiment
                                r-summarizedexperiment))
+      (native-inputs (list r-testthat))
       (home-page "https://github.com/JEFworks-Lab/SEraster")
       (synopsis
        "Rasterization framework for scalable spatial omics data analysis")
@@ -14575,7 +14706,7 @@ trait.")
                                r-seqinr
                                r-tidyverse
                                r-topdom))
-      (native-inputs (list r-knitr))
+      (native-inputs (list r-knitr r-testthat))
       (home-page "https://github.com/cran/rnaCrosslinkOO")
       (synopsis "Analysis of RNA crosslinking data")
       (description
@@ -14636,8 +14767,11 @@ of DTU.")
           (base32
            "0sbzma49aiiyw8b0jpr7fnhzys9nsqmp4hy4hdz1gzyg1lhnca26"))))
       (build-system r-build-system)
+      ;; Tests make invalid assumption about test files and their locations.
+      (arguments (list #:tests? #false))
       (propagated-inputs
        (list r-ggplot2 r-rcolorbrewer r-gridextra r-gplots r-plyr))
+      (native-inputs (list r-data-table))
       (home-page "https://github.com/rajewsky-lab/dropbead")
       (synopsis "Basic exploration and analysis of Drop-seq data")
       (description "This package offers a quick and straight-forward way to
@@ -15407,6 +15541,42 @@ browser.")
     (license (license:non-copyleft
               "http://genome.ucsc.edu/license/"
               "The contents of this package are free for all uses."))))
+
+(define-public skewer
+  (let ((commit "978e8e46cba44595ece623e5387749284a86b74b")
+        (revision "1"))
+    (package
+      (name "skewer")
+      (version (git-version "0" revision commit))
+      (source
+       (origin
+         (method git-fetch)
+         (uri (git-reference
+               (url "https://github.com/relipmoc/skewer")
+               (commit commit)))
+         (file-name (git-file-name name version))
+         (sha256
+          (base32
+           "1b3skfnj3zmd2065fiyxjrg4k6xsxfy6nxz80vmajd830mk6vr69"))))
+      (build-system gnu-build-system)
+      (arguments
+       (list
+        #:tests? #f
+        #:phases
+        #~(modify-phases %standard-phases
+            (delete 'configure)
+            (replace 'install
+              (lambda _
+                (install-file "skewer" (string-append #$output "/bin")))))))
+      ;; XXX Fails to build with GCC 11.
+      (native-inputs (list gcc-10))
+      (home-page "https://github.com/relipmoc/skewer")
+      (synopsis "Bit-masked k-difference matching")
+      (description "Skewer implements the bit-masked k-difference matching
+algorithm dedicated to the task of adapter trimming and it is specially
+designed for processing next-generation sequencing (NGS) paired-end
+sequences.")
+      (license license:expat))))
 
 (define-public f-seq
   (let ((commit "6ccded34cff38cf432deed8503648b4a66953f9b")
@@ -16332,7 +16502,7 @@ API services.")
     (native-inputs
      (list python-pytest))
     (home-page "https://github.com/caleblareau/mgatk")
-    (synopsis "Mitochondrial genome analysis toolkit.")
+    (synopsis "Mitochondrial genome analysis toolkit")
     (description "This package is a Python-based command line interface for
 processing .bam files with mitochondrial reads and generating high-quality
 heteroplasmy estimation from sequencing data.  The mgatk package places a
@@ -17107,7 +17277,7 @@ in an easily configurable manner.")
 (define-public pigx-bsseq
   (package
     (name "pigx-bsseq")
-    (version "0.1.8")
+    (version "0.1.10")
     (source (origin
               (method url-fetch)
               (uri (string-append "https://github.com/BIMSBbioinfo/pigx_bsseq/"
@@ -17115,14 +17285,15 @@ in an easily configurable manner.")
                                   "/pigx_bsseq-" version ".tar.gz"))
               (sha256
                (base32
-                "1s8zgrqxabrawrgkga5rmgb0gyzj7ck47p3rkicjkfv7r2yjy0d7"))))
+                "1vy3mhbrfdnjbhikwg3mgkfnwnzk96a1n27cxrr7gsffpmz9q6wa"))))
     (build-system gnu-build-system)
     (arguments
-     `(;; TODO: tests currently require 12+GB of RAM.  See
-       ;; https://github.com/BIMSBbioinfo/pigx_bsseq/issues/164
-       #:tests? #f
-       #:phases
-       (modify-phases %standard-phases
+     (list
+      ;; TODO: tests currently require 12+GB of RAM.  See
+      ;; https://github.com/BIMSBbioinfo/pigx_bsseq/issues/164
+      #:tests? #f
+      #:phases
+      '(modify-phases %standard-phases
          (add-before 'configure 'set-PYTHONPATH
            (lambda _
              (setenv "PYTHONPATH" (getenv "GUIX_PYTHONPATH"))))
@@ -17134,7 +17305,7 @@ in an easily configurable manner.")
                      (search-input-directory inputs
                                              "share/zoneinfo")))))))
     (native-inputs
-     (list tzdata))
+     (list tzdata-for-tests))
     (inputs
      (list coreutils
            sed
@@ -17178,7 +17349,7 @@ methylation and segmentation.")
 (define-public pigx-scrnaseq
   (package
     (name "pigx-scrnaseq")
-    (version "1.1.9")
+    (version "1.1.10")
     (source (origin
               (method url-fetch)
               (uri (string-append "https://github.com/BIMSBbioinfo/pigx_scrnaseq/"
@@ -17186,11 +17357,12 @@ methylation and segmentation.")
                                   "/pigx_scrnaseq-" version ".tar.gz"))
               (sha256
                (base32
-                "0adx7877c3lhlrzfid76i8bc829wcmzvrm0jx47gyid8mxqb7vqs"))))
+                "082im1j6qpd2y8ax4msxw7mfc40zxpl29hx92skqdd55745f58z8"))))
     (build-system gnu-build-system)
     (arguments
-     `(#:phases
-       (modify-phases %standard-phases
+     (list
+      #:phases
+      '(modify-phases %standard-phases
          (add-before 'configure 'set-additional-environment-variables
            (lambda _
              ;; Needed because of loompy
@@ -17913,7 +18085,7 @@ Mixtures.")
              r-withr
              r-xml2
              r-yaml))
-      (native-inputs (list r-knitr))
+      (native-inputs (list r-knitr r-testthat))
       (home-page "https://github.com/saezlab/omnipathr")
       (synopsis "OmniPath web service client and more")
       (description
@@ -17975,7 +18147,7 @@ activity prediction from transcriptomics data, and its R implementation
              r-tibble
              r-tidyr
              r-tidyselect))
-      (native-inputs (list r-knitr))
+      (native-inputs (list r-knitr r-testthat))
       (home-page "https://github.com/saezlab/liana/")
       (synopsis "LIANA: a LIgand-receptor ANalysis frAmework")
       (description
@@ -18018,7 +18190,7 @@ interaction inference from scRNA-seq data.")
            r-stringr
            r-summarizedexperiment))
     (native-inputs
-     (list r-knitr))
+     (list r-knitr r-testthat))
     (home-page "https://github.com/BIMSBbioinfo/ciRcus")
     (synopsis "Annotation, analysis and visualization of circRNA data")
     (description "Circus is an R package for annotation, analysis and
@@ -18152,6 +18324,31 @@ is then merged.")
        (list
         #:phases
         '(modify-phases %standard-phases
+           (add-after 'unpack 'skip-bad-tests
+             (lambda _
+               ;; These tests fail.  Some fail because of unimportant
+               ;; differences in printed messages.
+               (with-directory-excursion "tests/testthat/"
+                 (substitute* "test-cyto_channels-helpers.R"
+                   (("^test_that.*cyto_channels_restrict.*" m)
+                    (string-append m "skip('guix')")))
+                 (substitute* "test-cyto_gate_helpers.R"
+                   (("^test_that.*cyto_gate_rename.*" m)
+                    (string-append m "skip('guix')"))
+                   (("^test_that.*cyto_gate_remove.*" m)
+                    (string-append m "skip('guix')")))
+                 (substitute* "test-cyto_helpers.R"
+                   (("^test_that.*cyto_compensate.*" m)
+                    (string-append m "skip('guix')"))
+                   (("^test_that.*cyto_empty.*" m)
+                    (string-append m "skip('guix')"))
+                   (("^test_that.*cyto_group_by.*" m)
+                    (string-append m "skip('guix')")))
+                 (substitute* "test-cyto_spillover_spread_compute.R"
+                   (("^test_that.*cyto_spillover_spread_compute internal reference.*" m)
+                    (string-append m "skip('guix')"))
+                   (("^test_that.*cyto_spillover_spread_compute universal reference.*" m)
+                    (string-append m "skip('guix')"))))))
            (add-after 'unpack 'process-javascript
              (lambda* (#:key inputs #:allow-other-keys)
                (with-directory-excursion "docs/articles/CytoExploreR_files/"
@@ -18184,19 +18381,21 @@ is then merged.")
              r-umap
              r-visnetwork))
       (native-inputs
-       `(("esbuild" ,esbuild)
-         ("r-knitr" ,r-knitr)
-         ("js-vis"
-          ,(let ((version "4.20.1"))
-             (origin
-               (method git-fetch)
-               (uri (git-reference
-                     (url "https://github.com/almende/vis")
-                     (commit (string-append "v" version))))
-               (file-name (git-file-name "js-vis" version))
-               (sha256
-                (base32
-                 "09ldcqzzki5c0jlwas5992qjffqxnx6j5sl703qccfw7rg1hn469")))))))
+       (list esbuild
+             r-cytoexplorerdata
+             r-knitr
+             r-mockery
+             r-testthat
+             (let ((version "4.20.1"))
+               (origin
+                 (method git-fetch)
+                 (uri (git-reference
+                       (url "https://github.com/almende/vis")
+                       (commit (string-append "v" version))))
+                 (file-name (git-file-name "js-vis" version))
+                 (sha256
+                  (base32
+                   "09ldcqzzki5c0jlwas5992qjffqxnx6j5sl703qccfw7rg1hn469"))))))
       (home-page "https://github.com/DillonHammill/CytoExploreR")
       (synopsis "Interactive analysis of cytometry data")
       (description
@@ -18204,6 +18403,31 @@ is then merged.")
 conventional and cutting edge cytometry analysis tools under a unified
 framework.  It aims to represent an intuitive and interactive approach to
 analysing cytometry data in R.")
+      (license license:gpl2))))
+
+(define-public r-cytoexplorerdata
+  (let ((commit "488edf083092247ad547172906efe6f8c2aa8700")
+        (revision "1"))
+    (package
+      (name "r-cytoexplorerdata")
+      (version (git-version "1.0.3" revision commit))
+      (source
+       (origin
+         (method git-fetch)
+         (uri (git-reference
+               (url "https://github.com/DillonHammill/CytoExploreRData")
+               (commit commit)))
+         (file-name (git-file-name name version))
+         (sha256
+          (base32 "0mp3d8cv57psz5zjp7a1f07fxw9dw0w0x9fv32k46a566k1073p3"))))
+      (properties `((upstream-name . "CytoExploreRData")))
+      (build-system r-build-system)
+      (native-inputs (list r-knitr))
+      (home-page "https://github.com/DillonHammill/CytoExploreRData")
+      (synopsis "Flow Cytometry Data for CytoExploreR")
+      (description
+       "This package contains @code{gatingTemplates}, example fcs files and compensation
+controls for use in @code{CytoExploreR}.")
       (license license:gpl2))))
 
 (define-public r-giotto
@@ -20149,7 +20373,7 @@ repeated areas between contigs.")
     (native-inputs
      (list poetry python-pytest))
     (home-page "https://github.com/vembrane/vembrane")
-    (synopsis "Filter VCF/BCF files with Python expressions.")
+    (synopsis "Filter VCF/BCF files with Python expressions")
     (description "Vembrane simultaneously filters variants based on
 any INFO or FORMAT field, CHROM, POS, ID, REF, ALT, QUAL, FILTER, and the
 annotation field ANN.  When filtering based on ANN, annotation entries are
@@ -20436,6 +20660,7 @@ might be caused by ATAC-seq library prep or sequencing.  The main program,
            r-readr
            r-magrittr
            r-ggplot2))
+    (native-inputs (list r-testthat))
     (home-page "https://github.com/kcha/psiplot")
     (synopsis "Plot percent spliced-in values of alternatively-spliced exons")
     (description
@@ -21676,70 +21901,75 @@ patterns.")
       (license license:gpl3))))
 
 (define-public r-voltron
-  (let ((commit "5057b703479239a9aaba761f07e65d849f6111f8")
+  (let ((commit "9f9415c72e9347f578a166981842d33e43b0466d")
         (revision "1"))
     (package
       (name "r-voltron")
-      (version (git-version "1.0.0" revision commit))
-      (source (origin
-                (method git-fetch)
-                (uri (git-reference
-                      (url "https://github.com/BIMSBbioinfo/VoltRon")
-                      (commit commit)))
-                (file-name (git-file-name name version))
-                (sha256
-                 (base32
-                  "1nximl4708a7fdwn8ysxpni3mp6dx33cphavlay7hh1pa55pnzgn"))
-                (modules '((guix build utils)))
-                ;; The tripack package is not available under a free license,
-                ;; but interp provides free implementations of "tri.mesh" and
-                ;; "neighbours".
-                (snippet
-                 '(substitute* '("DESCRIPTION" "NAMESPACE" "R/spatial.R")
-                    (("tripack") "interp")))))
+      (version (git-version "0.2.0" revision commit))
+      (source
+       (origin
+         (method git-fetch)
+         (uri (git-reference
+               (url "https://github.com/BIMSBbioinfo/VoltRon")
+               (commit commit)))
+         (file-name (git-file-name name version))
+         (sha256
+          (base32 "0bvvpj96ix2ij6034dfrh7za1lvf73qxqsdvbs2wrpc931s18q32"))))
       (properties `((upstream-name . "VoltRon")))
       (build-system r-build-system)
-      (inputs (list opencv tbb zlib))
-      (propagated-inputs (list r-anndata
+      (inputs
+       (list opencv
+             ;; These Python inputs would be fetched by Basilisk via Conda.
+             ;; We add these inputs in anticipation of an upstream change to
+             ;; allow for a Conda-free use of the package.
+             python
+             python-numpy
+             python-pandas
+             python-anndata
+             python-h5py
+             python-natsort
+             python-numcodecs
+             python-packaging
+             python-scipy
+             python-tifffile
+             python-zarr
+             zlib))
+      (propagated-inputs (list r-basilisk
                                r-data-table
                                r-dplyr
                                r-ebimage
-                               r-fastdummies
-                               r-fnn
-                               r-ggforce
                                r-ggplot2
                                r-ggpubr
                                r-ggrepel
-                               r-hdf5r
-                               r-htmltools
+                               r-ids
                                r-igraph
-                               r-interp
                                r-irlba
                                r-magick
                                r-matrix
-                               r-morpho
-                               r-raster
+                               r-rann
+                               r-rcdt
                                r-rcpp
+                               r-rcppannoy
+                               r-rcpparmadillo
                                r-reshape2
+                               r-reticulate
                                r-rjson
                                r-rlang
-                               r-s4vectors
-                               r-scales
+                               r-s4arrays
                                r-shiny
                                r-shinyjs
+                               r-sp
                                r-stringr
-                               r-terra
-                               r-umap
-                               r-xml))
-      (native-inputs (list pkg-config))
+                               r-uwot))
+      (native-inputs (list pkg-config r-testthat))
       (home-page "https://github.com/BIMSBbioinfo/VoltRon")
-      (synopsis "VoltRon for Spatial Data Integration and Analysis")
+      (synopsis "VoltRon for spatial data integration and analysis")
       (description
-       "@code{VoltRon} is a toolbox for spatial data analysis, multi-omics
-integration using spatial image registration.  @code{VoltRon} is capable of
-analyzing multiple types and modalities of spatially-aware datasets.
-@code{VoltRon} visualizes and analyzes regions of interests (ROIs), spots,
-cells and even molecules.")
+       "@code{VoltRon} is a novel spatial omic analysis toolbox for
+multi-omics integration using spatial image registration.  @code{VoltRon} is
+capable of analyzing multiple types and modalities of spatially-aware
+datasets.  @code{VoltRon} visualizes and analyzes regions of interests (ROIs),
+spots, cells and even molecules.")
       (license license:expat))))
 
 (define-public methyldackel
@@ -22548,6 +22778,7 @@ translates between different variant encodings.")
              r-tidyr
              r-tidyselect
              r-vctrs))
+      (native-inputs (list r-testthat))
       (home-page "https://github.com/timoast/signac/")
       (synopsis "Analysis of single-cell chromatin data")
       (description
@@ -23296,6 +23527,9 @@ It also handles cell type-specific differential expression.")
            "0g38grrhbqqa4bmcilvdyawbkcnax6k4vffx2giywp18mbirmj0x"))))
       (properties `((upstream-name . "Spectre")))
       (build-system r-build-system)
+      ;; Tests attempt to install Spectre from Github, from the add_fitsne
+      ;; branch.
+      (arguments (list #:tests? #false))
       (propagated-inputs
        (list r-biobase
              r-biocmanager

@@ -67,6 +67,8 @@
 # Copyright © 2024 David Elsing <david.elsing@posteo.net>
 # Copyright © 2024 Ashish SHUKLA <ashish.is@lostca.se>
 # Copyright © 2024 Fabio Natali <me@fabionatali.com>
+# Copyright © 2024 Noé Lopez <noelopez@free.fr>
+# Copyright © 2024 Runciter <runciter@whispers-vpn.org>
 #
 # This file is part of GNU Guix.
 #
@@ -139,6 +141,7 @@ GNU_SYSTEM_MODULES =				\
   %D%/packages/apl.scm				\
   %D%/packages/apple.scm			\
   %D%/packages/apparmor.scm			\
+  %D%/packages/appimage.scm			\
   %D%/packages/apr.scm				\
   %D%/packages/arcan.scm			\
   %D%/packages/aspell.scm			\
@@ -239,6 +242,7 @@ GNU_SYSTEM_MODULES =				\
   %D%/packages/decker.scm			\
   %D%/packages/dhall.scm			\
   %D%/packages/dico.scm				\
+  %D%/packages/dictd.scm			\
   %D%/packages/dictionaries.scm			\
   %D%/packages/diffoscope.scm			\
   %D%/packages/digest.scm			\
@@ -1048,8 +1052,6 @@ dist_patch_DATA =						\
   %D%/packages/patches/ccextractor-add-missing-header.patch	\
   %D%/packages/patches/ccextractor-autoconf-tesseract.patch	\
   %D%/packages/patches/ccextractor-fix-ocr.patch		\
-  %D%/packages/patches/chez-scheme-backport-configure.patch	\
-  %D%/packages/patches/chez-scheme-backport-signal.patch	\
   %D%/packages/patches/chez-scheme-bin-sh.patch			\
   %D%/packages/patches/circos-remove-findbin.patch		\
   %D%/packages/patches/cdparanoia-fpic.patch			\
@@ -1167,8 +1169,6 @@ dist_patch_DATA =						\
   %D%/packages/patches/dtc-meson-cell-overflow.patch		\
   %D%/packages/patches/duc-fix-test-sh.patch                    \
   %D%/packages/patches/dune-common-skip-failing-tests.patch	\
-  %D%/packages/patches/dune-grid-add-missing-include-cassert.patch	\
-  %D%/packages/patches/dune-istl-fix-solver-playground.patch	\
   %D%/packages/patches/durden-shadow-arcan.patch		\
   %D%/packages/patches/dvd+rw-tools-add-include.patch 		\
   %D%/packages/patches/dwarves-threading-reproducibility.patch	\
@@ -1285,7 +1285,7 @@ dist_patch_DATA =						\
   %D%/packages/patches/fpc-reproducibility.patch		\
   %D%/packages/patches/fpc-glibc-2.34-compat.patch		\
   %D%/packages/patches/fpm-newer-clamp-fix.patch		\
-  %D%/packages/patches/freecad-vtk-9.3.patch		\
+  %D%/packages/patches/freedict-tools-fix-determinism.patch	\
   %D%/packages/patches/freedink-engine-fix-sdl-hints.patch	\
   %D%/packages/patches/freeimage-libtiff-compat.patch		\
   %D%/packages/patches/freeimage-libraw-0.21-compat.patch	\
@@ -1373,6 +1373,7 @@ dist_patch_DATA =						\
   %D%/packages/patches/gcolor3-update-libportal-usage.patch	\
   %D%/packages/patches/gd-fix-tests-on-i686.patch		\
   %D%/packages/patches/gd-brect-bounds.patch			\
+  %D%/packages/patches/gdb-hurd64.patch				\
   %D%/packages/patches/gdm-default-session.patch		\
   %D%/packages/patches/gdm-remove-hardcoded-xwayland-path.patch	\
   %D%/packages/patches/gdm-wayland-session-wrapper-from-env.patch	\
@@ -1438,7 +1439,12 @@ dist_patch_DATA =						\
   %D%/packages/patches/glibc-hurd-getauxval.patch		\
   %D%/packages/patches/glibc-hurd-gettyent.patch		\
   %D%/packages/patches/glibc-hurd-mach-print.patch		\
+  %D%/packages/patches/glibc-hurd-pthread_setcancelstate.patch	\
   %D%/packages/patches/glibc-hurd-signal-sa-siginfo.patch	\
+  %D%/packages/patches/glibc-hurd64-gcc-14.2-tls-bug.patch	\
+  %D%/packages/patches/glibc-hurd64-fault.patch			\
+  %D%/packages/patches/glibc-hurd64-intr-msg-clobber.patch	\
+  %D%/packages/patches/glibc-hurd64-sgms-context.patch		\
   %D%/packages/patches/glibc-ldd-powerpc.patch			\
   %D%/packages/patches/glibc-ldd-x86_64.patch			\
   %D%/packages/patches/glibc-locales.patch			\
@@ -1462,6 +1468,7 @@ dist_patch_DATA =						\
   %D%/packages/patches/gnome-session-support-elogind.patch	\
   %D%/packages/patches/gnome-tweaks-search-paths.patch		\
   %D%/packages/patches/gnulib-bootstrap.patch			\
+  %D%/packages/patches/gnumach-version.patch			\
   %D%/packages/patches/gnupg-default-pinentry.patch		\
   %D%/packages/patches/gnupg-1-build-with-gcc10.patch		\
   %D%/packages/patches/gnutls-skip-trust-store-test.patch	\
@@ -1489,6 +1496,7 @@ dist_patch_DATA =						\
   %D%/packages/patches/gromacs-tinyxml2.patch			\
   %D%/packages/patches/groovy-add-exceptionutilsgenerator.patch	\
   %D%/packages/patches/grub-efi-fat-serial-number.patch		\
+  %D%/packages/patches/grub-hurd64.patch			\
   %D%/packages/patches/grub-setup-root.patch			\
   %D%/packages/patches/guile-1.8-cpp-4.5.patch			\
   %D%/packages/patches/guile-2.2-skip-oom-test.patch            \
@@ -1511,10 +1519,10 @@ dist_patch_DATA =						\
   %D%/packages/patches/guile-fix-invalid-unicode-handling.patch \
   %D%/packages/patches/guile-gdbm-ffi-support-gdbm-1.14.patch	\
   %D%/packages/patches/guile-hurd-posix-spawn.patch		\
+  %D%/packages/patches/guile-lzlib-hurd64.patch			\
   %D%/packages/patches/guile-present-coding.patch		\
   %D%/packages/patches/guile-rsvg-pkgconfig.patch		\
-  %D%/packages/patches/guile-ssh-rename-bool.patch		\
-  %D%/packages/patches/guile-emacs-fix-configure.patch		\
+  %D%/packages/patches/guile-emacs-build-fixes.patch		\
   %D%/packages/patches/gtk2-fix-builder-test.patch		\
   %D%/packages/patches/gtk2-harden-list-store.patch		\
   %D%/packages/patches/gtk2-respect-GUIX_GTK2_PATH.patch	\
@@ -1547,6 +1555,8 @@ dist_patch_DATA =						\
   %D%/packages/patches/htslib-for-stringtie.patch		\
   %D%/packages/patches/hubbub-sort-entities.patch		\
   %D%/packages/patches/hueplusplus-mbedtls.patch		\
+  %D%/packages/patches/hurd-64bit.patch				\
+  %D%/packages/patches/hurd-refcounts-assert.patch		\
   %D%/packages/patches/hurd-rumpdisk-no-hd.patch		\
   %D%/packages/patches/hurd-startup.patch			\
   %D%/packages/patches/hwloc-1-test-btrfs.patch			\
@@ -1570,6 +1580,7 @@ dist_patch_DATA =						\
   %D%/packages/patches/indent-CVE-2024-0911.patch	\
   %D%/packages/patches/instead-use-games-path.patch		\
   %D%/packages/patches/intltool-perl-compatibility.patch	\
+  %D%/packages/patches/inetutils-hurd64.patch			\
   %D%/packages/patches/irrlicht-use-system-libs.patch		\
   %D%/packages/patches/irrlicht-link-against-needed-libs.patch	\
   %D%/packages/patches/isl-0.11.1-aarch64-support.patch	\
@@ -1619,6 +1630,7 @@ dist_patch_DATA =						\
   %D%/packages/patches/libgeotiff-fix-tests-with-proj-9.3.0.patch	\
   %D%/packages/patches/libgeotiff-fix-tests-with-proj-9.3.1.patch	\
   %D%/packages/patches/libgeotiff-fix-tests-on-i386.patch	\
+  %D%/packages/patches/libgpg-error-hurd64.patch		\
   %D%/packages/patches/libguestfs-syms.patch            	\
   %D%/packages/patches/libobjc2-unbundle-robin-map.patch	\
   %D%/packages/patches/libvirt-add-install-prefix.patch	\
@@ -1705,6 +1717,7 @@ dist_patch_DATA =						\
   %D%/packages/patches/libmpeg2-global-symbol-test.patch	\
   %D%/packages/patches/libmygpo-qt-fix-qt-5.11.patch		\
   %D%/packages/patches/libmygpo-qt-missing-qt5-modules.patch	\
+  %D%/packages/patches/libpciaccess-hurd64.patch		\
   %D%/packages/patches/libphonenumber-reproducible-build.patch	\
   %D%/packages/patches/libqalculate-3.8.0-libcurl-ssl-fix.patch	\
   %D%/packages/patches/libquicktime-ffmpeg.patch 		\
@@ -1728,8 +1741,7 @@ dist_patch_DATA =						\
   %D%/packages/patches/libutils-remove-damaging-includes.patch	\
   %D%/packages/patches/libvdpau-va-gl-unbundle.patch		\
   %D%/packages/patches/libvpx-CVE-2016-2818.patch		\
-  %D%/packages/patches/libvpx-CVE-2023-5217.patch		\
-  %D%/packages/patches/libvpx-CVE-2023-44488.patch		\
+  %D%/packages/patches/libxcrypt-hurd64.patch			\
   %D%/packages/patches/libxml2-xpath0-Add-option-xpath0.patch	\
   %D%/packages/patches/libwpd-gcc-compat.patch			\
   %D%/packages/patches/libxslt-generated-ids.patch		\
@@ -1820,6 +1832,7 @@ dist_patch_DATA =						\
   %D%/packages/patches/ncftp-reproducible.patch			\
   %D%/packages/patches/netcdf-date-time.patch			\
   %D%/packages/patches/netdde-build-fix.patch			\
+  %D%/packages/patches/netdde-csum.patch			\
   %D%/packages/patches/netpbm-CVE-2017-2586.patch		\
   %D%/packages/patches/netpbm-CVE-2017-2587.patch		\
   %D%/packages/patches/netsurf-message-timestamp.patch		\
@@ -1895,6 +1908,7 @@ dist_patch_DATA =						\
   %D%/packages/patches/opensles-add-license-file.patch			\
   %D%/packages/patches/openssl-1.1-c-rehash-in.patch		\
   %D%/packages/patches/openssl-3.0-c-rehash-in.patch		\
+  %D%/packages/patches/openssl-hurd64.patch			\
   %D%/packages/patches/opentaxsolver-file-browser-fix.patch     \
   %D%/packages/patches/open-zwave-hidapi.patch			\
   %D%/packages/patches/orangeduck-mpc-fix-pkg-config.patch	\
@@ -1909,6 +1923,7 @@ dist_patch_DATA =						\
   %D%/packages/patches/pam-krb5-CVE-2020-10595.patch		\
   %D%/packages/patches/pango-skip-libthai-test.patch		\
   %D%/packages/patches/password-store-tree-compat.patch		\
+  %D%/packages/patches/pciutils-hurd64.patch			\
   %D%/packages/patches/pdfpc-build-with-vala-0.56.patch         \
   %D%/packages/patches/petri-foo-0.1.87-fix-recent-file-not-exist.patch			\
   %D%/packages/patches/plasma-framework-fix-KF5PlasmaMacros.cmake.patch \
@@ -1937,6 +1952,7 @@ dist_patch_DATA =						\
   %D%/packages/patches/python-pypdf-annotate-tests-appropriately.patch	\
   %D%/packages/patches/python-sip-include-dirs.patch	\
   %D%/packages/patches/python-sgmllib3k-assertions.patch	\
+  %D%/packages/patches/python-sphobjinv-defer-ssl-import.patch	\
   %D%/packages/patches/python-sphinx-prompt-docutils-0.19.patch	\
   %D%/packages/patches/python-typeguard-python3.10.patch	\
   %D%/packages/patches/python-uqbar-python3.10.patch	        \
@@ -2137,6 +2153,8 @@ dist_patch_DATA =						\
   %D%/packages/patches/rustc-1.54.0-src.patch			\
   %D%/packages/patches/rust-1.64-fix-riscv64-bootstrap.patch	\
   %D%/packages/patches/rust-1.70-fix-rustix-build.patch	\
+  %D%/packages/patches/rust-1.78-unwinding-fix.patch		\
+  %D%/packages/patches/rust-1.81-fix-riscv64-bootstrap.patch	\
   %D%/packages/patches/rust-cargo-edit-remove-ureq.patch	\
   %D%/packages/patches/rust-ring-0.17-ring-core.patch		\
   %D%/packages/patches/rust-ndarray-remove-blas-src-dep.patch	\
@@ -2233,6 +2251,7 @@ dist_patch_DATA =						\
   %D%/packages/patches/teuchos-remove-duplicate-using.patch	\
   %D%/packages/patches/texi2html-document-encoding.patch	\
   %D%/packages/patches/texi2html-i18n.patch			\
+  %D%/packages/patches/texmacs-wayland-hidpi.patch	\
   %D%/packages/patches/thefuck-test-environ.patch		\
   %D%/packages/patches/tidy-CVE-2015-5522+5523.patch		\
   %D%/packages/patches/timewarrior-time-sensitive-tests.patch	\
@@ -2244,6 +2263,7 @@ dist_patch_DATA =						\
   %D%/packages/patches/torcs-glibc-default-source.patch		\
   %D%/packages/patches/torcs-isnan.patch			\
   %D%/packages/patches/torcs-nullptr.patch			\
+  %D%/packages/patches/torbrowser-compare-paths.patch           \
   %D%/packages/patches/tpetra-remove-duplicate-using.patch	\
   %D%/packages/patches/transcode-ffmpeg.patch	\
   %D%/packages/patches/transmission-4.0.6-fix-build.patch	\
@@ -2257,6 +2277,7 @@ dist_patch_DATA =						\
   %D%/packages/patches/twinkle-bcg729.patch			\
   %D%/packages/patches/u-boot-allow-disabling-openssl.patch	\
   %D%/packages/patches/u-boot-build-without-libcrypto.patch	\
+  %D%/packages/patches/u-boot-calloc-visibility.patch		\
   %D%/packages/patches/u-boot-nintendo-nes-serial.patch		\
   %D%/packages/patches/u-boot-rockchip-inno-usb.patch		\
   %D%/packages/patches/ucx-tcp-iface-ioctl.patch		\

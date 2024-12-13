@@ -199,17 +199,17 @@
 ;; Update this id with every update to its release date.
 ;; It's used for cache validation and therefore can lead to strange bugs.
 ;; ex: date '+%Y%m%d%H%M%S'
-(define %librewolf-build-id "20241105185710")
+(define %librewolf-build-id "20241130102406")
 
 (define-public librewolf
   (package
     (name "librewolf")
-    (version "132.0-1")
+    (version "133.0-1")
     (source
      (make-librewolf-source
       #:version version
-      #:firefox-hash "0zjwqn13rbzyxa3f63mvz5xv0158bsvr2llpqrh48davi52b2249"
-      #:librewolf-hash "1kfpcv89kh2521f3c296asjizb1swb15mfkkkrlis9ncm1gp6fw6"))
+      #:firefox-hash "0q6cqfnwc2x09frdvsndmhck8ixrnbl281j9rqw5w8bd7fd2qas9"
+      #:librewolf-hash "1xf7gx3xm3c7dhch9gwpb0xp11lcyim1nrbm8sjljxdcs7iq9jy4"))
     (build-system gnu-build-system)
     (arguments
      (list
@@ -605,7 +605,7 @@
                          (substitute* desktop-file
                            (("^Exec=@MOZ_APP_NAME@")
                             (string-append "Exec="
-                                           #$output "/bin/librewolf"))
+                                           #$output "/bin/librewolf %u"))
                            (("@MOZ_APP_DISPLAYNAME@")
                             "LibreWolf")
                            (("@MOZ_APP_REMOTINGNAME@")

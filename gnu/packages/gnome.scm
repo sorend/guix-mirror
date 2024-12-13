@@ -1571,7 +1571,7 @@ extraction, and lookup for applications on the desktop.")
 (define-public gnome-initial-setup
   (package
     (name "gnome-initial-setup")
-    (version "46.4")
+    (version "44.8")
     (source (origin
               (method url-fetch)
               (uri (string-append "mirror://gnome/sources/gnome-initial-setup/"
@@ -1579,7 +1579,7 @@ extraction, and lookup for applications on the desktop.")
                                   "/gnome-initial-setup-" version ".tar.xz"))
               (sha256
                (base32
-                "1mqvvsl161pi4sv2x6b90rfs4a2166da9rkgkcpd67pwfhgyjxmr"))))
+                "0y61y3rvz1hqmhjxl9mjwxcdvdxslyaghajav6l79a9yxi859508"))))
     (build-system meson-build-system)
     (arguments
      (list
@@ -1603,7 +1603,6 @@ extraction, and lookup for applications on the desktop.")
            pkg-config))
     (inputs
      (list accountsservice
-           dconf
            elogind
            gdm
            geoclue
@@ -2641,7 +2640,7 @@ GNOME Desktop.")
 (define-public gnome-keyring
   (package
     (name "gnome-keyring")
-    (version "46.2")
+    (version "46.1")
     (source (origin
               (method url-fetch)
               (uri (string-append "mirror://gnome/sources/" name "/"
@@ -2649,7 +2648,7 @@ GNOME Desktop.")
                                   name "-" version ".tar.xz"))
               (sha256
                (base32
-                "098ryv7xsnf5r58w8kdr6nahzhmrczjb72ycbqlg7dx8p1kcj9mz"))))
+                "1xp31iashi7n81z4halmrw53v3lnj847k4514lzqnbzz6a8sxlxi"))))
     (build-system gnu-build-system)
     (arguments
      (list
@@ -2659,7 +2658,7 @@ GNOME Desktop.")
                         #$output "/share/p11-kit/modules/")
          (string-append "--with-pkcs11-modules="
                         #$output "/share/p11-kit/modules/"))
-      #:parallel-tests? #f              ; XXX: concurrency in dbus tests
+      #:parallel-tests? (not (target-riscv64?))
       #:phases
       #~(modify-phases %standard-phases
           (add-after 'unpack 'fix-/bin/sh-reference
@@ -5098,7 +5097,7 @@ libxml to ease remote use of the RESTful API.")
 (define-public libshumate
   (package
     (name "libshumate")
-    (version "1.3.0")
+    (version "1.2.1")
     (source (origin
               (method url-fetch)
               (uri (string-append "mirror://gnome/sources/" name "/"
@@ -5106,7 +5105,7 @@ libxml to ease remote use of the RESTful API.")
                                   name "-" version ".tar.xz"))
               (sha256
                (base32
-                "1m3mvk38cjlkxmhkq0zg75msckylc0vzizll50ii5phw53lac9w2"))))
+                "04cwakbdr68nw4kh956xhf447fawz8badpyd76hg4ir1gq3yw18i"))))
     (build-system meson-build-system)
     (arguments
      (list #:phases
@@ -9468,7 +9467,7 @@ properties, screen resolution, and other GNOME parameters.")
 (define-public gnome-shell
   (package
     (name "gnome-shell")
-    (version "46.7")
+    (version "44.10")
     (source (origin
               (method url-fetch)
               (uri (string-append "mirror://gnome/sources/" name "/"
@@ -9476,7 +9475,7 @@ properties, screen resolution, and other GNOME parameters.")
                                   name "-" version ".tar.xz"))
               (sha256
                (base32
-                "0n19160ab6chcnxmwwv4m0kfz856n7851dv4ck0p08mfp39wzwhw"))))
+                "01pw9qnnvh64x56z1gqh0qk6vfn0ihh4zijq23f4bpz9wszlbpwf"))))
     (build-system meson-build-system)
     (arguments
      (let ((disallowed-references
@@ -9491,7 +9490,8 @@ properties, screen resolution, and other GNOME parameters.")
         #~(list "-Dsystemd=false"
                 ;; Otherwise, the RUNPATH will lack the final path component.
                 (string-append "-Dc_link_args=-Wl,-rpath="
-                               #$output "/lib/gnome-shell"))
+                               #$output "/lib/gnome-shell")
+                "-Dsoup2=false")
         #:modules '((guix build meson-build-system)
                     (guix build utils)
                     (ice-9 match)
@@ -9513,11 +9513,11 @@ properties, screen resolution, and other GNOME parameters.")
                 (substitute* "meson.build"
                   (("gtk_update_icon_cache: true")
                    "gtk_update_icon_cache: false"))))
-            (add-after 'unpack 'unbreak-shell-tests
+            (add-after 'unpack 'unbreak-perf-tests
               (lambda _
                 ;; Lest non-fatal dbus warnings be made fatal again…
                 (substitute* "tests/meson.build"
-                  (("shell_testenv\\.set\\('G_DEBUG'" all)
+                  (("perf_testenv\\.set\\('G_DEBUG'" all)
                    (string-append "# " all)))))
             (add-before 'configure 'record-absolute-file-names
               (lambda* (#:key inputs #:allow-other-keys)
@@ -9557,7 +9557,7 @@ properties, screen resolution, and other GNOME parameters.")
                    (lambda (prog)
                      (wrap-program (string-append #$output "/bin/" prog)
                        `("GI_TYPELIB_PATH" ":" prefix (,gi-typelib-path))))
-                   '("gnome-shell" "gnome-extensions" "gnome-extensions-app"))
+                   '("gnome-shell" "gnome-extensions-app"))
                   (substitute* (string-append #$output "/share/gnome-shell/"
                                               "org.gnome.Shell.Extensions")
                     (("imports\\.package\\.start" all)
@@ -9577,7 +9577,13 @@ properties, screen resolution, and other GNOME parameters.")
                                     "[imports.gi.GLib.getenv('GST_PLUGIN_SYSTEM_PATH'),"
                                     "'" gst-plugin-path "'].filter(v => v).join(':'),"
                                     "true);\n"
-                                    all))))))
+                                    all)))
+                  (for-each
+                   (lambda (prog)
+                     (wrap-program (string-append #$output "/bin/" prog)
+                       `("GUIX_PYTHONPATH"      ":" prefix (,python-path))
+                       `("GI_TYPELIB_PATH" ":" prefix (,gi-typelib-path))))
+                   '("gnome-shell-perf-tool")))))
             (add-after 'install 'rewire
               (lambda* (#:key inputs #:allow-other-keys)
                 (for-each
@@ -11050,7 +11056,7 @@ functionality and behavior.")
 (define-public folks
   (package
     (name "folks")
-    (version "0.15.9")
+    (version "0.15.8")
     (source (origin
               (method url-fetch)
               (uri (string-append
@@ -11059,13 +11065,10 @@ functionality and behavior.")
                     "folks-" version ".tar.xz"))
               (sha256
                (base32
-                "0ps1243l4vladlylj6f3h830lam2fi43kp1z2qzz6lf3amrv6493"))))
+                "1hj9brran2azy3scyf913svhxjrmya83fi7x239h33rp7vxnljlm"))))
     (build-system meson-build-system)
     (arguments
-     '(;; Tests are broken since GLib 2.80
-       ;; See <https://gitlab.gnome.org/GNOME/folks/-/issues/140>.
-       #:tests? #f
-       #:phases
+     '(#:phases
        (modify-phases %standard-phases
          (add-after 'unpack 'skip-gtk-update-icon-cache
            ;; Don't create 'icon-theme.cache'.
@@ -12466,7 +12469,6 @@ higher level porcelain stuff.")
     (build-system meson-build-system)
     (arguments
      (list
-      #:meson meson-1.5                 ; XXX: breaks with Meson 1.2
       #:glib-or-gtk? #t
       #:build-type "release"            ; don't look at -Wformat…
       #:phases
@@ -14312,7 +14314,6 @@ or @acronym{RDP, Remote Desktop Protocol}.")
     (build-system meson-build-system)
     (arguments
      (list
-      #:meson meson-1.5
       #:phases
       #~(modify-phases %standard-phases
           (add-after 'unpack 'disable-gtk-update-icon-cache
