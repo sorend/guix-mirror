@@ -56,6 +56,7 @@
   #:use-module (gnu packages networking)
   #:use-module (gnu packages pkg-config)
   #:use-module (gnu packages python-xyz)
+  #:use-module (gnu packages python-build)
   #:use-module (gnu packages python-check)
   #:use-module (gnu packages rust-apps)
   #:use-module (gnu packages selinux)
@@ -67,7 +68,7 @@
 (define-public crun
   (package
     (name "crun")
-    (version "1.18.2")
+    (version "1.19.1")
     (source
      (origin
        (method url-fetch)
@@ -77,7 +78,7 @@
              "/crun-" version ".tar.gz"))
        (sha256
         (base32
-         "0hj4nb65pg4bv0ki04mrfirjac96d4bkv94pnp63cb73k2ik1mgx"))))
+         "1hf8ggkw9wiznlp7xarjjrmhgpdmqxzaq0a41wd18h360s1z5a9j"))))
     (build-system gnu-build-system)
     (arguments
      (list
@@ -339,7 +340,7 @@ Layer-4 sockets.")
 (define-public cni-plugins
   (package
     (name "cni-plugins")
-    (version "1.6.0")
+    (version "1.6.1")
     (source
      (origin
        (method git-fetch)
@@ -347,7 +348,7 @@ Layer-4 sockets.")
              (url "https://github.com/containernetworking/plugins")
              (commit (string-append "v" version))))
        (sha256
-        (base32 "03x9ql50gg97cixq3cs5lr5anl283irhvc9q9f8aim3xzmrpqfgf"))
+        (base32 "164savm1iic5ax2xi4zgy9lm7wk8kjy22n4is463lj9rkbp4s6xn"))
        (file-name (git-file-name name version))))
     (build-system go-build-system)
     (arguments
@@ -437,15 +438,16 @@ The binary is called @command{gvproxy}.")
 (define-public catatonit
   (package
     (name "catatonit")
-    (version "0.2.0")
+    (version "0.2.1")
     (source
      (origin
-       (method url-fetch)
-       (uri (string-append
-             "https://github.com/openSUSE/catatonit/releases/download/v"
-             version "/catatonit.tar.xz"))
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/openSUSE/catatonit/")
+             (commit (string-append "v" version))))
+       (file-name (git-file-name name version))
        (sha256
-        (base32 "141b5lypgqib546zmldi4kqzpqfd6vvqddqqkfaz3w11fjsc4hwq"))))
+        (base32 "14vh0xpg6lzmh7r52vi9w1qfc14r7cfhfrbca7q5fg62d3hx7kxi"))))
     (build-system gnu-build-system)
     (native-inputs
      (list autoconf automake libtool))
@@ -593,7 +595,7 @@ To get @code{podman machine} working, install @code{qemu-minimal}, and
     (arguments
      (list
       #:test-flags #~(list "pytests")))
-    (native-inputs (list python-pytest python-parameterized))
+    (native-inputs (list python-pytest python-parameterized python-setuptools python-wheel))
     (propagated-inputs (list python-dotenv python-pyyaml))
     (home-page "https://github.com/containers/podman-compose")
     (synopsis "Script to run docker-compose.yml using podman")

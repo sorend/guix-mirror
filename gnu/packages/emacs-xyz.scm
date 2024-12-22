@@ -1590,7 +1590,7 @@ configuration files, such as @file{.gitattributes}, @file{.gitignore}, and
 (define-public emacs-with-editor
   (package
     (name "emacs-with-editor")
-    (version "3.4.2")
+    (version "3.4.3")
     (source
      (origin
        (method git-fetch)
@@ -1599,7 +1599,7 @@ configuration files, such as @file{.gitattributes}, @file{.gitignore}, and
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "1k86z7zjvs5mbxirxvn190ya7fj1vdzps5cm0659hh32373c1l7s"))))
+        (base32 "0h21qs60qihv4p72x5wbmc0xly4g74wc25qj8m9slfbc4am9mwys"))))
     (build-system emacs-build-system)
     (arguments
      (list
@@ -1769,7 +1769,7 @@ before interacting with non-free LLMs.")
 (define-public emacs-magit
   (package
     (name "emacs-magit")
-    (version "4.1.1")
+    (version "4.1.3")
     (source
      (origin
        (method git-fetch)
@@ -1778,7 +1778,7 @@ before interacting with non-free LLMs.")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "1ckjq068728wwfm4fv0z4rrdmrj09zvarip2s5rqdr8ny722dxfn"))))
+        (base32 "0nggfqywxdnnzaw4vqn1m6h8qklyp7cwbaxxsnkr5pjcwn5nz69v"))))
     (build-system emacs-build-system)
     (arguments
      (list
@@ -7799,8 +7799,8 @@ Emacs, inspired by @code{Dracula} theme.")
       (license license:gpl3+))))
 
 (define-public emacs-zig-mode
-  (let ((commit "f55e42536a3f34b81198b856595dc3a61867aa3e")
-        (revision "1"))
+  (let ((commit "f0b4a487530146f99230f4a5ff67e8d56c8f3f80")
+        (revision "2"))
     (package
       (name "emacs-zig-mode")
       (version (git-version "0.0.8" revision commit))
@@ -7812,7 +7812,7 @@ Emacs, inspired by @code{Dracula} theme.")
                (commit commit)))
          (file-name (git-file-name name version))
          (sha256
-          (base32 "1s0p6dijg2zdzhw2mpyajwnsx6g28swgzpy63g8yn72718rq31kn"))))
+          (base32 "1cm4wvddvqyjhlp7wngls1lapsiq1n14qgi1ygiq3w2vryg96s1v"))))
       (build-system emacs-build-system)
       (arguments
        (list
@@ -7820,6 +7820,7 @@ Emacs, inspired by @code{Dracula} theme.")
         #:emacs emacs
         #:test-command #~(list "emacs" "--batch"
                                "-l" "zig-mode.el"
+                               "-l" "test/zig-tests.el"
                                "-f" "ert-run-tests-batch-and-exit")))
       (propagated-inputs (list emacs-reformatter))
       (home-page "https://github.com/ziglang/zig-mode/")
@@ -9761,14 +9762,14 @@ by a query, so both a link can refer to several mails.")
 (define-public emacs-debbugs
   (package
     (name "emacs-debbugs")
-    (version "0.41")
+    (version "0.42")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "https://elpa.gnu.org/packages/debbugs-"
                            version ".tar"))
        (sha256
-        (base32 "0nchb7dnkrn34nh3bi0k5xmsn3da9m9v4iksh18045mfj6wn6bl5"))))
+        (base32 "0n0kvkyzggn8q72dpy6c7rsjwn1rjx0r33y5jc080j7sw85xpigg"))))
     (build-system emacs-build-system)
     (arguments '(#:include '("\\.el$" "\\.wsdl$" "\\.info$")))
     (propagated-inputs

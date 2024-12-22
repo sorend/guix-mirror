@@ -101,7 +101,12 @@ devices on various operating systems.")
                           "libusb-compat-" version "/"
                           "libusb-compat-" version ".tar.bz2"))
       (sha256
-       (base32 "09q8w00djrkaxbiklcgjwya1w0n3aqavsz06fl0ixv1x9x47d339"))))
+       (base32 "0p5hz5q1ppd4d2wwhzfp4vwh6ngfwh627j73pv0chw60fkvdr4mn"))
+      (snippet #~(begin
+                   ;; Delete Autotools-generated files.
+                   (use-modules (guix build utils))
+                   (delete-file "configure")
+                   (for-each delete-file (find-files "^Makefile\\.in$"))))))
     (build-system gnu-build-system)
     (arguments
      (list #:configure-flags
@@ -738,6 +743,7 @@ HID-Class devices.")
                           "    '" libhidapi-hidraw.so "',\n"
                           "    '" libhidapi-libusb.so "',\n")))))))))
     (inputs (list hidapi))
+    (native-inputs (list python-setuptools python-wheel))
     (home-page "https://github.com/apmorton/pyhidapi")
     (synopsis "Python @code{ctypes} bindings for HIDAPI library")
     (description "Python @code{ctypes} bindings for HIDAPI library.")

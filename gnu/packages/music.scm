@@ -1766,14 +1766,14 @@ scores.")
 (define-public music21
   (package
     (name "music21")
-    (version "7.1.0")
+    (version "9.3.0")
     (source
-      (origin
-        (method url-fetch)
-        (uri (pypi-uri "music21" version))
-        (sha256
-          (base32 "17v2id8qm99xqymqsdczq173fmbdha4w109ahh8j1d9l5a7mqc86"))))
-    (build-system python-build-system)
+     (origin
+       (method url-fetch)
+       (uri (pypi-uri "music21" version))
+       (sha256
+        (base32 "0jjgyyzw527h026zr2pphj7ba1pda46mi03j0djc2bh6l9ywdx0c"))))
+    (build-system pyproject-build-system)
     (arguments
      `(#:phases
        (modify-phases %standard-phases
@@ -1783,9 +1783,16 @@ scores.")
                (add-installed-pythonpath inputs outputs)
                ;; See: https://github.com/cuthbertLab/music21/issues/1164
                (invoke "python" "-m" "music21.stream.tests")))))))
+    (native-inputs (list python-hatchling))
     (propagated-inputs
-      (list python-chardet python-joblib python-more-itertools
-            python-webcolors))
+     (list python-chardet
+           python-joblib
+           python-jsonpickle
+           python-matplotlib
+           python-more-itertools
+           python-numpy
+           python-requests
+           python-webcolors))
     (home-page "https://web.mit.edu/music21/")
     (synopsis "Toolkit for Computational Musicology")
     (description
@@ -1797,8 +1804,7 @@ listeners answer questions about music quickly and simply.")
 (define-public abjad
   (package
     (name "abjad")
-    ;; XXX: The latest version which supports current Guix's Python 3.9.9.
-    (version "3.4")
+    (version "3.19")
     (source
      (origin
        (method git-fetch)
@@ -1807,36 +1813,12 @@ listeners answer questions about music quickly and simply.")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "0s63vk9fifp0im9c31kb9ck39mbaxhrls993d8fvg0nkg41z1jnz"))))
+        (base32 "1cgcnmwzxx2hr21pqm1hbsknpad748yw3gf7jncsb3w1azhjypzm"))))
     (build-system pyproject-build-system)
-    (arguments
-     (list
-      #:phases
-      #~(modify-phases %standard-phases
-          ;; XXX. Permit newer version of uqbar, remove for >3.4. Remove in
-          ;; the next update.
-          (add-after 'unpack 'loosen-requirements
-            (lambda _
-              (substitute* "setup.py"
-                ((", <0\\.5\\.0") ""))))
-          ;; FIXME: Check why it's failing with this: Note: compilation failed
-          ;; and \version outdated, did you update input syntax with
-          ;; convert-ly?
-          (add-before 'check 'disable-failing-tests
-            (lambda _
-              (substitute* "tests/test_ext_sphinx.py"
-                (("def test_ext_sphinx_01") "def __off_test_ext_sphinx_01")))))))
     (inputs
      (list lilypond))
     (native-inputs
-     (list python-flake8
-           python-isort
-           python-mypy
-           python-pytest
-           python-pytest-cov
-           python-pytest-helpers-namespace
-           python-six
-           python-sphinx-autodoc-typehints))
+     (list python-pytest python-setuptools python-wheel))
     (propagated-inputs
      (list python-quicktions
            python-ply
@@ -1856,7 +1838,7 @@ typographic detail of symbols on the page.")
 (define-public abjad-ext-rmakers
   (package
     (name "abjad-ext-rmakers")
-    (version "3.4")
+    (version "3.19")
     (source
      (origin
        (method git-fetch)
@@ -1865,20 +1847,10 @@ typographic detail of symbols on the page.")
          (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32
-         "0wma9vzn42h1rhbzh2dwjsrzjhsi1yqdgn6wx1dfk78vaki6prd8"))))
+        (base32 "1y8s55b4mlsigm0xkk6qjpp08c75rv0swvjp0lj3cs6lgqdjxdjl"))))
     (build-system pyproject-build-system)
     (native-inputs
-     (list lilypond
-           python-black
-           python-flake8
-           python-iniconfig
-           python-isort
-           python-mypy
-           python-pytest
-           python-pytest-cov
-           python-pytest-helpers-namespace
-           python-sphinx-autodoc-typehints))
+     (list lilypond python-pytest python-setuptools python-wheel))
     (propagated-inputs
      (list abjad))
     (home-page "https://abjad.github.io")
@@ -1891,7 +1863,7 @@ and manipulating rhythms such as accelerandi, taleas, and more.")
 (define-public abjad-ext-nauert
   (package
     (name "abjad-ext-nauert")
-    (version "3.4")
+    (version "3.19")
     (source
      (origin
        (method git-fetch)
@@ -1900,20 +1872,10 @@ and manipulating rhythms such as accelerandi, taleas, and more.")
          (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32
-         "05hr2lr6myzi493k8vc19cqzraxxnbdwlckwbnras19l5g5ns38x"))))
+        (base32 "0j4pf4h27jm3df0dn2rwkdx6zqcxvr7pqchbaa9rffz7q4hbakmf"))))
     (build-system pyproject-build-system)
     (native-inputs
-     (list lilypond
-           python-black
-           python-flake8
-           python-iniconfig
-           python-isort
-           python-mypy
-           python-pytest
-           python-pytest-cov
-           python-pytest-helpers-namespace
-           python-sphinx-autodoc-typehints))
+     (list lilypond python-pytest python-setuptools python-wheel))
     (propagated-inputs
      (list abjad))
     (home-page "https://abjad.github.io")
@@ -1921,59 +1883,6 @@ and manipulating rhythms such as accelerandi, taleas, and more.")
     (description
      "@code{abjad-ext-nauert} provides classes for dealing with composer and
 music theorist Paul Nauert's quantization grids or Q-Grids, for short.")
-    (license license:expat)))
-
-(define-public abjad-ext-ipython
-  (package
-    (name "abjad-ext-ipython")
-    (version "3.3")
-    (source
-     (origin
-       (method git-fetch)
-       (uri (git-reference
-         (url "https://github.com/Abjad/abjad-ext-ipython")
-         (commit (string-append "v" version))))
-       (file-name (git-file-name name version))
-       (sha256
-        (base32
-         "1vv0alpiz0gf5lgjfvlh4km72dvrxfqkwzxl3k4amzci3i0jzbs2"))))
-    (build-system python-build-system)
-    (arguments
-     ;; UnboundLocalError: local variable 'output_path' referenced before assignment
-     `(#:tests? #f
-       #:phases
-       (modify-phases %standard-phases
-         (add-after 'unpack 'loosen-requirements
-           (lambda _
-             (substitute* "setup.py"
-               ;; Don't require a specific version of abjad.
-               (("abjad==")
-                "abjad>="))))
-         (replace 'check
-           (lambda* (#:key tests? inputs outputs #:allow-other-keys)
-             (when tests?
-               (setenv "HOME" (getcwd))
-               (add-installed-pythonpath inputs outputs)
-               ;; From 'make jupyter-test'
-               (invoke "jupyter" "nbconvert" "--to=html"
-               "--ExecutePreprocessor.enabled=True" "tests/test.ipynb")))))))
-    (native-inputs
-     (list lilypond
-           python-black
-           python-flake8
-           python-iniconfig
-           python-isort
-           python-mypy
-           python-pytest
-           python-pytest-cov
-           python-pytest-helpers-namespace))
-    (propagated-inputs
-     (list abjad jupyter python-sphinx-autodoc-typehints))
-    (home-page "https://abjad.github.io")
-    (synopsis "Abjad IPython Extension")
-    (description
-     "@code{abjad-ext-ipython} makes it possible to embed music notation in
-@code{jupyter} notebooks.")
     (license license:expat)))
 
 (define-public non-sequencer
@@ -2491,7 +2400,7 @@ a JACK session.")
 (define-public mixxx
   (package
     (name "mixxx")
-    (version "2.4.1")
+    (version "2.4.2")
     (source
      (origin
        (method git-fetch)
@@ -2500,7 +2409,7 @@ a JACK session.")
              (commit version)))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "0cfdgrxfhck6cg4j9mb2rdp06n57kca1403qw92c3pmk1y05grq4"))
+        (base32 "1xvmha9q2f1gclb5js09l511v3b5zbp3gnbrz11q681cp924byk1"))
        (modules '((guix build utils)))
        (snippet
         ;; Delete libraries that we already have or don't need.
@@ -4099,14 +4008,14 @@ formats, looking up tracks through metadata and audio fingerprints.")
 (define-public python-mutagen
   (package
     (name "python-mutagen")
-    (version "1.45.1")
+    (version "1.47.0")
     (source (origin
               (method url-fetch)
               (uri (pypi-uri "mutagen" version))
               (sha256
                (base32
-                "1qdk6i8gyhbi1c4j5jmbfpac3q8sff2ysri1pnp7nb9wzcp615v3"))))
-    (build-system python-build-system)
+                "16gwy04xxc8p4650f8r0nd46k2y5ndhn559wrys3334p1bpsv7vi"))))
+    (build-system pyproject-build-system)
     (arguments
      (list
        #:phases
@@ -4119,7 +4028,11 @@ formats, looking up tracks through metadata and audio fingerprints.")
                  (("( +)@given" all spaces)
                   (string-append spaces "@settings(deadline=None)\n" all))))))))
     (native-inputs
-     (list python-pytest python-hypothesis python-flake8))
+     (list python-flake8
+           python-hypothesis
+           python-pytest
+           python-setuptools
+           python-wheel))
     (home-page "https://mutagen.readthedocs.io/")
     (synopsis "Read and write audio tags")
     (description "Mutagen is a Python module to handle audio metadata.  It
@@ -4134,17 +4047,26 @@ streams on an individual packet/page level.")
 (define-public python-mediafile
   (package
     (name "python-mediafile")
-    (version "0.8.0")
+    (version "0.13.0")
     (source
      (origin
        (method url-fetch)
        (uri (pypi-uri "mediafile" version))
        (sha256
         (base32
-         "0ipb001j19s9wvssmrj8wz0nrkbl0k3zr3dgzyp1bd9cjc6vklnp"))))
-    (build-system python-build-system)
+         "0vcsf9607jxh3bw2fn0hc3krr2mcgpm2dmfadhyp7sgz3cz0cwfy"))))
+    (build-system pyproject-build-system)
+    (arguments
+     (list
+      ;; One test fails with: AssertionError: 88200 != 705600.
+      #:test-flags
+      #~(list "--deselect=test/test_mediafile.py::WAVETest::test_read_audio_properties")))
+    (native-inputs
+     (list python-flit-core
+           python-pytest))
     (propagated-inputs
-     (list python-mutagen python-six))
+     (list python-mutagen
+           python-filetype))
     (home-page "https://github.com/beetbox/mediafile")
     (synopsis "Read and write audio file tags")
     (description
@@ -4259,44 +4181,41 @@ websites such as Libre.fm.")
 (define-public beets
   (package
     (name "beets")
-    (version "1.6.0")
+    (version "2.0.0")
     (source (origin
               (method url-fetch)
               (uri (pypi-uri "beets" version))
               (sha256
                (base32
-                "0paj2nxvdx4zz9xawjpbsh0dy1kp9kfhxg8akh1rpz2awhsbfvxa"))))
-    (build-system python-build-system)
+                "1kzqn6f3iw30lav9cwf653w2ns1n09yrys54dqxf6a9ppjsp449v"))))
+    (build-system pyproject-build-system)
     (arguments
-     `(#:phases
-       (modify-phases %standard-phases
-         (add-after 'unpack 'set-HOME
-           (lambda _
-             (setenv "HOME" (string-append (getcwd) "/tmp"))
-             #t))
-         (replace 'check
-           (lambda* (#:key tests? #:allow-other-keys)
-             (when tests?
-               (invoke "pytest" "-v" "test"))))
-         ;; Wrap the executable, so it can find python-gi (aka
-         ;; pygobject) and gstreamer plugins.
-         (add-after 'wrap 'wrap-typelib
-           (lambda* (#:key outputs #:allow-other-keys)
-             (let ((prog (string-append (assoc-ref outputs "out")
-                                        "/bin/beet"))
-                   (plugins (getenv "GST_PLUGIN_SYSTEM_PATH"))
-                   (types (getenv "GI_TYPELIB_PATH")))
-               (wrap-program prog
-                 `("GST_PLUGIN_SYSTEM_PATH" ":" prefix (,plugins))
-                 `("GI_TYPELIB_PATH" ":" prefix (,types)))
-               #t))))))
+     (list
+      #:phases
+      #~(modify-phases %standard-phases
+          (add-after 'unpack 'set-HOME
+            (lambda _
+              (setenv "HOME" (string-append (getcwd) "/tmp"))))
+          ;; Wrap the executable, so it can find python-gi (aka
+          ;; pygobject) and gstreamer plugins.
+          (add-after 'wrap 'wrap-typelib
+            (lambda* (#:key outputs #:allow-other-keys)
+              (let ((prog (string-append #$output "/bin/beet"))
+                    (plugins (getenv "GST_PLUGIN_SYSTEM_PATH"))
+                    (types (getenv "GI_TYPELIB_PATH")))
+                (wrap-program prog
+                  `("GST_PLUGIN_SYSTEM_PATH" ":" prefix (,plugins))
+                  `("GI_TYPELIB_PATH" ":" prefix (,types)))))))))
     (native-inputs
      (list gobject-introspection
            python-flask
            python-mock
            python-py7zr
            python-pytest
-           python-responses))
+           python-pytest-cov
+           python-setuptools
+           python-responses
+           python-wheel))
     (inputs
      (list bash-minimal
            gst-plugins-base
@@ -4333,9 +4252,9 @@ Then it provides a variety of tools for manipulating and accessing
 your music.")
     (license license:expat)))
 
-(define-public beets-next
-  (deprecated-package "beets-next" beets))
-
+;;; XXX: The original project is abandoned for 4y, see
+;;; <https://github.com/unrblt/beets-bandcamp/issues/15>, this package may be
+;;; sourced from maintained fork <https://github.com/snejus/beetcamp>.
 (define-public beets-bandcamp
   (package
     (name "beets-bandcamp")

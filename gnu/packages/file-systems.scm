@@ -1563,16 +1563,16 @@ with the included @command{xfstests-check} helper.")
 (define-public zfs
   (package
     (name "zfs")
-    (version "2.2.6")
+    (version "2.2.7")
     (outputs '("out" "module" "src"))
     (source
       (origin
         (method url-fetch)
-          (uri (string-append "https://github.com/openzfs/zfs/releases"
-                              "/download/zfs-" version
-                              "/zfs-" version ".tar.gz"))
-          (sha256
-           (base32 "19x2a8k25i3y6nr7nx5aaqrpnp55vjmrw86p06zpgpf578804bn9"))))
+        (uri (string-append "https://github.com/openzfs/zfs/releases"
+                            "/download/zfs-" version
+                            "/zfs-" version ".tar.gz"))
+        (sha256
+         (base32 "0wkniyfjmbvyyfqv35fhbdx58qk7rck3f91j05x419pjmfzy7f5j"))))
     (build-system linux-module-build-system)
     (arguments
      (list
@@ -2049,6 +2049,15 @@ the XDG directory specification from @file{~/.@var{name}} to
        (sha256
         (base32 "03aw8pw8694jyrzpnbry05rk9718sqw66kiyq878bbb679gl7224"))))
     (build-system gnu-build-system)
+    (arguments
+     (list
+      #:phases
+      #~(modify-phases %standard-phases
+          (add-after 'unpack 'fix-cross-compile
+            (lambda _
+              (substitute* "autogen.sh"
+                (("pkg-config")
+                 #$(pkg-config-for-target))))))))
     (native-inputs (list autoconf automake libtool pkg-config))
     (inputs (list attr fuse-2 xz zlib `(,zstd "lib")))
     (home-page "https://github.com/vasi/squashfuse")
@@ -2063,17 +2072,18 @@ memory-efficient.")
     (package
       (inherit squashfuse)
       (arguments
-       (list
+       (cons*
         #:configure-flags
         #~'("CFLAGS=-ffunction-sections -fdata-sections -Os -no-pie"
             "LDFLAGS=-static")
-        #:phases
-        #~(modify-phases %standard-phases
-            (add-after 'install 'install-private-headers
-              (lambda _
-                (install-file "fuseprivate.h"
-                              (string-append #$output
-                                             "/include/squashfuse/")))))))
+        (substitute-keyword-arguments (package-arguments squashfuse)
+          ((#:phases phases)
+           #~(modify-phases #$phases
+               (add-after 'install 'install-private-headers
+                 (lambda _
+                   (install-file "fuseprivate.h"
+                                 (string-append #$output
+                                                "/include/squashfuse/")))))))))
       (inputs (list fuse-for-appimage
                     `(,zstd "lib")
                     `(,zstd "static")

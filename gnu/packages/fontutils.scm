@@ -532,7 +532,11 @@ converts any cubic curves to quadratic.  The most useful function is probably
        (sha256
         (base32 "1rg2997af8blvswlwif0kpz2vxrlh555gzqslz6yv9y7i7v8lphl"))))
     (build-system pyproject-build-system)
-    (native-inputs (list python-pytest python-setuptools-scm))
+    (native-inputs
+     (list python-pytest
+           python-setuptools-scm
+           python-setuptools
+           python-wheel))
     (propagated-inputs
      (list python-booleanoperations
            python-cffsubr
@@ -679,7 +683,8 @@ process.  FontParts is the successor of RoboFab.")
                        "--ignore=tests/builder/interpolation_test.py")))
     (native-inputs
      (list python-setuptools-scm
-
+           python-setuptools
+           python-wheel
            ;; For tests.
            python-pytest
            python-xmldiff))
@@ -859,6 +864,7 @@ suite of the @code{psautohint} package.")
            python-pytest-cov
            python-pytest-xdist
            python-setuptools-scm
+           python-setuptools
            python-wheel))
     (home-page "https://github.com/adobe-type-tools/psautohint")
     (synopsis "Adobe's PostScript autohinter")
@@ -1001,20 +1007,20 @@ value (e.g. @samp{x=\"95.0\"} becomes @samp{x=\"95\"})
 @end itemize")
     (license license:bsd-3)))
 
-(define-public fontobene-qt5
+(define-public fontobene-qt
   (package
-    (name "fontobene-qt5")
-    (version "0.2.0")
+    (name "fontobene-qt")
+    (version "1.0.0")
     (source (origin
               (method git-fetch)
               (uri (git-reference
-                    (url "https://github.com/fontobene/fontobene-qt5")
+                    (url "https://github.com/fontobene/fontobene-qt")
                     (commit version)))
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "0gy3sfraf23k7dm4ha8nqpd6madzk0zmxkcb204micyn5b5l8ljg"))))
-    (inputs (list qtbase-5))
+                "098ys33l563hjyzm6azzw8kmlybja374vacakczwhh2k3ifn37r9"))))
+    (inputs (list qtbase))
     (build-system cmake-build-system)
     (arguments
      `(#:phases
@@ -1022,13 +1028,16 @@ value (e.g. @samp{x=\"95.0\"} becomes @samp{x=\"95\"})
          (replace 'check
            (lambda* (#:key tests? #:allow-other-keys)
              (when tests?
-               (invoke "./tests/fontobene-qt5-tests")))))))
+               (invoke "./tests/fontobene-qt-tests")))))))
     (home-page "https://github.com/fontobene/fontobene-qt5")
     (synopsis "Parser for FontoBene stroke fonts")
-    (description "FontoBene-Qt5 is a header-only library to parse FontoBene
-stroke fonts with C++11/Qt5.")
+    (description "FontoBene-Qt is a header-only library to parse FontoBene
+stroke fonts with C++11/Qt.")
     ;; Dual-licensed, either license applies.
     (license (list license:asl2.0 license:expat))))
+
+(define-public fontobene-qt5
+  (deprecated-package "fontobene-qt5" fontobene-qt))
 
 (define-public ttfautohint
   (package
@@ -1782,8 +1791,13 @@ with @samp{nameIDs}.")
         (base32 "0yx4i8q5rfyqhr2fj70a7z1bp1jv7bdlr64ww9z4nv9ycbda4x9j"))))
     (build-system pyproject-build-system)
     (native-inputs
-     (list python-pytest python-setuptools-scm))
-    (propagated-inputs (list python-attrs python-fonttools))
+     (list python-pytest
+           python-setuptools
+           python-setuptools-scm
+           python-wheel))
+    (propagated-inputs
+     (list python-attrs
+           python-fonttools))
     (home-page "https://github.com/fonttools/ufoLib2")
     (synopsis "Unified Font Object (UFO) font processing library")
     (description "The ufoLib2 Python library is meant to be a thin

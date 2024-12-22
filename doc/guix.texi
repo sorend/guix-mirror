@@ -1824,6 +1824,14 @@ this binary incompatibility problem because those @code{libnss_*.so}
 files are loaded in the @command{nscd} process, not in applications
 themselves.
 
+@cindex nsncd, replacement for nscd
+Note that @command{nscd} is no longer provided on some GNU/Linux
+distros, such as Arch Linux (as of Dec. 2024).  @command{nsncd} can be
+used as a drop-in-replacement.  See
+@uref{https://github.com/twosigma/nsncd, the nsncd repository} and
+@uref{https://flokli.de/posts/2022-11-18-nsncd/, this blog post} for
+more information.
+
 @subsection X11 Fonts
 
 @cindex fonts
@@ -8061,8 +8069,8 @@ inputs.
 Look up @var{name} among @var{package}'s inputs (or native, propagated,
 or direct inputs).  Return it if found, @code{#f} otherwise.
 
-@var{name} is the name of a package depended on.  Here's how you might
-use it:
+@var{name} is the name of a package or the file name of an origin
+depended on.  Here's how you might use it:
 
 @lisp
 (use-modules (guix packages) (gnu packages base))
@@ -8073,6 +8081,10 @@ use it:
 
 In this example we obtain the @code{gmp} package that is among the
 direct inputs of @code{coreutils}.
+
+When looking up an origin, use the name that appears in the origin's
+@code{file-name} field or its default file name---e.g.,
+@code{"foo-1.2.tar.gz"}.
 @end deffn
 
 @cindex development inputs, of a package
@@ -8653,12 +8665,16 @@ Dependency graph rewriting, for the purposes of swapping packages in the
 graph, is what the @code{package-input-rewriting} procedure in
 @code{(guix packages)} implements.
 
-@deffn {Procedure} package-input-rewriting replacements [rewrite-name] [#:deep? #t]
+@deffn {Procedure} package-input-rewriting replacements [rewrite-name] @
+  [#:deep? #t] [#:recursive? #f]
 Return a procedure that, when passed a package, replaces its direct and
 indirect dependencies, including implicit inputs when @var{deep?} is
 true, according to @var{replacements}.  @var{replacements} is a list of
 package pairs; the first element of each pair is the package to replace,
 and the second one is the replacement.
+
+When @var{recursive?} is true, apply replacements to the right-hand sides of
+@var{replacements} as well, recursively.
 
 Optionally, @var{rewrite-name} is a one-argument procedure that takes
 the name of a package and returns its new name after rewrite.
@@ -9922,6 +9938,18 @@ The API is slightly different from @var{python-build-system}:
 @itemize
 @item
 @code{#:use-setuptools?} and @code{#:test-target} is removed.
+@item
+@code{#:configure-flags} is changed. Instead of a list
+this option must be a JSON object, whose interpretation
+depends on the build backend. For instance the example from
+@url{https://peps.python.org/pep-0517/#config-settings,PEP 517}
+should be written as @code{'(@@ ("CC" "gcc") ("--global-option"
+("--some-global-option")) ("--build-option" ("--build-option1"
+"--build-option2")))}
+@item
+@code{#:backend-path} is added.  It defaults to @code{#false}, but when
+set to a list it will be appended to Python’s search path and overrides
+the definition in @file{pyproject.toml}.
 @item
 @code{#:build-backend} is added.  It defaults to @code{#false} and will try
 to guess the appropriate backend based on @file{pyproject.toml}.
@@ -18824,6 +18852,13 @@ Note that the ``root'' account is not included here.  It is a
 special-case and is automatically added whether or not it is specified.
 @end defvar
 
+@cindex containers, subordinate IDs
+The Linux kernel also implements @dfn{subordinate user and group IDs},
+or ``subids'', which are used to map the ID of a user and group to
+several IDs inside separate name spaces---inside ``containers''.
+@xref{subordinate-user-group-ids, the subordinate user and group ID
+service}, for information on how to configure it.
+
 @node Keyboard Layout
 @section Keyboard Layout
 
@@ -19417,7 +19452,53 @@ When set to @code{#t} in conjunction with @var{auto-login}, the user
 will have to press a key before the log-in shell is launched.
 
 @item @code{clear-on-logout?} (default: @code{#t})
-When set to @code{#t}, the screen will be cleared after logout.
+When set to @code{#t}, the screen will be cleared before showing the
+login prompt.  The field name is bit unfortunate, since it controls
+clearing also before the initial login, not just after a logout.
+
+@item @code{delay} (default: @code{#f})
+When set to a number, sleep that many seconds after startup.
+
+@item @code{print-issue} (default: @code{#t})
+When set to @code{#t}, write out a new line and the content of
+@file{/etc/issue}.  Value of @code{'no-nl} can be used to suppress the
+new line.
+
+@item @code{print-hostname} (default: @code{#t})
+When set to @code{#t}, print the host name before the login prompt.  The
+host name is printed up to the first dot.  Can be set to @code{'long} to
+print the full host name.
+
+@item @code{nice} (default: @code{#f})
+When set to a number, change the process priority using @code{nice}.
+
+@item @code{working-directory} (default: @code{#f})
+When set to a string, change into that directory before calling the
+login program.
+
+@item @code{root-directory} (default: @code{#f})
+When set to a string, use this directory at the process's root
+directory.
+
+@item @code{shepherd-requirement}
+List of shepherd requirements.  Unless you know what you are doing, it
+is recommended to extend the default list instead of overriding it.
+
+As an example, when using auto-login on a system with elogind, it is
+necessary to wait on the @code{'dbus-system} service:
+
+@lisp
+(modify-services %base-services
+  (mingetty-service-type config =>
+                         (mingetty-configuration
+                          (inherit config)
+                          ;; Automatically log in as "guest".
+                          (auto-login "guest")
+                          (shepherd-requirement
+                           (cons 'dbus-system
+                                 (mingetty-configuration-shepherd-requirement
+                                  config))))))
+@end lisp
 
 @item @code{mingetty} (default: @var{mingetty})
 The Mingetty package to use.
@@ -40199,6 +40280,12 @@ Extra command line options for @code{guix-data-service}.
 @item @code{extra-process-jobs-options} (default: @var{'()})
 Extra command line options for @code{guix-data-service-process-jobs}.
 
+@item @code{git-repositories} (default: @var{#f})
+List of git-repository information to insert into the database.
+
+@item @code{build-servers} (default: @var{#f})
+List of build-server information to insert into the database.
+
 @end table
 @end deftp
 
@@ -41209,6 +41296,116 @@ setuid-root (@pxref{Privileged Programs}) such that unprivileged users can
 invoke @command{singularity run} and similar commands.
 @end defvar
 
+@cindex Rootless Podman
+@subsubheading Rootless Podman Service
+
+@cindex rootless podman, container management tool
+@cindex podman, rootless
+@cindex container management, podman
+The @code{(gnu services containers)} module provides the following service.
+
+
+@defvar rootless-podman-service-type
+This is the service type for @url{https://podman.io, Podman} is a
+container management tool.
+
+In addition to providing a drop-in replacement for Docker, Podman offers
+the ability to run containers in ``root-less'' mode, meaning that regular users can
+deploy containers without elevated privileges.  It does so mainly by leveraging
+two Linux kernel features: unprivileged user namespaces, and subordinate
+user and group IDs (@pxref{subordinate-user-group-ids, the subordinate
+user and group ID service}).
+
+The @code{rootless-podman-service-type} sets up the system to allow
+unprivileged users to run @command{podman} commands:
+
+@lisp
+(use-service-modules containers networking @dots{})
+
+(operating-system
+  ;; @dots{}
+  (users (cons (user-account
+                (name "alice")
+                (comment "Bob's sister")
+                (group "users")
+
+                ;; Adding the account to the "cgroup" group
+                ;; makes it possible to run podman commands.
+                (supplementary-groups '("cgroup" "wheel"
+                                        "audio" "video")))
+               %base-user-accounts))
+  (services
+    (append (list (service iptables-service-type)
+                  (service rootless-podman-service-type
+                           (rootless-podman-configuration
+                             (subgids
+                               (list (subid-range (name "alice"))))
+                             (subuids
+                               (list (subid-range (name "alice")))))))
+            %base-services)))
+@end lisp
+
+The @code{iptables-service-type} is required for Podman to be able to setup its
+own networks.  Due to the change in user groups and file systems it is
+recommended to reboot (or at least logout), before trying to run Podman commands.
+
+To test your installation you can run:
+
+@example
+$ podman run -it --rm docker.io/alpine cat /etc/*release*
+NAME="Alpine Linux"
+ID=alpine
+VERSION_ID=3.20.2
+PRETTY_NAME="Alpine Linux v3.20"
+HOME_URL="https://alpinelinux.org/"
+BUG_REPORT_URL="https://gitlab.alpinelinux.org/alpine/aports/-/issues"
+@end example
+
+@end defvar
+
+@c %start of fragment
+
+@deftp {Data Type} rootless-podman-configuration
+Available @code{rootless-podman-configuration} fields are:
+
+@table @asis
+@item @code{podman} (default: @code{podman}) (type: package)
+The Podman package that will be installed in the system profile.
+
+@item @code{group-name} (default: @code{"cgroup"}) (type: string)
+The name of the group that will own /sys/fs/cgroup resources.  Users that
+want to use rootless Podman have to be in this group.
+
+@item @code{containers-registries} (type: lowerable)
+A string or a gexp evaluating to the path of Podman's
+@code{containers/registries.conf} configuration file.
+
+@item @code{containers-storage} (type: lowerable)
+A string or a gexp evaluating to the path of Podman's
+@code{containers/storage.conf} configuration file.
+
+@item @code{containers-policy} (type: lowerable)
+A string or a gexp evaluating to the path of Podman's
+@code{containers/policy.json} configuration file.
+
+@item @code{pam-limits} (type: list-of-pam-limits-entries)
+The PAM limits to be set for rootless Podman.
+
+@item @code{subgids} (default: @code{()}) (type: list-of-subid-ranges)
+A list of subid ranges representing the subgids that will be
+available for each configured user.
+
+@item @code{subuids} (default: @code{()}) (type: list-of-subid-ranges)
+A list of subid ranges representing the subuids that will be
+available for each configured user.
+
+@end table
+
+@end deftp
+
+
+@c %end of fragment
+
 @cindex OCI-backed, Shepherd services
 @subsubheading OCI backed services
 
@@ -41445,6 +41642,188 @@ Whether to allow grafting or not in the pack build.
 
 @end deftp
 
+
+@c %end of fragment
+
+@anchor{subordinate-user-group-ids}
+@cindex subordinate user and group IDs
+@cindex subid, subordinate user and group IDs
+@subsubheading Subordinate User and Group ID Service
+
+Among the virtualization facilities implemented by the Linux kernel is the
+concept of @dfn{subordinate IDs}.  Subordinate IDs allow for mapping user and group
+IDs inside process namespaces to user and group IDs of the host system.
+Subordinate user ID ranges (subuids) allow users to map virtual user IDs inside
+containers to the user ID of an unprivileged user of the host system.
+Subordinate group ID ranges (subgids), instead map virtual group IDs to the
+group ID of an unprivileged user on the host system.  You can access
+@code{subuid(5)} and @code{subgid(5)} Linux man pages for more details.
+
+The @code{(gnu system shadow)} module exposes the
+@code{subids-service-type}, its configuration record
+@code{subids-configuration} and its extension record
+@code{subids-extension}.
+
+With @code{subids-service-type}, subuids and subgids ranges can be reserved for
+users that desire so:
+
+@lisp
+(use-modules (gnu system shadow)     ;for 'subids-service-type'
+             (gnu system accounts)   ;for 'subid-range'
+             @dots{})
+
+(operating-system
+  ;; @dots{}
+  (services
+    (list
+      (simple-service 'alice-bob-subids
+                      subids-service-type
+                      (subids-extension
+                        (subgids
+                         (list
+                          (subid-range (name "alice"))))
+                        (subuids
+                         (list
+                          (subid-range (name "alice"))
+                          (subid-range (name "bob")
+                                       (start 100700)))))))))
+@end lisp
+
+Users (definitely other services), usually, are supposed to extend the service
+instead of adding subids directly to @code{subids-configuration}, unless the
+want to change the default behavior for root.  With default settings the
+@code{subids-service-type} adds, if it's not already there, a configuration
+for the root account to both @file{/etc/subuid} and @file{/etc/subgid}, possibly
+starting at the minimum possible subid.  Otherwise the root subuids and subgids
+ranges are fitted wherever possible.
+
+The above configuration will yield the following:
+
+@example
+# cat /etc/subgid
+root:100000:65536
+alice:165536:65536
+# cat /etc/subuid
+root:100000:700
+bob:100700:65536
+alice:166236:65536
+@end example
+
+@c %start of fragment
+
+@deftp {Data Type} subids-configuration
+
+With default settings the
+@code{subids-service-type} adds, if it's not already there, a configuration
+for the root account to both @file{/etc/subuid} and @file{/etc/subgid}, possibly
+starting at the minimum possible subid.  To disable the default behavior and
+provide your own definition for the root subid ranges you can set to @code{#f}
+the @code{add-root?} field:
+
+@lisp
+(use-modules (gnu system shadow)     ;for 'subids-service-type'
+             (gnu system accounts)   ;for 'subid-range'
+             @dots{})
+
+(operating-system
+  ;; @dots{}
+  (services
+    (list
+      (service subids-service-type
+               (subids-configuration
+                (add-root? #f)
+                (subgids
+                  (subid-range (name "root")
+                               (start 120000)
+                               (count 100)))
+                (subuids
+                  (subid-range (name "root")
+                               (start 120000)
+                               (count 100)))))
+      (simple-service 'alice-bob-subids
+                      subids-service-type
+                      (subids-extension
+                        (subgids
+                         (list
+                          (subid-range (name "alice"))))
+                        (subuids
+                         (list
+                          (subid-range (name "alice"))
+                          (subid-range (name "bob")
+                                       (start 100700)))))))))
+@end lisp
+
+Available @code{subids-configuration} fields are:
+
+@table @asis
+@item @code{add-root?} (default: @code{#t}) (type: boolean)
+Whether to automatically configure subuids and subgids for root.
+
+@item @code{subgids} (default: @code{'()}) (type: list-of-subid-ranges)
+The list of @code{subid-range}s that will be serialized to @code{/etc/subgid}.
+If a range doesn't specify a start it will be fitted based on its number of
+requrested subids.  If a range doesn't specify a count the default size
+of 65536 will be assumed.
+
+@item @code{subuids} (default: @code{'()}) (type: list-of-subid-ranges)
+The list of @code{subid-range}s that will be serialized to @code{/etc/subuid}.
+If a range doesn't specify a start it will be fitted based on its number of
+requrested subids.  If a range doesn't specify a count the default size
+of 65536 will be assumed.
+
+@end table
+
+@end deftp
+
+@c %end of fragment
+
+@c %start of fragment
+
+@deftp {Data Type} subids-extension
+
+Available @code{subids-extension} fields are:
+
+@table @asis
+
+@item @code{subgids} (default: @code{'()}) (type: list-of-subid-ranges)
+The list of @code{subid-range}s that will be appended to
+@code{subids-configuration-subgids}.  Entries with the same name are deduplicated
+upon merging.
+
+@item @code{subuids} (default: @code{'()}) (type: list-of-subid-ranges)
+The list of @code{subid-range}s that will be appended to
+@code{subids-configuration-subuids}.  Entries with the same name are deduplicated
+upon merging.
+
+@end table
+
+@end deftp
+
+@c %end of fragment
+
+@c %start of fragment
+
+@deftp {Data Type} subid-range
+
+The @code{subid-range} record is defined at @code{(gnu system accounts)}.
+Available fields are:
+
+@table @asis
+
+@item @code{name} (type: string)
+The name of the user or group that will own this range.
+
+@item @code{start} (default: @code{#f}) (type: integer)
+The first requested subid.  When false the first available subid with enough
+contiguous subids will be assigned.
+
+@item @code{count} (default: @code{#f}) (type: integer)
+The number of total allocated subids.  When #f the default of 65536 will be
+assumed .
+
+@end table
+
+@end deftp
 
 @c %end of fragment
 
@@ -41890,6 +42269,60 @@ Mode for filter.
 @end deftp
 
 @c End of auto-generated fail2ban documentation.
+
+@cindex resize-file-system
+@subsubheading Resize File System Service
+
+This service type lets you resize a live file system during boot, which
+can be convenient if a Guix image is flashed on an SD Card (e.g. for an
+embedded device) or uploaded to a VPS.  In both cases the medium the
+image will reside upon may be larger than the image you want to produce.
+
+For an embedded device booting from an SD card you may use something like:
+@lisp
+(service resize-file-system-service-type
+         (resize-file-system-configuration
+          (file-system
+           (file-system (device (file-system-label "root"))
+                        (type "ext4")))))
+@end lisp
+
+@quotation Warning
+Be extra cautious to use the correct device and type.  The service has
+little error handling of its own and relies on the underlying tools.
+Wrong use could end in loss of data or the corruption of the operating
+system.
+@end quotation
+
+Partitions and file systems are grown to the maximum size available.
+File systems can only grow when they are on the last partition on a
+device and have empty space available.
+
+This service supports the ext2, ext3, ext4, btrfs, and bcachefs file
+systems.
+
+@table @asis
+
+@item @code{file-system} (default: @code{#f}) (type: file-system)
+The file-system object to resize (@pxref{File Systems}).  This object
+must have the @code{device} and @code{type} fields set.  Other fields
+are ignored.
+
+@item @code{cloud-utils} (default: @code{cloud-utils}) (type: file-like)
+The cloud-utils package to use.  This package is used for the
+@code{growpart} command.
+
+@item @code{e2fsprogs} (default: @code{e2fsprogs}) (type: file-like)
+The e2fsprogs package to use, used for resizing ext2, ext3, and ext4
+file systems.
+
+@item @code{btrfs-progs} (default: @code{btrfs-progs}) (type: file-like)
+The btrfs-progs package to use, used for resizing the btrfs file system.
+
+@item @code{bcachefs-tools} (default: @code{bcachefs-tools}) (type: file-like)
+The bcachefs-tools package to use, used for resizing the bcachefs file system.
+
+@end table
 
 @cindex Backup
 @subsubheading Backup Services
@@ -47692,11 +48125,11 @@ Programs to execute at startup time @emph{and} after every configuration
 reload.  The value of this field is a list of strings, G-expressions or
 file-like objects (@pxref{G-Expressions}).
 
-@item @code{startup-programs} (default: @code{%sway-default-execs})
+@item @code{startup-programs} (default: @code{%sway-default-startup-programs})
 Programs to execute at startup time.  As above, values of this field are
 a list of strings, G-expressions or file-like objects.
 
-The default value, @code{%sway-default-execs}, executes @code{swayidle}
+The default value, @code{%sway-default-startup-programs}, executes @code{swayidle}
 in order to lock the screen after 5@ minutes of inactivity (displaying a
 background distributed with Sway) and turn the screen off after 10@
 minutes of inactivity.

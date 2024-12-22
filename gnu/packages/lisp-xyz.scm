@@ -12949,8 +12949,8 @@ well as standard genetic algorithms.")
   (sbcl-package->ecl-package sbcl-core-gp))
 
 (define-public sbcl-croatoan
-  (let ((commit "0157da69edf1459db43fcd30bc6941ef0b26c02d")
-        (revision "1"))
+  (let ((commit "470055739ef6ece42655ef0f3878a87a9e3e9b78")
+        (revision "2"))
     (package
       (name "sbcl-croatoan")
       (version (git-version "0.3" revision commit))
@@ -12958,11 +12958,11 @@ well as standard genetic algorithms.")
        (origin
          (method git-fetch)
          (uri (git-reference
-               (url "https://github.com/McParen/croatoan")
+               (url "https://codeberg.org/McParen/croatoan")
                (commit commit)))
          (file-name (git-file-name "cl-croatoan" version))
          (sha256
-          (base32 "1pd3ivh2hcrbj7xfrfma10chlpzcgh0g36sjy5b23pm2zga4dqvs"))))
+          (base32 "04776x4i8inxs8n4mgy9xf0q39bzv4mfz4cl880sxwk6mnhwnn4c"))))
       (build-system asdf-build-system/sbcl)
       (arguments
        '(#:phases
@@ -12980,7 +12980,7 @@ well as standard genetic algorithms.")
       (synopsis "Common Lisp bindings for the ncurses terminal library")
       (description "Croatoan provides high-level Common Lisp CLOS bindings for
 the ncurses terminal library.")
-      (home-page "https://github.com/McParen/croatoan")
+      (home-page "https://codeberg.org/McParen/croatoan")
       (license license:expat))))
 
 (define-public cl-croatoan
@@ -22844,11 +22844,11 @@ instead of #'FOO.
   (sbcl-package->ecl-package sbcl-nkeymaps))
 
 (define-public sbcl-nodgui
-  (let ((commit "dc3efed8f93d4955e59347824f8f6d018e1a22e0")
-        (revision "1"))
+  (let ((commit "9a1b2c6419adce2ba317497328276f8d63843279")
+        (revision "2"))
     (package
       (name "sbcl-nodgui")
-      (version (git-version "0.7.0.3" revision commit))
+      (version (git-version "0.7.2.0" revision commit))
       (source
        (origin
          (method git-fetch)
@@ -22857,7 +22857,7 @@ instead of #'FOO.
                (commit commit)))
          (file-name (git-file-name "cl-nodgui" version))
          (sha256
-          (base32 "1kjbimzl9q74dz1fhl03n49607li55q6h0kdygfyr0n8cnf5638j"))))
+          (base32 "1qanhxn46bwq8a10v61n46q4j8avp7n1m2687bi2wdylz1pgakyq"))))
       (build-system asdf-build-system/sbcl)
       (native-inputs
        (list sbcl-clunit2))
@@ -22880,15 +22880,16 @@ instead of #'FOO.
              sbcl-trivial-garbage
              sbcl-zpng
              tk
-             tklib))
+             tklib
+             tcllib))
       (arguments
        (list #:phases
              #~(modify-phases %standard-phases
                  (add-after 'unpack 'fix-paths
                    (lambda* (#:key inputs #:allow-other-keys)
                      (substitute* "src/wish-communication.lisp"
-                       (("#-freebsd \"wish\"")
-                        (string-append "#-freebsd \""
+                       (("\\(guess-wish-interpreter-path\\)")
+                        (string-append "\""
                                        (search-input-file inputs "/bin/wish")
                                        "\""))))))))
       (synopsis "Common Lisp bindings for the Tk GUI toolkit")

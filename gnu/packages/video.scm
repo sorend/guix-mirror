@@ -2369,6 +2369,7 @@ videoformats depend on the configuration flags of ffmpeg.")
                                 `("PATH" ":" prefix
                                   (,(search-input-file inputs ffm))))))))))
     (inputs (list bash-minimal ffmpeg))
+    (native-inputs (list python-setuptools python-wheel))
     (home-page "https://github.com/slhck/ffmpeg-progress-yield")
     (synopsis "Run an ffmpeg command with progress")
     (description "This package allows an ffmpeg command to run with progress.
@@ -2378,13 +2379,13 @@ It is usually a complement to @code{ffmpeg-normalize}.")
 (define-public ffmpeg-normalize
   (package
     (name "ffmpeg-normalize")
-    (version "1.28.3")
+    (version "1.31.0")
     (source (origin
               (method url-fetch)
-              (uri (pypi-uri "ffmpeg-normalize" version))
+              (uri (pypi-uri "ffmpeg_normalize" version))
               (sha256
                (base32
-                "19j1pi0gcm9yzllszaji06c1i0r9kl586ada5d2hliahajwly0zk"))))
+                "0f8m0ikn4jw975fy66zli6z7zck5ng717dk3hravxzpj1kf1s6vx"))))
     (build-system pyproject-build-system)
     (arguments
      (list #:phases
@@ -2402,7 +2403,7 @@ It is usually a complement to @code{ffmpeg-normalize}.")
                          (ffm (search-input-file inputs "bin/ffmpeg")))
                      (wrap-program ffn
                        `("FFMPEG_PATH" = (,ffm)))))))))
-    (native-inputs (list python-pytest))
+    (native-inputs (list python-pytest python-setuptools python-wheel))
     (inputs (list bash-minimal ffmpeg))
     (propagated-inputs (list ffmpeg-progress-yield
                              python-colorama
@@ -3170,7 +3171,7 @@ YouTube.com and many more sites.")
 (define-public yt-dlp
   (package
     (name "yt-dlp")
-    (version "2024.11.18")
+    (version "2024.12.13")
     (source
      (origin
        (method git-fetch)
@@ -3182,7 +3183,7 @@ YouTube.com and many more sites.")
        (snippet '(substitute* "pyproject.toml"
                    (("^.*Programming Language :: Python :: 3\\.13.*$") "")))
        (sha256
-        (base32 "019wkjbjcdsf56sk5ihnkprp02a80vkja448iwps1illzb5jp52f"))))
+        (base32 "1659zblb5a06g033161s3qdndcafkkkz3zcm05vdk1zcjca9drbk"))))
     (build-system pyproject-build-system)
     (arguments
      `(#:tests? ,(not (%current-target-system))
@@ -3364,20 +3365,38 @@ Both command-line and GTK2 interface are available.")
     (version "2.6.1")
     (source
      (origin
-       (method url-fetch)
-       (uri (pypi-uri "ytcc" version))
+       (method git-fetch)        ; no tests in PyPI
+       (uri (git-reference
+             (url "https://github.com/woefe/ytcc")
+             (commit (string-append "v" version))))
+       (file-name (git-file-name name version))
        (sha256
-        (base32 "0laaj7m9mkn421hsljaqyhj2az641lg4y7ym6l8jl1xgs1vl9b4b"))))
+        (base32 "03rypw9sycardmrxc7hb0iak8zdxz1snv55fbpzyp79yi2iawbd4"))))
     (build-system pyproject-build-system)
-    (inputs (list python-click
-                  python-wcwidth
-                  python-websockets
-                  python-urllib3-next
-                  python-requests-next
-                  python-pycryptodomex
-                  python-mutagen
-                  python-brotli
-                  yt-dlp))
+    (arguments
+     (list
+      #:test-flags
+      #~(list "-k" (string-append "not test_subscribe"
+                                  " and not test_bug_report_command"
+                                  " and not test_download"
+                                  " and not test_import"
+                                  " and not test_import_duplicate"
+                                  " and not test_play_video"
+                                  " and not test_update"))))
+    (native-inputs
+     (list python-pytest
+           python-setuptools
+           python-wheel))
+    (inputs
+     (list python-click
+           python-wcwidth
+           python-websockets
+           python-urllib3
+           python-requests-next
+           python-pycryptodomex
+           python-mutagen
+           python-brotli
+           yt-dlp))
     (home-page "https://github.com/woefe/ytcc")
     (synopsis "Command line tool to keep track of your favorite playlists")
     (description "ytcc is a command line tool to keep track of your favorite
@@ -3874,7 +3893,7 @@ from sites like Twitch.tv and pipes them into a video player of choice.")
 (define-public mlt
   (package
     (name "mlt")
-    (version "7.24.0")
+    (version "7.28.0")
     (source
      (origin
        (method git-fetch)
@@ -3883,7 +3902,7 @@ from sites like Twitch.tv and pipes them into a video player of choice.")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "08fgcf20v4q52lfdwzvscbbppa6m582f551q6fzxz2vs5936w3wx"))))
+        (base32 "074rb3d3k9i6vmc2201qa7yfnnz8xs3kkvbnfwngjzyrzk6r14xr"))))
     (build-system cmake-build-system)
     (arguments
      (list
@@ -6055,7 +6074,7 @@ transitions, and effects and then export your film to many common formats.")
 (define-public shotcut
   (package
     (name "shotcut")
-    (version "23.09.29")
+    (version "24.11.17")
     (source
      (origin
        (method git-fetch)
@@ -6064,7 +6083,7 @@ transitions, and effects and then export your film to many common formats.")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "1r380lpa79i6821r3v84dm47vqxk4smx2k1wvf9afylw95v3i8zv"))))
+        (base32 "15p48l5qphhlx2yrxvnya585ws5aq6k9m4w26qbpf60i0qnldq5h"))))
     (build-system qt-build-system)
     (arguments
      `(#:tests? #f                      ;there are no tests
@@ -6110,6 +6129,7 @@ transitions, and effects and then export your film to many common formats.")
            mlt
            pulseaudio
            qtbase
+           qtcharts
            qtdeclarative
            qtmultimedia
            sdl2))
@@ -6185,7 +6205,7 @@ video from a Wayland session.")
                 "1z9j3r9pm4rdynlmhgsgnwnnaqw5274yfy4kyillgd77msnpbhaw"))))
     (build-system pyproject-build-system)
     (native-inputs
-     (list gettext-minimal pkg-config))
+     (list gettext-minimal pkg-config python-setuptools python-wheel))
     (inputs
      (list bash-minimal
            python-pygobject

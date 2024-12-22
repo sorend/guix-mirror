@@ -3356,6 +3356,39 @@ This is intended to be used with the Jolly Good Reference Frontend
                    license:isc          ;libco
                    license:lgpl2.1+))))
 
+(define-public libretro-beetle-gba
+  ;; There are no releases.  Use the latest commit.
+  (let ((commit "6cee80685f735ea6c2373db2622a1f1ee9f39d39")
+        (revision "0"))
+    (package
+      (name "libretro-beetle-gba")
+      ;; Use Mednafen core version as base.  Defined in libretro.cpp:73.
+      (version (git-version "0.9.36" revision commit))
+      (source
+       (origin
+         (method git-fetch)
+         (uri (git-reference
+               (url "https://github.com/libretro/beetle-gba-libretro")
+               (commit commit)))
+         (file-name (git-file-name name version))
+         (sha256
+          (base32 "14fm2g3hrsvvd57d6m9apzc30ypa4m0m5hk2viq422fm2l9y0xbb"))))
+      (build-system gnu-build-system)
+      (arguments
+       (list #:make-flags #~(list (string-append "CC=" #$(cc-for-target))
+                                  (string-append "GIT_VERSION=" #$commit)
+                                  (string-append "prefix=" #$output))
+             #:tests? #f                ;no tests
+             #:phases #~(modify-phases %standard-phases
+                          (delete 'configure))))
+      (home-page "https://github.com/libretro/beetle-gba-libretro")
+      (synopsis "Standalone port of Mednafen GBA to libretro")
+      (description
+       "A standalone port of Mednafen’s GameBoy Advance emulator called Beetle
+GBA to libretro.  Beetle GBA is based on VBA-M, itself a fork of Visual Boy
+Advance.")
+      (license license:gpl2+))))
+
 (define-public libretro-bsnes-jg
   ;; There aren't any release yet; use the latest commit.
   (let ((commit "0d42dea0cb20aba8bfec05b928e4aed2b295352a")
@@ -3888,11 +3921,13 @@ stack-machine, written in ANSI C.  Graphical output is implemented using SDL2.")
        (uri (pypi-uri "keystone-engine" version))
        (sha256
         (base32 "1xahdr6bh3dw5swrc2r8kqa8ljhqlb7k2kxv5mrw5rhcmcnzcyig"))))
-    (native-inputs (list cmake))
     (build-system pyproject-build-system)
+    (native-inputs
+     (list cmake
+           python-setuptools
+           python-wheel))
     (home-page "https://www.keystone-engine.org")
-    (synopsis
-     "Lightweight multi-platform, multi-architecture assembler framework")
+    (synopsis "Lightweight multi-platform, multi-architecture assembler framework")
     (description
      "Keystone is a lightweight multi-platform, multi-architecture
 assembler framework.  It supports a wide-range of different architectures

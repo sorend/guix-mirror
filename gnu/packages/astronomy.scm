@@ -1519,6 +1519,7 @@ model-fitting photometry or morphological analyses.")
     (native-inputs
      (list nss-certs-for-test
            python-httpretty
+           python-pytest
            python-setuptools
            python-wheel))
     (propagated-inputs
@@ -1611,15 +1612,12 @@ Main features:
     (arguments
      (list
       #:test-flags
-      #~(list "-p" "no:legacypath")
+      #~(list "--numprocesses" (number->string (parallel-job-count)))
       #:phases
       #~(modify-phases %standard-phases
           (add-after 'unpack 'patch-pypojrect-toml
             (lambda _
               (substitute* "pyproject.toml"
-                ;; ImportError: Error importing plugin " no:legacypath": No
-                ;; module named ' no:legacypath'
-                ((".*:legacypath.*") "")
                 ;; TypeError: Configuration.__init__() got an unexpected
                 ;; keyword argument 'version_file'
                 (("version_file = \"asdf/_version.py\"") "")))))))
@@ -1627,13 +1625,12 @@ Main features:
      (list python-fsspec
            python-packaging
            python-psutil
-           ;; 3.3.0+ requries newer version of pytest, see
-           ;; <https://github.com/asdf-format/asdf/issues/1804>.
-           python-pytest-8
+           python-pytest
            python-pytest-doctestplus
            python-pytest-remotedata
            python-pytest-xdist
-           python-setuptools-scm))
+           python-setuptools-scm
+           python-wheel))
     (propagated-inputs
      (list python-asdf-standard
            python-asdf-transform-schemas
@@ -2169,7 +2166,10 @@ code to be greatly simplified.")
        (sha256
         (base32 "0ps2lr6aa477262yw13w3hh0h5rzmywdlji0wbnkxnzrfvmf9lhf"))))
     (build-system pyproject-build-system)
-    (native-inputs (list tzdata))
+    (native-inputs
+     (list python-setuptools
+           python-wheel
+           tzdata))
     (home-page "https://rhodesmill.org/pyephem/")
     (synopsis "Compute positions of the planets and stars")
     (description
@@ -2299,7 +2299,9 @@ CFITSIO library.  Among other things, it can
             (lambda _ (setenv "HOME" "/tmp"))))))
     (native-inputs
      (list python-pytest
-           python-setuptools-scm))
+           python-setuptools
+           python-setuptools-scm
+           python-wheel))
     (propagated-inputs
      (list python-astroml
            python-numpy
@@ -2673,11 +2675,13 @@ sensitivity or energy density
      (list nss-certs-for-test
            pkg-config
            python-cython-3
-           python-pytest-8
+           python-pytest
            python-pytest-astropy-header
            python-pytest-cython
            ;python-pytest-doctestplus
-           python-setuptools-scm))
+           python-setuptools
+           python-setuptools-scm
+           python-wheel))
     (propagated-inputs
      (list python-astropy
            python-colorlog
@@ -5159,7 +5163,8 @@ Telescope Science Institute} image array manipulation functions.")
               ;; Cython extensions have to be built before running the tests.
               (invoke "python" "setup.py" "build_ext" "--inplace"))))))
     (propagated-inputs (list python-numpy))
-    (native-inputs (list python-pytest python-setuptools-scm))
+    (native-inputs (list python-pytest python-setuptools python-wheel
+                         python-setuptools-scm))
     (home-page "https://stsciimagestats.readthedocs.io/en/latest/")
     (synopsis "Compute sigma-clipped statistics on data arrays")
     (description
@@ -5886,7 +5891,9 @@ of the old packages.")
       (native-inputs
        (list python-numpy
              python-pytest
-             python-setuptools-scm))
+             python-setuptools
+             python-setuptools-scm
+             python-wheel))
       (propagated-inputs
        (list python-asdf
              python-blosc
@@ -5993,14 +6000,17 @@ package such as asdf-astropy.")
     (native-inputs
      (list python-pytest
            python-pytest-xdist
-           python-setuptools-scm))
+           python-setuptools
+           python-setuptools-scm
+           python-wheel))
     (propagated-inputs
      (list python-asdf))
     (home-page "https://github.com/asdf-format/asdf-coordinates-schemas")
     (synopsis "ASDF coordinates schemas")
-    (description "This package provides ASDF schemas for validating
-coordinates tags.  Users should not need to install this directly; instead,
-install an implementation package such as asdf-astropy.")
+    (description
+     "This package provides ASDF schemas for validating coordinates tags.
+Users should not need to install this directly; instead, install an
+implementation package such as asdf-astropy.")
     (license license:bsd-3)))
 
 (define python-asdf-fits-schemas
@@ -6115,7 +6125,9 @@ install an implementation package such as asdf-astropy.")
      (list python-asdf
            python-pytest
            python-pytest-openfiles
-           python-setuptools-scm))
+           python-setuptools
+           python-setuptools-scm
+           python-wheel))
     (propagated-inputs
      (list python-asdf-coordinates-schemas
            python-asdf-standard
@@ -6520,14 +6532,6 @@ using (multivariate) polynomials.")
                     " and not "))
       #:phases
       #~(modify-phases %standard-phases
-         (add-after 'unpack 'relax-requirements
-           (lambda _
-             (substitute* "pyproject.toml"
-               ;; XXX: Updating ipywidgets requires long chain of rebuilds,
-               ;; maybe for python-team.
-               ;;
-               ;; ipywidgets>=8.0.0
-               ((">=8.0.0") ">=7.6.3"))))
           (add-before 'check 'prepare-test-environment
             (lambda _
               (setenv "HOME" "/tmp")

@@ -30,7 +30,9 @@
 ;;; Copyright © 2023 Sharlatan Hellseher <sharlatanus@gmail.com>
 ;;; Copyright © 2022, 2024 Zheng Junjie <873216071@qq.com>
 ;;; Copyright © 2023 Herman Rimm <herman@rimm.ee>
+;;; Copyright © 2023 Simon South <simon@simonsouth.net>
 ;;; Copyright © 2024 Foundation Devices, Inc. <hello@foundation.xyz>
+;;; Copyright © 2024 Josep Bigorra <jjbigorra@gmail.com>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -127,6 +129,7 @@
   #:use-module (gnu packages sqlite)
   #:use-module (gnu packages telephony)
   #:use-module (gnu packages tls)
+  #:use-module (gnu packages toolkits)
   #:use-module (gnu packages valgrind)
   #:use-module (gnu packages video)
   #:use-module (gnu packages vulkan)
@@ -268,6 +271,43 @@ window managers, that don't provide Qt integration by themselves.")
     (home-page "https://qt5ct.sourceforge.io/")
     (license license:bsd-2)))
 
+(define-public qt6ct
+  (package
+    (name "qt6ct")
+    (version "0.9")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/trialuser02/qt6ct")
+             (commit version)))
+       (sha256
+        (base32 "0dknk4qqzqc5wa763nclb1k6jkmvjh8kzz8kfp4iggy9jy0vnzgb"))))
+    (build-system qt-build-system)
+    (arguments
+     (list
+      #:qtbase qtbase
+      #:tests? #f                      ; No target
+      #:phases
+      #~(modify-phases %standard-phases
+          (add-after 'unpack 'patch
+            (lambda _
+              (substitute* '("src/qt6ct-qtplugin/CMakeLists.txt"
+                             "src/qt6ct-style/CMakeLists.txt")
+                (("\\$\\{PLUGINDIR\\}")
+                 (string-append #$output "/lib/qt6/plugins"))))))))
+    (native-inputs
+     (list qttools))
+    (inputs
+     (list qtsvg
+           libxkbcommon))
+    (synopsis "Qt6 Configuration Tool")
+    (description "Qt6CT is a program that allows users to configure Qt6
+settings (such as icons, themes, and fonts) in desktop environments or
+window managers, that don't provide Qt integration by themselves.")
+    (home-page "https://github.com/trialuser02/qt6ct")
+    (license license:bsd-2)))
+
 (define-public kddockwidgets
   (package
     (name "kddockwidgets")
@@ -344,7 +384,8 @@ Qt.  Some of its features include:
     (native-inputs (list qttools))
     (inputs (list
              kwindowsystem
-             qtsvg))
+             qtsvg
+             qtwayland))
     (synopsis "SVG-based theme engine for Qt")
     (description
      "Kvantum is an SVG-based theme engine for Qt,
@@ -3290,7 +3331,7 @@ linux/libcurl_wrapper.h")
            flex
            gperf
            ninja
-           node
+           node-lts
            perl
            pkg-config
            python2-six
@@ -3998,13 +4039,15 @@ Python.")
          "0ykxq0607f2sdwbl5cxbp0y8pl14bsgzc9nhifpxbibfivj5kjbz"))
        (patches (search-patches "python-sip-include-dirs.patch"))))
     (build-system pyproject-build-system)
+    (arguments
+     (list #:tests? #f))        ; No test system found.
     (native-inputs
      (list python-wrapper python-setuptools python-setuptools-scm-next))
     (propagated-inputs
      (list python-tomli
-           python-packaging))
-    ;; no test.
-    (arguments (list #:tests? #f))
+           python-packaging
+           python-setuptools
+           python-wheel))
     (home-page "https://www.riverbankcomputing.com/software/sip/intro")
     (synopsis "Python binding creator for C and C++ libraries")
     (description
@@ -4472,6 +4515,67 @@ This package provides the Python bindings.")))
     (synopsis "Union of PyQt and the Qscintilla extension")
     (description
      "This package contains the union of PyQt and the Qscintilla extension.")))
+
+(define-public qtimgui
+  (let ((commit "48d64a715b75dee24e398f7e5b0942c2ca329334")
+        (revision "0"))
+    (package
+      (name "qtimgui")
+      (version (git-version "0.0" revision commit))
+      (source (origin
+                (method git-fetch)
+                (uri (git-reference
+                      (url "https://github.com/seanchas116/qtimgui")
+                      (commit commit)))
+                (file-name (git-file-name name version))
+                (sha256
+                 (base32
+                  "0x71j8m15w003ak0d7q346rlwyvklkda9l0dwbxfx6kny3gsl11k"))))
+      (build-system cmake-build-system)
+      (arguments
+       (list
+        #:configure-flags #~(list "-DQTIMGUI_BUILD_IMGUI=OFF"
+                                  "-DQTIMGUI_BUILD_IMPLOT=OFF")
+        #:phases
+        #~(modify-phases %standard-phases
+            (add-after 'unpack 'patch-source
+              (lambda* (#:key inputs #:allow-other-keys)
+                (substitute* "CMakeLists.txt"
+                  ;; Disable building the examples.
+                  (("^add_subdirectory\\(examples\\)") ""))
+                (substitute* "src/CMakeLists.txt"
+                  ;; Build shared libraries, not static.
+                  (("STATIC") "SHARED")
+                  ;; Compile with the system imgui headers.
+                  (("^(target_include_directories.*)\\)" _ prefix)
+                   (string-append prefix
+                                  " "
+                                  (search-input-directory inputs
+                                                          "include/imgui")
+                                  ")")))))
+            (replace 'install
+              ;; No install target provided; manually copy the header and
+              ;; library files to the output.
+              (lambda* (#:key source #:allow-other-keys)
+                (for-each
+                 (lambda (file-name)
+                   (install-file (string-append source "/src/" file-name)
+                                 (string-append #$output "/include/qtimgui")))
+                 '("ImGuiRenderer.h" "QtImGui.h"))
+                (for-each
+                 (lambda (file-name)
+                   (install-file (string-append "src/" file-name)
+                                 (string-append #$output "/lib")))
+                 '("libqt_imgui_quick.so" "libqt_imgui_widgets.so")))))
+        #:tests? #f))                   ; no test suite
+      (inputs
+       (list imgui-1.86 implot qtbase-5 qtdeclarative-5))
+      (home-page "https://github.com/seanchas116/qtimgui")
+      (synopsis "Qt backend for the ImGui GUI library")
+      (description "QtImGui allows the ImGui C++ GUI library to be used by Qt
+applications within subclasses of @code{QOpenGLWidget} and
+@code{QOpenGLWindow}.")
+      (license license:expat))))
 
 (define-public qtkeychain
   (package

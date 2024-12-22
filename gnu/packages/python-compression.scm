@@ -9,6 +9,8 @@
 ;;; Copyright © 2021 Brendan Tildesley <mail@brendan.scot>
 ;;; Copyright © 2023, 2024 Troy Figiel <troy@troyfigiel.com>
 ;;; Copyright © 2024 TakeV <takev@disroot.org>
+;;; Copyright © 2023 Ivan Vilata i Balaguer <ivan@selidor.net>
+;;; Copyright © 2024 Maxim Cournoyer <maxim.cournoyer@gmail.com>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -47,6 +49,7 @@
   #:use-module (gnu packages python-build)
   #:use-module (gnu packages python-check)
   #:use-module (gnu packages python-crypto)
+  #:use-module (gnu packages python-science)
   #:use-module (gnu packages python-xyz)
   #:use-module (gnu packages rust-apps)
   #:use-module (gnu packages sphinx))
@@ -95,6 +98,56 @@ regular-spaced values, etc.
 This Python package wraps the Blosc library.")
     (license license:bsd-3)))
 
+(define-public python-blosc2
+  (package
+    (name "python-blosc2")
+    (version "2.7.1")                   ;3.0.0 requires numpy>=1.25
+    (source
+     (origin
+       (method url-fetch)
+       (uri (pypi-uri "blosc2" version))
+       (sha256
+        (base32 "1s4gpdf1hfbw5w3hpx0g8bfwjrws1b8wgmh7snafh5ivai0lvnrl"))))
+    (build-system python-build-system)
+    (arguments
+     (list #:phases #~(modify-phases %standard-phases
+                        (replace 'build
+                          (lambda* (#:key inputs #:allow-other-keys)
+                            (invoke "python" "setup.py" "build"
+                                    "-DUSE_SYSTEM_BLOSC2=ON")))
+                        (replace 'check
+                          (lambda* (#:key tests? #:allow-other-keys)
+                            (when tests?
+                              (invoke "python" "-m" "pytest" "-vv")))))))
+    (inputs (list c-blosc2))
+    (propagated-inputs
+     (list python-msgpack
+           python-ndindex
+           python-numexpr
+           python-numpy
+           python-py-cpuinfo))
+    (native-inputs
+     (list cmake-minimal
+           pkg-config
+           python-cython-3
+           python-pytest
+           python-scikit-build))
+    (home-page "https://github.com/blosc/python-blosc2")
+    (synopsis "Python wrapper for the Blosc2 data compressor library")
+    (description
+     "Blosc2 is a high performance compressor optimized for binary
+data.  It has been designed to transmit data to the processor cache faster
+than the traditional, non-compressed, direct memory fetch approach via a
+@code{memcpy()} system call.
+
+Python-Blosc2 wraps the C-Blosc2 library, and it aims to leverage its new API
+so as to support super-chunks, multi-dimensional arrays, serialization and
+other features introduced in C-Blosc2.
+
+Python-Blosc2 also reproduces the API of Python-Blosc and is meant to be able
+to access its data, so it can be used as a drop-in replacement.")
+    (license license:bsd-3)))
+
 (define-public python-multivolumefile
   (package
     (name "python-multivolumefile")
@@ -114,7 +167,9 @@ This Python package wraps the Blosc library.")
            python-hypothesis
            python-pyannotate
            python-pytest
-           python-pytest-cov))
+           python-pytest-cov
+           python-setuptools
+           python-wheel))
     (home-page "https://github.com/miurahr/multivolume")
     (synopsis "Treat multiple files as one")
     (description "MultiVolumefile is a Python library that provides a
@@ -202,13 +257,13 @@ following algorithms are available:
 (define-public python-ewah-bool-utils
   (package
     (name "python-ewah-bool-utils")
-    (version "1.2.0")
+    (version "1.2.2")
     (source
      (origin
        (method url-fetch)
        (uri (pypi-uri "ewah_bool_utils" version))
        (sha256
-        (base32 "1bff3cv5m4n5pwqz0q90dy42vpyrrhylnrkcd49g1dlf3fs6r0pp"))))
+        (base32 "1hvs1fvf3g7kq6hnzxyxfrwvmykw503cmxf1l3irs67gr931z47b"))))
     (build-system pyproject-build-system)
     (arguments
      (list
@@ -218,7 +273,10 @@ following algorithms are available:
             (lambda _
               (invoke "python" "setup.py" "build_ext" "--inplace"))))))
     (native-inputs
-     (list python-cython python-pytest))
+     (list python-cython
+           python-pytest
+           python-setuptools
+           python-wheel))
     (propagated-inputs
      (list python-numpy))
     (home-page "https://github.com/yt-project/ewah_bool_utils")
@@ -251,7 +309,9 @@ following algorithms are available:
            python-hypothesis
            python-pytest
            python-pytest-cov
-           python-setuptools-scm))
+           python-setuptools-scm
+           python-setuptools
+           python-wheel))
     (home-page "https://codeberg.org/miurahr/pybcj")
     (synopsis "BCJ filter library")
     (description "In data compression, BCJ, short for Branch-Call-Jump, refers
@@ -311,6 +371,7 @@ Jump conversion filter by CFFI for Python.")
                (setenv "USE_SHARED_BROTLI" "1"))))))
     (propagated-inputs (list python-cffi))
     (inputs (list brotli))
+    (native-inputs (list python-setuptools python-wheel))
     (home-page "https://github.com/python-hyper/brotlicffi")
     (synopsis "Python CFFI bindings to the Brotli library")
     (description "This package provides Python CFFI bindings to the Brotli
@@ -332,7 +393,9 @@ library.")
     (native-inputs
      (list python-pyannotate
            python-pytest
-           python-setuptools-scm))
+           python-setuptools-scm
+           python-setuptools
+           python-wheel))
     (home-page "https://pypi.org/project/inflate64/")
     (synopsis "Compression/decompression library")
     (description "The @code{inflate64} package provides @code{Deflater} and
@@ -361,7 +424,7 @@ compression algorithm.")
          (add-after 'unpack 'use-dynamic-linking
            (lambda _ (setenv "PYTHON_ISAL_LINK_DYNAMIC" "1"))))))
     (inputs (list isa-l))
-    (native-inputs (list python-cython))
+    (native-inputs (list python-cython python-setuptools python-wheel))
     (home-page "https://github.com/pycompression/python-isal")
     (synopsis "Python bindings for the ISA-L compression library")
     (description
@@ -381,6 +444,7 @@ and decompression by implementing Python bindings for the ISA-L library.")
                 "1qiwmavmxy6ba89mrdkzk52hqrd4awnp4yca395pxp2np66pf81g"))))
     ;; FIXME: Unbundle ls-qpack and xxhash!
     (build-system pyproject-build-system)
+    (native-inputs (list python-setuptools python-wheel))
     (home-page "https://github.com/aiortc/pylsqpack")
     (synopsis "Python bindings for @code{ls-qpack}")
     (description
@@ -407,7 +471,9 @@ headers compressed with QPACK.")
            python-pytest-benchmark
            python-pytest-cov
            python-pytest-timeout
-           python-setuptools-scm))
+           python-setuptools-scm
+           python-setuptools
+           python-wheel))
     (home-page "https://github.com/miurahr/pyppmd")
     (synopsis "PPMd compression/decompression library")
     (description "Pyppmd provides classes and functions for compressing and
@@ -468,9 +534,8 @@ several possible methods.")
            python-pyzstd
            python-texttable))
     (native-inputs
-     (list python-setuptools
-           python-setuptools-scm
-           python-coverage
+     (list python-coverage
+           python-setuptools
            python-coveralls
            python-libarchive-c
            python-py-cpuinfo
@@ -479,7 +544,9 @@ several possible methods.")
            python-pytest-benchmark
            python-pytest-cov
            python-pytest-remotedata
-           python-pytest-timeout))
+           python-pytest-timeout
+           python-setuptools-scm
+           python-wheel))
     (home-page "https://github.com/miurahr/py7zr")
     (synopsis "7-zip in Python")
     (description "This package provides py7zr, which implements 7-zip
@@ -732,7 +799,7 @@ wrapper.  It provides a backport of the @code{Path} object.")
         (base32 "1z4zdqqs2rg3z36khgj96bpggv34av337isfv7yxg32prawj687r"))))
     (build-system pyproject-build-system)
     (native-inputs
-     (list python-pytest python-pytest-cov))
+     (list python-pytest python-pytest-cov python-setuptools python-wheel))
     (home-page "https://github.com/pR0Ps/zipstream-ng")
     (synopsis "Streamable zip file generator")
     (description

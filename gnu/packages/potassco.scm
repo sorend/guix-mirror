@@ -512,21 +512,33 @@ directly from the python command line.")))
   (package
     (name "python-clingox")
     (version "1.2.1")
-    (source (origin
-             (method git-fetch)
-             (uri (git-reference
-                   (url "https://github.com/potassco/python-clingox")
-                   (commit (string-append "v" version))))
-             (file-name (git-file-name name version))
-             (sha256
-              (base32
-               "0ji0sdqlv0byxmdipwk60afsb82r0rr1j73r7j2508hsfk94m2i8"))))
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/potassco/python-clingox")
+             (commit (string-append "v" version))))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "0ji0sdqlv0byxmdipwk60afsb82r0rr1j73r7j2508hsfk94m2i8"))))
     (build-system pyproject-build-system)
+    (arguments
+     (list
+      #:test-flags
+      ;; fixture 's' not found
+      #~(list "--deselect=clingox/tests/test_ast.py::test_rename"
+              "--deselect=clingox/tests/test_ast.py::test_reify"
+              "--deselect=clingox/tests/test_ast.py::test_ast_dict")))
+    (native-inputs
+     (list python-pytest
+           python-setuptools
+           python-wheel))
     (propagated-inputs (list python-clingo))
     (home-page "https://potassco.org/clingo")
     (synopsis "Auxiliary functions for Clingo")
-    (description "This package provides additional functions to go along with
-the Python bindings for Clingo.")
+    (description
+     "This package provides additional functions to go along with the Python
+bindings for Clingo.")
     (license license:expat)))
 
 (define-public python-asprin
@@ -589,7 +601,7 @@ are already predefined, but more can be added as logic programs.")
                    (setenv "CLORM_NOCLINGO" "1")
                    (delete-file "tests/test_mypy_query.py"))))))
     (propagated-inputs (list python-clingo))
-    (native-inputs (list python-typing-extensions))
+    (native-inputs (list python-typing-extensions python-setuptools python-wheel))
     (home-page "https://potassco.org")
     (synopsis "Object relational mapping to clingo")
     (description "@acronym{Clorm, Clingo ORM} provides an @acronym{ORM,
@@ -629,6 +641,7 @@ into Python programs easier.")
                      ;; XXX: Does this cross-compile?
                      (patch-shebang script)))))))
     (propagated-inputs (list python-clingo))
+    (native-inputs (list python-setuptools python-wheel))
     (home-page "https://potassco.org/")
     (synopsis "Solve probabilistic logic programs")
     (description "This package provides a system to solve probabilistic
@@ -651,6 +664,7 @@ the most probable model as well as finding all models and their probabilities.")
                 "1q6hlh4b5hsa4n5agvmfa9rhsxfd2g6kpl4b9kfccwbmf6dh51k6"))))
     (build-system pyproject-build-system)
     (propagated-inputs (list python-clingo))
+    (native-inputs (list python-setuptools python-wheel))
     (home-page "https://potassco.org/")
     (synopsis "Solve dynamic temporal logic programs")
     (description "This package provides a system to solve dynamic temporal
@@ -678,8 +692,10 @@ logic programs based on clingo.")
                              python-imageio
                              python-jinja2
                              python-jsonschema
-                             python-networkx))
-    (native-inputs (list dot2tex graphviz python-pylint python-pytest))
+                             python-networkx
+                             python-setuptools))
+    (native-inputs (list dot2tex graphviz python-pylint python-pytest
+                         python-wheel))
     (home-page "https://github.com/potassco/clingraph")
     (synopsis "Visualizer for graphs defined as logic programs")
     (description
@@ -711,6 +727,9 @@ as logic programs.")
                    ;; XXX: python-clingo-dl installs clingodl instead…
                    (("clingo-dl") "clingodl"))))))
    (build-system pyproject-build-system)
+   (native-inputs
+    (list python-setuptools
+          python-wheel))
    (propagated-inputs
     (list python-clingo
           python-clingo-dl
@@ -738,7 +757,7 @@ which allows user interfaces to be specified entirely as a logic program.")
 (define-public python-clintest
   (package
     (name "python-clintest")
-    (version "0.2.0")
+    (version "0.3.0")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -747,10 +766,10 @@ which allows user interfaces to be specified entirely as a logic program.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "0xzbby9ram55h87ykm652kgm45b8rlhbjc8gjkz308h1jnjllmmy"))))
+                "1k8y3pm3w81n2appfl98drv1hpgjjqi2hxb1aa52y2m831lir38s"))))
     (build-system pyproject-build-system)
     (inputs (list python-clingo))
-    (native-inputs (list python-pytest))
+    (native-inputs (list python-pytest python-setuptools python-wheel))
     (home-page "https://potassco.org/clintest/")
     (synopsis "Test framework for clingo programs")
     (description "Clintest is a framework for unit testing clingo programs.

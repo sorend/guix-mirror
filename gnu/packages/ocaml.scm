@@ -5061,7 +5061,7 @@ writing to these structures, and they are accessed via the Bigarray module.")
     (build-system dune-build-system)
     (arguments
      `(#:package "ezjsonm"))
-    (native-inputs (list ocaml-alcotest js-of-ocaml node))
+    (native-inputs (list ocaml-alcotest js-of-ocaml node-lts))
     (propagated-inputs (list ocaml-jsonm ocaml-uutf ocaml-sexplib0 ocaml-hex))
     (home-page "https://github.com/mirage/ezjsonm/")
     (synopsis "Read and write JSON data")
@@ -9081,7 +9081,7 @@ libraries.")
            ocaml-yojson))
     (native-inputs
      ;; for tests
-     (list node ocaml-ppx-expect ocaml-num))
+     (list node-lts ocaml-ppx-expect ocaml-num))
     (properties `((upstream-name . "js_of_ocaml")))
     (home-page "https://ocsigen.org/js_of_ocaml/")
     (synopsis "Compiler from OCaml bytecode to Javascript")

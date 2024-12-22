@@ -4647,7 +4647,7 @@ network.")
 (define-public ngtcp2
   (package
     (name "ngtcp2")
-    (version "1.9.0")
+    (version "1.9.1")
     (source
      (origin
        (method url-fetch)
@@ -4655,7 +4655,7 @@ network.")
                            "releases/download/v" version "/"
                            "ngtcp2-" version ".tar.gz"))
        (sha256
-        (base32 "1nyaai8arhal8pi8yzw06kcq4c8bpqgz9mv9wd2897xgjrxmgrvb"))))
+        (base32 "1hw2wmkp3z0p64gv4zgcrjkspb9wrdqyjymc93c4992skn9br3hd"))))
     (build-system gnu-build-system)
     (arguments
      (list
@@ -4674,7 +4674,7 @@ QUIC protocol.")
 (define-public yggdrasil
   (package
     (name "yggdrasil")
-    (version "0.5.10")
+    (version "0.5.12")
     (source
      (origin
        (method git-fetch)
@@ -4685,7 +4685,7 @@ QUIC protocol.")
          (recursive? #t)))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "0dd5181p07xshbd7q6p0hf3cvq1ahq6q36qjij0vzdil8dka6fmx"))
+        (base32 "072r52b6bkpc7bhn0v1z6dm6q5g9qf4k1xlqwrvzmzwai6fm0lrn"))
       (patches (search-patches "yggdrasil-extra-config.patch"))))
     (build-system go-build-system)
     (arguments
@@ -4733,7 +4733,8 @@ QUIC protocol.")
            go-golang-org-x-net
            go-golang-org-x-sys
            go-golang-org-x-text
-           go-golang-zx2c4-com-wireguard))
+           go-golang-zx2c4-com-wireguard
+           go-suah-dev-protect))
     (home-page "https://yggdrasil-network.github.io/blog.html")
     (synopsis
      "Experiment in scalable routing as an encrypted IPv6 overlay network")
@@ -4876,7 +4877,7 @@ on hub/switched networks.  It is based on @acronym{ARP} packets, it will send
 (define-public phantomsocks
   (package
     (name "phantomsocks")
-    (version "0.0.0-20240729085950-7928f8eff406")
+    (version "0.0.0-20241119070700-535ab0adb1e4")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -4885,7 +4886,7 @@ on hub/switched networks.  It is based on @acronym{ARP} packets, it will send
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "1bx3ln650yrywrqpz78xphs141zfsg2h5cr8j9411ilifzr8r4ib"))))
+                "1mqjkhpv4d0178d9r8kdjzb2mrvx1xrhbjsgsdn065h4jbjl1z96"))))
     (build-system go-build-system)
     (arguments
      (list #:install-source? #f

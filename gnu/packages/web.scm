@@ -194,6 +194,7 @@
   #:use-module (gnu packages python)
   #:use-module (gnu packages python-build)
   #:use-module (gnu packages python-check)
+  #:use-module (gnu packages python-compression)
   #:use-module (gnu packages python-crypto)
   #:use-module (gnu packages python-web)
   #:use-module (gnu packages python-xyz)
@@ -2082,7 +2083,7 @@ of people.")
                (base32
                 "0ysqylpyv17s52634wn3vrwf7y9b5ig7fdfv8vwj1272lvv68qgk"))))
     (build-system pyproject-build-system)
-    (native-inputs (list python-nose2))
+    (native-inputs (list python-nose2 python-setuptools python-wheel))
     (inputs
      (list python-jwcrypto
            python-numpy
@@ -2127,12 +2128,6 @@ directions.")
           (add-after 'build 'build-platform
             (lambda* (#:key unpack-path #:allow-other-keys)
               (with-directory-excursion (string-append "src/" unpack-path)
-                ;; We're using Node 10, which doesn't have this method.
-                (substitute* "scripts/esbuild.js"
-                  (("exports.buildNativeLib" m)
-                   (string-append
-                    "Object.fromEntries = entries => entries.reduce((result, entry) => (result[entry[0]] = entry[1], result), {});\n"
-                    m)))
                 ;; Must be writable.
                 (for-each make-file-writable (find-files "." "."))
                 (invoke "node" "scripts/esbuild.js"
@@ -2155,7 +2150,7 @@ directions.")
                   (invoke "make" "test-go"))))))))
     (native-inputs
      (modify-inputs (package-native-inputs esbuild)
-       (append node)))))
+       (append node-lts)))))
 
 (define-public wwwoffle
   (package
@@ -5207,11 +5202,15 @@ their web site.")
                  (string-append indent
                                 "os.utime(os.path.join(root, file), (315619200, 315619200))\n"
                                 line))))))))
+    (native-inputs
+     (list python-setuptools
+           python-wheel))
     (inputs (list python))
     (propagated-inputs
      (list python-boto3
            python-botocore
            python-docutils
+           python-pip
            python-six
            python-virtualenv))
     (home-page "https://github.com/4dn-dcic/python-lambda")
@@ -5285,8 +5284,8 @@ Cloud.")
     (license license:expat)))
 
 (define-public guix-data-service
-  (let ((commit "64aeeffd8eb5b03da706d7bf57d1a2964585e6d1")
-        (revision "55"))
+  (let ((commit "62d6b5901331ad5f78ac65a8a9cb5410b60942cb")
+        (revision "56"))
     (package
       (name "guix-data-service")
       (version (string-append "0.0.1-" revision "." (string-take commit 7)))
@@ -5298,7 +5297,7 @@ Cloud.")
                 (file-name (git-file-name name version))
                 (sha256
                  (base32
-                  "0jcjl5vhzwl1hc37w6xnmxlal8j5jlfykycx5wvdrc1wb7111s8v"))))
+                  "0nfh13sgp9f66bpm476866lpwgfzhxg0k04rxbxnxq2qqij3s9g4"))))
       (build-system gnu-build-system)
       (arguments
        (list
@@ -5365,10 +5364,12 @@ Cloud.")
       (propagated-inputs
        (list guix
              guile-fibers
+             guile-knots
              guile-json-4
              guile-email
              guile-prometheus
-             guile-squee))
+             guile-squee
+             guile-lzlib))
       (native-inputs
        (list (car (assoc-ref (package-native-inputs guix) "guile"))
              autoconf
@@ -6933,48 +6934,66 @@ exploit attempts.")
 (define-public python-httpbin
   (package
     (name "python-httpbin")
-    (version "0.5.0")
+    (version "0.10.2")
     (source
      (origin
        (method url-fetch)
        (uri (pypi-uri "httpbin" version))
        (sha256
-        (base32
-         "1dc92lnk846hpilslrqnr63x55cxll4qx88gif8fm521gv9cbyvr"))))
-    (build-system python-build-system)
+        (base32 "1a8pcf6411pqkpl3c5z93wml0nw4xb6j9dnjl976ij31h9llh8b3"))))
+    (build-system pyproject-build-system)
+    (native-inputs
+     (list python-pytest
+           python-setuptools
+           python-wheel))
     (propagated-inputs
-     (list python-decorator python-flask python-itsdangerous
-           python-markupsafe python-six))
-    (home-page "https://github.com/Runscope/httpbin")
+     (list python-brotlicffi
+           python-decorator
+           python-flasgger
+           python-flask
+           python-greenlet-2
+           python-itsdangerous
+           python-markupsafe
+           python-six
+           python-werkzeug))
+    ;; The archive in PyPI points to a fork of
+    ;; <https://github.com/postmanlabs/httpbin> which is unmaintained for 6y,
+    ;; where <https://github.com/Runscope/httpbin> rediects to.  See
+    ;; <https://github.com/postmanlabs/httpbin/issues/719>
+    (home-page "https://github.com/psf/httpbin")
     (synopsis "HTTP request and response service")
-    (description "Testing an HTTP Library can become difficult sometimes.
-@code{RequestBin} is fantastic for testing POST requests, but doesn't let you control the
-response.  This exists to cover all kinds of HTTP scenarios.  All endpoint responses are
-JSON-encoded.")
+    (description
+     "Testing an HTTP Library can become difficult sometimes.
+@code{RequestBin} is fantastic for testing POST requests, but doesn't let you
+control the response.  This exists to cover all kinds of HTTP scenarios.  All
+endpoint responses are JSON-encoded.")
     (license license:isc)))
 
 (define-public python-pytest-httpbin
   (package
     (name "python-pytest-httpbin")
-    (version "0.2.3")
+    (version "2.1.0")
     (source
      (origin
        (method url-fetch)
-       (uri (pypi-uri "pytest-httpbin" version))
+       (uri (pypi-uri "pytest_httpbin" version))
        (sha256
-        (base32
-         "1y0v2v7xpzpyd4djwp7ad8ifnlxp8r1y6dfbxg5ckzvllkgridn5"))))
-    (build-system python-build-system)
+        (base32 "1iikdji2136mybjk7sczqa2qivlb6gchhkzyz4kq68j3hj1pj1fl"))))
+    (build-system pyproject-build-system)
+    (native-inputs
+     (list python-setuptools
+           python-wheel))
     (propagated-inputs
-     (list python-six python-httpbin python-pytest))
-    (home-page
-     "https://github.com/kevin1024/pytest-httpbin")
-    (synopsis
-     "Test your HTTP library against a local copy of httpbin")
+     (list python-httpbin
+           python-pytest
+           python-six))
+    (home-page "https://github.com/kevin1024/pytest-httpbin")
+    (synopsis "Test your HTTP library against a local copy of httpbin")
     (description
-     "@code{Pytest-httpbin} creates a @code{pytest} fixture that is dependency-injected
-into your tests.  It automatically starts up a HTTP server in a separate thread running
-@code{httpbin} and provides your test with the URL in the fixture.")
+     "@code{Pytest-httpbin} creates a @code{pytest} fixture that is
+dependency-injected into your tests.  It automatically starts up a HTTP server
+in a separate thread running @code{httpbin} and provides your test with the
+URL in the fixture.")
     (license license:expat)))
 
 (define-public http-parser
@@ -8594,35 +8613,6 @@ compressed JSON header blocks.
 @end itemize\n")
     (license license:expat)))
 
-;; Older variant for Node versions < 17 (upstream commit 43291b98edaa682
-;; add support for newer nghttp2, but is difficult to backport).
-(define-public nghttp2-for-node
-  (hidden-package
-   (package
-     (inherit nghttp2)
-     (version "1.44.0")
-     (source (origin
-               (method url-fetch)
-               (uri (string-append "https://github.com/nghttp2/nghttp2/"
-                                   "releases/download/v" version "/"
-                                   "nghttp2-" version ".tar.xz"))
-               (sha256
-                (base32
-                 "0p9wvva4g8hwj55x19rbyvnq2dbsnf65rphhxnpqs7ll54xlg6an"))))
-     (arguments
-      (substitute-keyword-arguments (package-arguments nghttp2)
-        ((#:phases phases #~%standard-phases)
-         #~(modify-phases #$phases
-             (add-after 'unpack 'workaround-broken-python-version-check
-               (lambda _
-                 (substitute* "configure"
-                   ;; The configure script uses a string comparison to
-                   ;; determine whether the Python interpreter is recent
-                   ;; enough, which fails when comparing 3.8 to 3.10.
-                   ;; Convert to tuples for a more reliable check.
-                   (("print \\(ver >= '3\\.8'\\)")
-                    "print (tuple(map(int, ver.split('.'))) >= (3,8))")))))))))))
-
 (define-public nghttp3
   (package
     (name "nghttp3")
@@ -9588,7 +9578,7 @@ the Fediring.")
     (build-system python-build-system)
     (propagated-inputs
      (list curl
-           node))
+           node-lts))
     (inputs
      (list python
            youtube-dl

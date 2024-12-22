@@ -2191,7 +2191,7 @@ and fast file reading.")
                  ;; Remove dataset with unclear license.
                  (lambda _
                    (delete-file "vega_datasets/_data/la-riots.csv"))))))
-    (native-inputs (list python-pytest))
+    (native-inputs (list python-pytest python-setuptools python-wheel))
     (propagated-inputs (list python-pandas))
     (home-page "https://github.com/altair-viz/vega_datasets")
     (synopsis "Example datasets used by Vega-related projects")
@@ -2236,12 +2236,12 @@ and Vega-Lite examples.")
                              python-jsonschema
                              python-numpy
                              python-pandas
+                             python-setuptools
                              python-toolz
                              python-typing-extensions))
     (native-inputs (list python-black
                          python-hatchling
                          python-ipython
-                         python-m2r
                          python-pytest
                          python-vega-datasets))
     (home-page "https://altair-viz.github.io/")
@@ -2323,7 +2323,8 @@ correlated samples from Markov Chain Monte Carlo (MCMC).")
            (lambda _
              ;; Cython extensions have to be built before running the tests.
              (invoke "python" "setup.py" "build_ext" "--inplace"))))))
-    (propagated-inputs (list python-cython python-numpy))
+    (propagated-inputs (list python-cython python-numpy python-setuptools
+                             python-wheel))
     (native-inputs (list python-nose))
     (home-page "http://github.com/daleroberts/hdmedians")
     (synopsis "High-dimensional medians")
@@ -2337,7 +2338,7 @@ machine learning, computer vision, and high-dimensional statistics.")
 (define-public python-arviz
   (package
     (name "python-arviz")
-    (version "0.19.0")
+    (version "0.20.0")
     (source (origin
               (method git-fetch)        ; PyPI misses some test files
               (uri (git-reference
@@ -2346,7 +2347,7 @@ machine learning, computer vision, and high-dimensional statistics.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "0wj1yxr6as368vkr4mk9fz4584nyy12gq2v20l7542lnaabw403z"))))
+                "1dk25jmsljan6pfcq0s06vgk7gg20qqhk0zqnpd8dw94dhw2mnpa"))))
     (build-system pyproject-build-system)
     (arguments
      ;; FIXME: matplotlib tests fail because of the "--save" test flag.
@@ -2374,7 +2375,9 @@ machine learning, computer vision, and high-dimensional statistics.")
                              python-scipy
                              python-typing-extensions
                              python-xarray
-                             python-xarray-einstats))
+                             python-xarray-einstats
+                             python-setuptools
+                             python-wheel))
     (home-page "https://github.com/arviz-devs/arviz")
     (synopsis "Exploratory analysis of Bayesian models")
     (description
@@ -2465,7 +2468,8 @@ inference (VI) algorithms.")
                 (("\"error::DeprecationWarning\",") "")))))))
     (propagated-inputs (list python-importlib-metadata python-numpoly
                              python-numpy python-scipy))
-    (native-inputs (list python-pytest python-scikit-learn))
+    (native-inputs (list python-pytest python-scikit-learn python-setuptools
+                         python-wheel))
     (home-page "https://chaospy.readthedocs.io/en/master/")
     (synopsis "Numerical tool for performing uncertainty quantification")
     (description "Chaospy is a numerical toolbox for performing uncertainty
@@ -2540,30 +2544,38 @@ new data from those PDFs.")
 (define-public python-lifelines
   (package
     (name "python-lifelines")
-    (version "0.28.0")
+    (version "0.30.0")
     (source
      (origin
        (method url-fetch)
        (uri (pypi-uri "lifelines" version))
        (sha256
-        (base32 "0pmjb3z1rw1ia64gw87r6y9x1g4kwpw239gqzsa9qh7xadj75kzf"))))
+        (base32 "065yajlfydi7x7b1sjxp9h3rqgwrd3w9ivxiyph7y5nbbwkzdxpp"))))
     (build-system pyproject-build-system)
     (arguments
      (list
       #:test-flags
-      ;; This accuracy test fails because 0.012 is not < 0.01.
-      '(list "-k" "not test_weibull_with_delayed_entries")))
-    (propagated-inputs (list python-autograd
-                             python-autograd-gamma
-                             python-formulaic
-                             python-matplotlib
-                             python-numpy
-                             python-pandas
-                             python-scipy))
-    (native-inputs (list python-dill
-                         python-flaky
-                         python-joblib
-                         python-pytest))
+      ;; NOTE: Tests take 15-25min to complete on 16 threads and much longer
+      ;; in single one, consider to try enabling --numprocesses option.
+      #~(list ;; "--numprocesses" (number->string (parallel-job-count))
+              ;; This accuracy test fails because 0.012 is not < 0.01.
+              "-k" "not test_weibull_with_delayed_entries")))
+    (native-inputs
+     (list python-dill
+           python-flaky
+           python-joblib
+           python-pytest
+           ;; python-pytest-xdist
+           python-setuptools
+           python-wheel))
+    (propagated-inputs
+     (list python-autograd
+           python-autograd-gamma
+           python-formulaic
+           python-matplotlib
+           python-numpy
+           python-pandas
+           python-scipy))
     (home-page "https://github.com/CamDavidsonPilon/lifelines")
     (synopsis
      "Survival analysis including Kaplan Meier, Nelson Aalen and regression")
@@ -2575,21 +2587,16 @@ Meier, Nelson Aalen and regression.")
 (define-public python-mapie
   (package
     (name "python-mapie")
-    (version "0.8.6")
+    (version "0.9.1")
     (source (origin
               (method url-fetch)
               (uri (pypi-uri "MAPIE" version))
               (sha256
                (base32
-                "013ljcjjl3k9yb3166fnvr6nsb9ph4rhidpdjjks78qw0w1j7faa"))))
+                "1lyqszfgmqfsyvfaxplzz84iqm7s49rdscjjhnxlymrasrizfp26"))))
     (build-system pyproject-build-system)
-    ;; See https://github.com/scikit-learn-contrib/MAPIE/issues/432
-    (arguments
-     (list
-      #:test-flags
-      '(list "-k" (string-append "not test_correct_results"
-                                 " and not test_correct_results_binary"))))
-    (native-inputs (list python-pandas python-pytest))
+    (native-inputs (list python-pandas python-pytest python-setuptools
+                         python-wheel))
     (propagated-inputs (list python-numpy python-scikit-learn))
     (home-page "https://github.com/scikit-learn-contrib/MAPIE")
     (synopsis "Module for estimating prediction intervals")
@@ -2617,7 +2624,9 @@ conformal prediction methods intervals.")
     (native-inputs (list python-coverage
                          python-pytest
                          python-pytest-cov
-                         python-setuptools-scm))
+                         python-setuptools
+                         python-setuptools-scm
+                         python-wheel))
     (home-page "https://emcee.readthedocs.io/en/stable/")
     (synopsis "Ensemble sampling toolkit for MCMC")
     (description
@@ -2670,7 +2679,9 @@ sampler for Markov chain Monte Carlo (MCMC).")
            python-pytest
            python-pytest-randomly
            python-pytest-xdist
-           python-setuptools-scm))
+           python-setuptools-scm
+           python-setuptools
+           python-wheel))
     (home-page
      (string-append "https://www.statsmodels.org/v" version "/"))
     (synopsis "Statistical modeling and econometrics in Python")
@@ -7091,14 +7102,14 @@ completion.")
 (define-public python-rpy2
   (package
     (name "python-rpy2")
-    (version "3.5.15")
+    (version "3.5.17")
     (source
       (origin
         (method url-fetch)
         (uri (pypi-uri "rpy2" version))
         (sha256
          (base32
-          "0asvybb7kmr48pfkibp1qi3h3vlq2fl0mazaf0xj6zywhi5awks4"))))
+          "10nmydlbmi0vyim7sx71isx3z2mnnfjmhf3248cicy9x1z1hizyv"))))
     (build-system pyproject-build-system)
     (propagated-inputs
      (list python-cffi
@@ -7128,7 +7139,9 @@ completion.")
            python-numpy
            python-pandas
            python-pytest
-           python-pytest-cov))
+           python-pytest-cov
+           python-setuptools
+           python-wheel))
     (home-page "https://rpy2.github.io")
     (synopsis "Python interface to the R language")
     (description "rpy2 is a redesign and rewrite of rpy.  It is providing a

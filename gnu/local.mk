@@ -177,6 +177,7 @@ GNU_SYSTEM_MODULES =				\
   %D%/packages/busybox.scm			\
   %D%/packages/bqn.scm				\
   %D%/packages/c.scm				\
+  %D%/packages/c2rust.scm			\
   %D%/packages/calcurse.scm			\
   %D%/packages/ccache.scm			\
   %D%/packages/cdrom.scm			\
@@ -719,6 +720,7 @@ GNU_SYSTEM_MODULES =				\
   %D%/services/cgit.scm			\
   %D%/services/ci.scm				\
   %D%/services/configuration.scm		\
+  %D%/services/containers.scm   		\
   %D%/services/cuirass.scm			\
   %D%/services/cups.scm				\
   %D%/services/databases.scm			\
@@ -825,6 +827,7 @@ GNU_SYSTEM_MODULES =				\
   %D%/tests/base.scm				\
   %D%/tests/cachefilesd.scm			\
   %D%/tests/ci.scm				\
+  %D%/tests/containers.scm			\
   %D%/tests/cups.scm				\
   %D%/tests/databases.scm			\
   %D%/tests/desktop.scm				\
@@ -851,6 +854,7 @@ GNU_SYSTEM_MODULES =				\
   %D%/tests/samba.scm				\
   %D%/tests/security.scm			\
   %D%/tests/security-token.scm			\
+  %D%/tests/shadow.scm  			\
   %D%/tests/singularity.scm			\
   %D%/tests/ssh.scm				\
   %D%/tests/telephony.scm		        \
@@ -931,6 +935,8 @@ MODULES_NOT_COMPILED +=				\
 
 patchdir = $(guilemoduledir)/%D%/packages/patches
 dist_patch_DATA =						\
+  %D%/packages/patches/8mq-enable-imx_hab_handler.patch		\
+  %D%/packages/patches/8mq-move-stack-to-ocram_s.patch		\
   %D%/packages/patches/abcl-fix-build-xml.patch	\
   %D%/packages/patches/ableton-link-system-libraries-debian.patch	\
   %D%/packages/patches/abiword-explictly-cast-bools.patch	\
@@ -1040,6 +1046,7 @@ dist_patch_DATA =						\
   %D%/packages/patches/byobu-writable-status.patch		\
   %D%/packages/patches/bubblewrap-fix-locale-in-tests.patch	\
   %D%/packages/patches/busybox-add-missing-sha-NI-guard.patch	\
+  %D%/packages/patches/c2rust-ast-exporter-local-search.patch	\
   %D%/packages/patches/cadical-add-shared-library.patch		\
   %D%/packages/patches/calibre-no-updates-dialog.patch		\
   %D%/packages/patches/calibre-remove-test-sqlite.patch		\
@@ -1633,6 +1640,7 @@ dist_patch_DATA =						\
   %D%/packages/patches/libgpg-error-hurd64.patch		\
   %D%/packages/patches/libguestfs-syms.patch            	\
   %D%/packages/patches/libobjc2-unbundle-robin-map.patch	\
+  %D%/packages/patches/librewolf-use-system-wide-dir.patch	\
   %D%/packages/patches/libvirt-add-install-prefix.patch	\
   %D%/packages/patches/libziparchive-add-includes.patch		\
   %D%/packages/patches/lightdm-arguments-ordering.patch		\
@@ -1700,6 +1708,7 @@ dist_patch_DATA =						\
   %D%/packages/patches/libgnomeui-utf8.patch			\
   %D%/packages/patches/libgrss-CVE-2016-2001.patch		\
   %D%/packages/patches/libjami-ac-config-files.patch		\
+  %D%/packages/patches/libjami-libgit2-compatibility.patch	\
   %D%/packages/patches/libjxr-fix-function-signature.patch	\
   %D%/packages/patches/libjxr-fix-typos.patch			\
   %D%/packages/patches/libofa-ftbfs-1.diff		\
@@ -1925,6 +1934,7 @@ dist_patch_DATA =						\
   %D%/packages/patches/password-store-tree-compat.patch		\
   %D%/packages/patches/pciutils-hurd64.patch			\
   %D%/packages/patches/pdfpc-build-with-vala-0.56.patch         \
+  %D%/packages/patches/pdl-2.019-glut-bitmap-fonts.patch	\
   %D%/packages/patches/petri-foo-0.1.87-fix-recent-file-not-exist.patch			\
   %D%/packages/patches/plasma-framework-fix-KF5PlasmaMacros.cmake.patch \
   %D%/packages/patches/plasp-fix-normalization.patch \
@@ -1947,15 +1957,13 @@ dist_patch_DATA =						\
   %D%/packages/patches/python-matplotlib-fix-legend-loc-best-test.patch	\
   %D%/packages/patches/python-random2-getrandbits-test.patch		\
   %D%/packages/patches/python-pillow-use-zlib-1.3.patch	\
+  %D%/packages/patches/python-pydocstyle-add-support-for-pep701.patch	\
   %D%/packages/patches/python-pyreadstat-link-libiconv.patch	\
   %D%/packages/patches/python-pyls-black-41.patch		\
-  %D%/packages/patches/python-pypdf-annotate-tests-appropriately.patch	\
   %D%/packages/patches/python-sip-include-dirs.patch	\
   %D%/packages/patches/python-sgmllib3k-assertions.patch	\
   %D%/packages/patches/python-sphobjinv-defer-ssl-import.patch	\
   %D%/packages/patches/python-sphinx-prompt-docutils-0.19.patch	\
-  %D%/packages/patches/python-typeguard-python3.10.patch	\
-  %D%/packages/patches/python-uqbar-python3.10.patch	        \
   %D%/packages/patches/python-wxwidgets-type-errors.patch	\
   %D%/packages/patches/qtdeclarative-5-disable-qmlcache.patch	\
   %D%/packages/patches/qtdeclarative-disable-qmlcache.patch	\
@@ -2028,7 +2036,6 @@ dist_patch_DATA =						\
   %D%/packages/patches/pybugz-encode-error.patch		\
   %D%/packages/patches/pybugz-stty.patch			\
   %D%/packages/patches/pyqt-configure.patch			\
-  %D%/packages/patches/pytest-fix-unstrable-exception-test.patch	\
   %D%/packages/patches/python-2-deterministic-build-info.patch	\
   %D%/packages/patches/python-2.7-adjust-tests.patch		\
   %D%/packages/patches/python-2.7-expat-compat.patch		\
@@ -2044,8 +2051,6 @@ dist_patch_DATA =						\
   %D%/packages/patches/python-3-hurd-configure.patch		\
   %D%/packages/patches/python-angr-check-exec-deps.patch	\
   %D%/packages/patches/python-3-reproducible-build.patch	\
-  %D%/packages/patches/python-aionotify-0.2.0-py3.8.patch	\
-  %D%/packages/patches/python-argcomplete-1.11.1-fish31.patch	\
   %D%/packages/patches/python-cross-compile.patch		\
   %D%/packages/patches/python-configobj-setuptools.patch	\
   %D%/packages/patches/python-dateutil-pytest-compat.patch	\
@@ -2065,7 +2070,6 @@ dist_patch_DATA =						\
   %D%/packages/patches/python-libxml2-utf8.patch		\
   %D%/packages/patches/python-memcached-syntax-warnings.patch	\
   %D%/packages/patches/python-mox3-python3.6-compat.patch	\
-  %D%/packages/patches/python-parso-unit-tests-in-3.10.patch    \
   %D%/packages/patches/python-packaging-test-arch.patch		\
   %D%/packages/patches/python-paste-remove-timing-test.patch	\
   %D%/packages/patches/python-pyan3-fix-absolute-path-bug.patch \
@@ -2276,8 +2280,6 @@ dist_patch_DATA =						\
   %D%/packages/patches/tuxpaint-stamps-path.patch		\
   %D%/packages/patches/twinkle-bcg729.patch			\
   %D%/packages/patches/u-boot-allow-disabling-openssl.patch	\
-  %D%/packages/patches/u-boot-build-without-libcrypto.patch	\
-  %D%/packages/patches/u-boot-calloc-visibility.patch		\
   %D%/packages/patches/u-boot-nintendo-nes-serial.patch		\
   %D%/packages/patches/u-boot-rockchip-inno-usb.patch		\
   %D%/packages/patches/ucx-tcp-iface-ioctl.patch		\
@@ -2370,7 +2372,6 @@ dist_patch_DATA =						\
   %D%/packages/patches/xfig-Enable-error-message-for-missing-libraries.patch		\
   %D%/packages/patches/xfig-Fix-double-free-when-requesting-MediaBox.patch		\
   %D%/packages/patches/xfig-Use-pkg-config-to-set-fontconfig-CFLAGS-and-LIBS.patch	\
-  %D%/packages/patches/xfce4-panel-plugins.patch		\
   %D%/packages/patches/xfce4-settings-defaults.patch		\
   %D%/packages/patches/xgboost-use-system-dmlc-core.patch       \
   %D%/packages/patches/xmonad-dynamic-linking.patch		\

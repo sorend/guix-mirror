@@ -11,12 +11,13 @@
 ;; You may run it like so:
 ;;
 ;;     cp /gnu/store/.../disk-image devel-hurd.img
-;;     guix shell qemu@7 -- qemu-system-x86_64 -m 4096            \
-;;       --machine q35                                            \
+;;     guix shell qemu -- qemu-system-x86_64 -m 4096              \
 ;;       --enable-kvm                                             \
 ;;       --device e1000,netdev=net0                               \
 ;;       --netdev user,id=net0,hostfwd=tcp:127.0.0.1:10022-:2222  \
 ;;       --hda devel-hurd.img
+;;
+;; (note that the 64bit Hurd does not seem to show a login prompt)
 ;;
 ;; and use it like:
 ;;
@@ -30,10 +31,8 @@
 ;; For Guix hacking, do something like:
 ;;
 ;;     guix shell --boostrap -D guix
-;;     mkdir -p ~/src/guix
-;;     cd src/guix
-;;     git clone git clone git://git.savannah.gnu.org/guix
-;;     cd master
+;;     mkdir ~/src && cd src
+;;     git clone git://git.savannah.gnu.org/guix
 ;;     ./bootstrap
 ;;     ./configure
 ;;     make

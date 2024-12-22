@@ -2361,7 +2361,7 @@ parallel computing platforms.  It also supports serial execution.")
 (define-public librepcb
   (package
     (name "librepcb")
-    (version "1.0.0")
+    (version "1.2.0")
     (source
      (origin
        (method url-fetch)
@@ -2372,7 +2372,7 @@ parallel computing platforms.  It also supports serial execution.")
         ;; Delete libraries that we already have or don't need.
         ;; TODO: try to unbundle more (see lib/).
         `(begin
-           (let ((third-parties '("fontobene-qt5"
+           (let ((third-parties '("fontobene-qt"
                                   "googletest"
                                   "hoedown"
                                   "muparser"
@@ -2383,12 +2383,12 @@ parallel computing platforms.  It also supports serial execution.")
                       (delete-file-recursively third-party))
                     third-parties)))))
        (sha256
-        (base32 "02qfwyhdq1pklb5gkwn3rbsdhwvcgiksd21swaphz3kw6s4p9i8v"))))
+        (base32 "0ag8k2ni9x175s77gmg29adap82rjfgf87j8hqjdm3wzmdss7sgn"))))
     (build-system cmake-build-system)
     (inputs
      (list clipper
            fontconfig
-           fontobene-qt5
+           fontobene-qt
            glu
            hoedown
            muparser
@@ -2406,7 +2406,7 @@ parallel computing platforms.  It also supports serial execution.")
            unzip))
     (arguments
      `(#:configure-flags (list
-                          "-DUNBUNDLE_FONTOBENE_QT5=ON"
+                          "-DUNBUNDLE_FONTOBENE_QT=ON"
                           "-DUNBUNDLE_GTEST=ON"
                           "-DUNBUNDLE_HOEDOWN=ON"
                           "-DUNBUNDLE_MUPARSER=ON"
@@ -2419,6 +2419,7 @@ parallel computing platforms.  It also supports serial execution.")
                         (let ((test-include (list "*"))
                               (test-exclude
                                (list
+                                "ApplicationTest.testGetCacheDir"
                                 ;; These tests all fail when run by the build
                                 ;; process even though they pass when manually
                                 ;; run as a normal user.
@@ -2669,9 +2670,14 @@ specification can be downloaded at @url{http://3mf.io/specification/}.")
                             (substitute* "pyvisa/shell.py"
                               (("from .thirdparty import prettytable")
                                "import prettytable")))))))
-    (native-inputs (list python-pytest))
-    (propagated-inputs (list python-dataclasses python-prettytable
-                             python-typing-extensions))
+    (native-inputs
+     (list python-pytest
+           python-setuptools
+           python-wheel))
+    (propagated-inputs
+     (list python-dataclasses
+           python-prettytable
+           python-typing-extensions))
     (home-page "https://pyvisa.readthedocs.io/en/latest/")
     (synopsis "Python binding for the VISA library")
     (description "PyVISA is a Python package for support of the
@@ -2716,13 +2722,13 @@ Newton-Raphson power flow solvers in the C++ library lightsim2grid, and the
 (define-public python-pandapipes
   (package
     (name "python-pandapipes")
-    (version "0.10.0")
+    (version "0.11.0")
     (source
      (origin
        (method url-fetch)
-       (uri (pypi-uri "pandapipes" version ".zip"))
+       (uri (pypi-uri "pandapipes" version))
        (sha256
-        (base32 "06yqqd25hxa6q49qcbpy0njwxkqzfhbff4frrrxd84391njgvdhq"))))
+        (base32 "0rvbfpb42hd2hh2321vwj758yda2zrpj62hmdr7qrhfnzjhcr9z3"))))
     (build-system pyproject-build-system)
     (native-inputs (list python-nbmake
                          python-pytest
@@ -2752,6 +2758,12 @@ Newton-Raphson power flow solvers in the C++ library lightsim2grid, and the
                 "0idr730zdwlxdqyvh3s24720pxrjhwixih24gbqzipgp8nh0713i"))
               (file-name (git-file-name name version))))
     (build-system pyproject-build-system)
+    (arguments
+     (list
+      #:test-flags '(list ;; Missing docscrape dependency.
+                          "--ignore=doc/sphinxext/tests/test_docscrape.py"
+                          ;; these test require network
+                          "--ignore=skrf/tests/test_network.py")))
     (propagated-inputs (list python-matplotlib
                              python-networkx
                              python-numpy
@@ -3123,13 +3135,13 @@ interpolation toolkit.")
 (define-public python-motulator
   (package
     (name "python-motulator")
-    (version "0.3.0")
+    (version "0.5.0")
     (source
      (origin
        (method url-fetch)
        (uri (pypi-uri "motulator" version))
        (sha256
-        (base32 "01qv4d4rgkwk653vz1qz1nmakniv86572j5ikrxwd63rwv5ckggf"))))
+        (base32 "1kh13zfa4w73q04pny2w2zgym47fp8xy7glwfx82fdx4fihk7dv7"))))
     (build-system pyproject-build-system)
     (arguments
      (list #:tests? #f)) ; there are no tests
@@ -4781,11 +4793,18 @@ more.")
                 "0bazk3k2dyzlrh7yxs4pc76m5ysm7riia3ncg7as3xr4y9dy29bx"))))
     (build-system pyproject-build-system)
     (native-inputs
-     (list python-pytest-asyncio python-pytest-runner python-asynctest
-           python-pytest-mock))
+     (list python-asynctest
+           python-pytest-asyncio
+           python-pytest-mock
+           python-pytest-runner
+           python-setuptools
+           python-wheel))
     (propagated-inputs
-     (list python-aiofiles python-aiosqlite python-cryptography
-           python-importlib-metadata python-dateutil python-pytz
+     (list python-aiofiles
+           python-aiosqlite
+           python-cryptography
+           python-dateutil python-pytz
+           python-importlib-metadata
            python-sortedcontainers))
     (synopsis "OPC UA / IEC 62541 client and server library")
     (description "This package provides an OPC UA / IEC 62541 client and
@@ -4796,16 +4815,17 @@ server for Python and pypy3.")
 (define-public cadabra2
   (package
     (name "cadabra2")
-    (version "2.4.5.6")
+    (version "2.5.8")
     (source (origin
               (method git-fetch)
               (uri (git-reference
                     (url "https://github.com/kpeeters/cadabra2")
-                    (commit version)))
+                    (commit version)
+                    (recursive? #t)))
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "1c0832q156kl83dz1wpjw4wf2f68fg7421wxwzahnr2r7xxvgrvl"))))
+                "0pcijvvv75x6408r6slkwljhqb4l4csnk6dhf5333dv9j9cm76ck"))))
     (build-system cmake-build-system)
     (arguments
      (list
@@ -4820,20 +4840,13 @@ server for Python and pypy3.")
                         (assoc-ref %outputs "out")))
       #:phases
       #~(modify-phases %standard-phases
-          (add-after 'unpack 'patch-dependencies
-            (lambda _
-              (substitute* "cmake/modules/FindGLIBMM.cmake"
-                (("glibmm-2[.]4") "glibmm-2.68"))
-              (substitute* "client_server/ComputeThread.cc"
-                (("sigc::slot<void>[(][)]") "{}")
-                (("Glib::SPAWN_") "Glib::SpawnFlags::"))))
           (add-before 'check 'prepare-checks
             (lambda _
               (setenv "HOME" "/tmp"))))))
     (native-inputs
      (list pkg-config))
     (inputs
-     (list glibmm gmp python boost gtkmm-3 sqlite python-gmpy2 python-sympy
+     (list glibmm-2.66 gmp python boost gtkmm-3 sqlite python-gmpy2 python-sympy
            python-mpmath python-matplotlib texlive-dvipng
            `(,util-linux "lib")))
     (synopsis "Computer algebra system geared towards field theory")

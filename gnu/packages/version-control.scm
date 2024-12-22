@@ -1174,7 +1174,7 @@ write native speed custom Git applications in any language with bindings.")
 (define-public libgit2-1.8
   (package
     (inherit libgit2-1.7)
-    (version "1.8.3")
+    (version "1.8.4")
     (source (origin
               (inherit (package-source libgit2-1.7))
               (uri (git-reference
@@ -1183,7 +1183,7 @@ write native speed custom Git applications in any language with bindings.")
               (file-name (git-file-name "libgit2" version))
               (sha256
                (base32
-                "11jyxy6ckl19ayqpq5s3nlbcd0s1q4sdy8884m4pjrbzgxg6y1ds"))
+                "0jydckwn0bbrp2kbcr1ih1bz4sc6yhx7lrl22lqcgnf2v6ml6n01"))
               (patches
                (search-patches "libgit2-uninitialized-proxy-settings.patch"))
 	      (snippet
@@ -1345,8 +1345,9 @@ collaboration using typical untrusted file hosts or services.")
    (license license:gpl3+)))
 
 (define-public cgit
-  (let ((commit "2a13177f3dce660954b1ce78bc83338fe64f6b33")
-        (rev "6"))
+  ;; Use the latest commit, as the latest tagged release is 5 years old.
+  (let ((commit "751a5b527de07dde30a69709c2d6fc6f05fafd06")
+        (rev "7"))
     (package
       (name "cgit")
       ;; Update the ‘git-source’ input as well.
@@ -1358,7 +1359,7 @@ collaboration using typical untrusted file hosts or services.")
                       (commit commit)))
                 (sha256
                  (base32
-                  "0g02rghwx6gda15ip1pd3rli6smis1mrcb904zlxfqmm6dlc7lca"))
+                  "0rfflh7fnfhchd7pdspn2r416c5kaya37cad918f7ldidzwvmp37"))
                 (file-name (git-file-name name version))))
       (build-system gnu-build-system)
       (arguments
@@ -1373,7 +1374,7 @@ collaboration using typical untrusted file hosts or services.")
               (lambda* (#:key inputs #:allow-other-keys)
                 ;; Unpack the source of git into the 'git' directory.
                 (invoke "tar" "--strip-components=1" "-C" "git" "-xf"
-                        (assoc-ref inputs "git-source"))))
+                        #$(this-package-input "git-source.tar.xz"))))
             (add-after 'unpack 'patch-absolute-file-names
               (lambda* (#:key inputs outputs #:allow-other-keys)
                 (define (quoted-file-name input path)
@@ -1428,29 +1429,30 @@ collaboration using typical untrusted file hosts or services.")
        ;; For building manpage.
        (list asciidoc))
       (inputs
-       `( ;; Building cgit requires a Git source tree.
-         ("git-source"
-          ,(origin
-             (method url-fetch)
-             ;; cgit is tightly bound to git.  Use GIT_VER from the Makefile,
-             ;; which may not match the current (package-version git).
-             (uri "mirror://kernel.org/software/scm/git/git-2.46.2.tar.xz")
-             (sha256
-              (base32 "18rcmvximgyg3v1a9papi9djfamiak0ys5cmgx7ll29nhp3a3s2y"))))
-         ("bash-minimal" ,bash-minimal)
-         ("openssl" ,openssl)
-         ("python" ,python)
-         ("python-docutils" ,python-docutils)
-         ("python-markdown" ,python-markdown)
-         ("python-pygments" ,python-pygments)
-         ("zlib" ,zlib)
-         ;; bzip2, groff, gzip and xz are inputs (not native inputs)
-         ;; since they are actually substituted into cgit source and
-         ;; referenced by the built package output.
-         ("bzip2" ,bzip2)
-         ("groff" ,groff)
-         ("gzip" ,gzip)
-         ("xz" ,xz)))
+       (list (origin
+               (method url-fetch)
+               ;; Building cgit requires a Git source tree.
+               ;; cgit is tightly bound to git.  Use GIT_VER from the Makefile,
+               ;; which may not match the current (package-version git).
+               (uri "mirror://kernel.org/software/scm/git/git-2.47.1.tar.xz")
+               (sha256
+                (base32
+                 "046kdr5dhg31hjcg6wpfqnwwbaqdjyax7n8wx5s26fdf4fxzkn7k"))
+               (file-name "git-source.tar.xz"))
+             bash-minimal
+             openssl
+             python
+             python-docutils
+             python-markdown
+             python-pygments
+             zlib
+             ;; bzip2, groff, gzip and xz are inputs (not native inputs)
+             ;; since they are actually substituted into cgit source and
+             ;; referenced by the built package output.
+             bzip2
+             groff
+             gzip
+             xz))
       (home-page "https://git.zx2c4.com/cgit/")
       (synopsis "Web frontend for git repositories")
       (description
@@ -2247,7 +2249,7 @@ visualize your public Git repositories on a web interface.")
 (define-public pre-commit
   (package
     (name "pre-commit") ;formerly known as python-pre-commit
-    (version "3.3.3")
+    (version "3.7.1")
     (source
      (origin
        (method git-fetch)               ; no tests in PyPI release
@@ -2256,73 +2258,55 @@ visualize your public Git repositories on a web interface.")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "1spkg3ld3s6l7wz24lcywlf1z2ywp751bcdlxjfdsln76bi9ylp8"))
+        (base32 "1m2cs21xq2j1x80s7bh47fm2nsbnfxgscxfijaqwdsi2rrf4vlzv"))
        (modules '((guix build utils)))
        (snippet '(substitute* "setup.cfg"
                    (("virtualenv>=20.10.0") ;our virtualenv (20.3.1) is fine
                     "virtualenv>=20.0.8")))))
-    (build-system python-build-system)
+    (build-system pyproject-build-system)
     (arguments
-     `(#:phases
-       (modify-phases %standard-phases
-         (add-before 'check 'prepare-check-env
-           (lambda _
-             ;; Change from /homeless-shelter to /tmp for write permission.
-             (setenv "HOME" "/tmp")
-             ;; Environment variables used in the tests.
-             (setenv "GIT_AUTHOR_NAME" "Your Name")
-             (setenv "GIT_COMMITTER_NAME" "Your Name")
-             (setenv "GIT_AUTHOR_EMAIL" "you@example.com")
-             (setenv "GIT_COMMITTER_EMAIL" "you@example.com")
-             ;; Some tests still fail with PermissionError.  Make the source
-             ;; tree writable.
-             (for-each make-file-writable (find-files "."))
-             ;; Some tests will need a working git repository.
-             (invoke "git" "init")
-             (invoke "git" "config" "--global" "user.name" "Your Name")
-             (invoke "git" "config" "--global" "user.email" "you@example.com")))
-         (replace 'check
-           (lambda* (#:key inputs outputs tests? #:allow-other-keys)
-             (add-installed-pythonpath inputs outputs)
-             (when tests?
-               ;; The file below contains 30+ tests that fail because they
-               ;; depend on tools from multiple languages (cargo, npm, cpan,
-               ;; Rscript, etc).  Other tests are passing, but it's more
-               ;; convenient to skip the file than list 30 tests to skip.
-               (invoke "pytest" "--ignore=tests/repository_test.py"
-                       ;; Ruby and Node tests require node and gem.
-                       "--ignore=tests/languages/node_test.py"
-                       "--ignore=tests/languages/ruby_test.py"
-                       ;; Skip lang-specific (network) tests added in 3.1.1
-                       "--ignore=tests/languages/conda_test.py"
-                       "--ignore=tests/languages/coursier_test.py"
-                       "--ignore=tests/languages/dart_test.py"
-                       "--ignore=tests/languages/docker_test.py"
-                       "--ignore=tests/languages/docker_image_test.py"
-                       "--ignore=tests/languages/dotnet_test.py"
-                       "--ignore=tests/languages/golang_test.py"
-                       "--ignore=tests/languages/lua_test.py"
-                       "--ignore=tests/languages/perl_test.py"
-                       "--ignore=tests/languages/rust_test.py"
-                       "--ignore=tests/languages/swift_test.py"
-                       "-k"
-                       (string-append
-                        ;; TODO: these tests fail with AssertionError.  It may
-                        ;; be possible to fix them.
-                        "not test_install_existing_hooks_no_overwrite"
-                        " and not test_uninstall_restores_legacy_hooks"
-                        " and not test_installed_from_venv"
-                        " and not test_healthy_venv_creator"
-                        " and not test_r_hook and not test_r_inline"))))))))
+     (list
+      ;; Skip language-specific tests because they depennd on language tools.
+      #:test-flags
+      #~(list "--ignore" "tests/languages"
+              ;; These fail with AssertionError.
+              "-k" (string-append
+                    "not test_additional_dependencies_roll_forward"
+                    " and not test_control_c_control_c_on_install"
+                    " and not test_invalidated_virtualenv"
+                    " and not test_local_python_repo"
+                    " and not test_install_existing_hooks_no_overwrite"
+                    " and not test_uninstall_restores_legacy_hooks"
+                    " and not test_installed_from_venv"))
+      #:phases
+      #~(modify-phases %standard-phases
+          (add-before 'check 'prepare-check-env
+            (lambda _
+              ;; Change from /homeless-shelter to /tmp for write permission.
+              (setenv "HOME" "/tmp")
+              ;; Environment variables used in the tests.
+              (setenv "GIT_AUTHOR_NAME" "Your Name")
+              (setenv "GIT_COMMITTER_NAME" "Your Name")
+              (setenv "GIT_AUTHOR_EMAIL" "you@example.com")
+              (setenv "GIT_COMMITTER_EMAIL" "you@example.com")
+              ;; Some tests still fail with PermissionError.  Make the source
+              ;; tree writable.
+              ;; (for-each make-file-writable (find-files "."))
+              ;; Some tests will need a working git repository.
+              (invoke "git" "init")
+              (invoke "git" "config" "--global" "user.name" "Your Name")
+              (invoke "git" "config" "--global" "user.email" "you@example.com"))))))
     (native-inputs
-     `(("git" ,git-minimal/pinned)
-       ("python-covdefaults" ,python-covdefaults)
-       ("python-coverage" ,python-coverage)
-       ("python-distlib" ,python-distlib)
-       ("python-pytest" ,python-pytest)
-       ("python-pytest-env" ,python-pytest-env)
-       ("python-re-assert" ,python-re-assert)
-       ("which" ,which)))
+     (list git-minimal
+           python-covdefaults
+           python-coverage
+           python-distlib
+           python-pytest
+           python-pytest-env
+           python-re-assert
+           python-setuptools
+           python-wheel
+           which))
     ;; Propagate because pre-commit is also used as a module.
     (propagated-inputs
      (list python-cfgv
@@ -3268,7 +3252,7 @@ email header.")
            python-dnspython
            python-requests))
     (native-inputs
-     (list python-pytest))
+     (list python-pytest python-setuptools python-wheel))
     (home-page "https://git.kernel.org/pub/scm/utils/b4/b4.git")
     (synopsis "Tool for working with patches in public-inbox archives")
     (description

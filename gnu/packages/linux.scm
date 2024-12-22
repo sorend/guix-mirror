@@ -174,6 +174,7 @@
   #:use-module (gnu packages protobuf)
   #:use-module (gnu packages pulseaudio)
   #:use-module (gnu packages python)
+  #:use-module (gnu packages python-build)
   #:use-module (gnu packages python-xyz)
   #:use-module (gnu packages qt)
   #:use-module (gnu packages readline)
@@ -532,7 +533,7 @@ corresponding UPSTREAM-SOURCE (an origin), using the given DEBLOB-SCRIPTS."
 ;; Here are the support timelines:
 ;; <https://www.kernel.org/category/releases.html>
 
-(define-public linux-libre-6.6-version "6.6.64")
+(define-public linux-libre-6.6-version "6.6.66")
 (define-public linux-libre-6.6-gnu-revision "gnu")
 (define deblob-scripts-6.6
   (linux-libre-deblob-scripts
@@ -542,12 +543,12 @@ corresponding UPSTREAM-SOURCE (an origin), using the given DEBLOB-SCRIPTS."
    (base32 "1x3455v7sfzakq99ydifh65yzvjzrw06p2lchwb6902yzqbnh786")))
 (define-public linux-libre-6.6-pristine-source
   (let ((version linux-libre-6.6-version)
-        (hash (base32 "1cbag4wzv5fpjdcl0rpp158ch1q17rfz2qxm1xjjyhnblqzxjpq6")))
+        (hash (base32 "0lhy5waj330hmaxbqpfw2fxzkvvlxxs1nr325i8jy736qhvpjxcx")))
    (make-linux-libre-source version
                             (%upstream-linux-source version hash)
                             deblob-scripts-6.6)))
 
-(define-public linux-libre-6.1-version "6.1.119")
+(define-public linux-libre-6.1-version "6.1.120")
 (define-public linux-libre-6.1-gnu-revision "gnu")
 (define deblob-scripts-6.1
   (linux-libre-deblob-scripts
@@ -557,12 +558,12 @@ corresponding UPSTREAM-SOURCE (an origin), using the given DEBLOB-SCRIPTS."
    (base32 "060pbbvk3c1r9v6fz1qm5f0hjb29wi67lg7an0nwl6bpjsk5ci52")))
 (define-public linux-libre-6.1-pristine-source
   (let ((version linux-libre-6.1-version)
-        (hash (base32 "0y1j8bz99d5vkxklzpwhns5r77lpz2prszf6whfahi58s0wszkdf")))
+        (hash (base32 "06gp5fdq0bc39hd8mf9mrdrygdybdr3nzsb58lcapf5vmjw9gjb1")))
    (make-linux-libre-source version
                             (%upstream-linux-source version hash)
                             deblob-scripts-6.1)))
 
-(define-public linux-libre-5.15-version "5.15.173")
+(define-public linux-libre-5.15-version "5.15.174")
 (define-public linux-libre-5.15-gnu-revision "gnu")
 (define deblob-scripts-5.15
   (linux-libre-deblob-scripts
@@ -572,12 +573,12 @@ corresponding UPSTREAM-SOURCE (an origin), using the given DEBLOB-SCRIPTS."
    (base32 "1pbl08jzqh944z34bz25k2v7igsm3r89jbcg0hba3cvyybkkfc2g")))
 (define-public linux-libre-5.15-pristine-source
   (let ((version linux-libre-5.15-version)
-        (hash (base32 "1a3x3ld6g7ny0hdfqfvj5j2i5sx5l5p236pdnsr0icn9ri3jljwa")))
+        (hash (base32 "02kn9nvaa36s070k235lk9x6n40l2zlwj4v6i2y6nnx0cjw3rrn3")))
    (make-linux-libre-source version
                             (%upstream-linux-source version hash)
                             deblob-scripts-5.15)))
 
-(define-public linux-libre-5.10-version "5.10.230")
+(define-public linux-libre-5.10-version "5.10.231")
 (define-public linux-libre-5.10-gnu-revision "gnu1")
 (define deblob-scripts-5.10
   (linux-libre-deblob-scripts
@@ -587,12 +588,12 @@ corresponding UPSTREAM-SOURCE (an origin), using the given DEBLOB-SCRIPTS."
    (base32 "14jdl5rk3w7h97svl6j6ngbywj5qixmpv6ifhqkzjxpp07xngvs4")))
 (define-public linux-libre-5.10-pristine-source
   (let ((version linux-libre-5.10-version)
-        (hash (base32 "0isbb0ixqg4yzlh3lmdvnax4m1ikf2q4wk0b9vgqc63p7gpm066d")))
+        (hash (base32 "0xcnlz5ib4b368z5cyp4qwys3jsbm18wlvwn73rzj2j6rj1lhnjn")))
    (make-linux-libre-source version
                             (%upstream-linux-source version hash)
                             deblob-scripts-5.10)))
 
-(define-public linux-libre-5.4-version "5.4.286")
+(define-public linux-libre-5.4-version "5.4.287")
 (define-public linux-libre-5.4-gnu-revision "gnu1")
 (define deblob-scripts-5.4
   (linux-libre-deblob-scripts
@@ -602,7 +603,7 @@ corresponding UPSTREAM-SOURCE (an origin), using the given DEBLOB-SCRIPTS."
    (base32 "1q1wcslpwpwsnwzbddjdc0qv2h89492skyw2zsjyb4rpz41s66mg")))
 (define-public linux-libre-5.4-pristine-source
   (let ((version linux-libre-5.4-version)
-        (hash (base32 "0z48n7vahg318bgkccy8xqgl87vfb8zmn995cqh7z38fvzrm81qq")))
+        (hash (base32 "082bq26bwi8jxfbk840wf9awm5l65aya4bg43im9qvqfpzjzl3qd")))
    (make-linux-libre-source version
                             (%upstream-linux-source version hash)
                             deblob-scripts-5.4)))
@@ -1645,7 +1646,7 @@ and the notification, WiFi, and Bluetooth LED.")
 (define-public tuxedo-keyboard
   (package
     (name "tuxedo-keyboard")
-    (version "4.6.3")
+    (version "4.11.7")
     (source
      (origin
        (method git-fetch)
@@ -1654,7 +1655,7 @@ and the notification, WiFi, and Bluetooth LED.")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "1958ls5jk8ilc5mn7z3770phrqwj09lnam2slyq54h15n68hf07c"))))
+        (base32 "0r5ik5jzdk7jghzhx3ahzwddzpd1vx55qrsrz265qlxxfk8zhr35"))))
     (build-system linux-module-build-system)
     (arguments
      (list #:tests? #f))                ; no test suite
@@ -4662,7 +4663,7 @@ time.")
                  (string-append
                   (assoc-ref inputs "kernel-headers") "/include/linux"))))))))
     (native-inputs
-     (list python-pytest))
+     (list python-pytest python-setuptools python-wheel))
     (home-page "https://github.com/gvalkov/python-evdev")
     (synopsis "Bindings to the Linux input handling subsystem")
     (description
@@ -5298,6 +5299,7 @@ SMBus access.")
                       (string-append "-L" #$(this-package-input "i2c-tools")
                                      "/lib"))))))))
     (inputs (list i2c-tools))
+    (native-inputs (list python-setuptools python-wheel))
     (synopsis "I2C/SMBus access for Python")
     (description "This package provides a Python library to access
 @acronym{I2C, Inter-Integrated Circuit} and @acronym{SMBus, System
@@ -5559,7 +5561,9 @@ isolation or root privileges.")
      (list singularity))
     (native-inputs
      (list python-pytest
-           python-pytest-runner))
+           python-pytest-runner
+           python-setuptools
+           python-wheel))
     (home-page "https://github.com/singularityhub/singularity-cli")
     (synopsis "Singularity Python client")
     (description "@code{python-spython} is a Python library to interact with
@@ -10053,7 +10057,7 @@ types and interfaces and translates so that the X server can use them.")
 (define-public pipewire
   (package
     (name "pipewire")
-    (version "1.2.5")
+    (version "1.2.7")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -10062,7 +10066,7 @@ types and interfaces and translates so that the X server can use them.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "0mjr3sz0y9szqaws84c05qbdiaayagx1yvw836ynvkbr5c9dr33i"))))
+                "17a18978100c0dj3w42ybqxjg46cgdmrvij7dlvbwsrq7sgvcpsd"))))
     (build-system meson-build-system)
     (arguments
      (list
@@ -10614,7 +10618,7 @@ kernel side implementation.")
 (define-public erofs-utils
   (package
     (name "erofs-utils")
-    (version "1.7.1")
+    (version "1.8.3")
     (source
      (origin
        (method git-fetch)
@@ -10623,7 +10627,7 @@ kernel side implementation.")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "1mvybd06cswxj0nzk9ph1pkb9mrs8lvcbn6cgsp7z3wl6jai9d6d"))))
+        (base32 "1a57a8r58wp90a9r2fmkfxsq2agq78rm2qif3js0rsraz4hhrfn2"))))
     (build-system gnu-build-system)
     (inputs
      (list lz4

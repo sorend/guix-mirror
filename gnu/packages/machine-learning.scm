@@ -167,7 +167,12 @@ representations and sentence classification.")
        (sha256
         (base32 "1i699a9m5ndnj8cwzjjf2agb77aawhzrzxfbmn5zrkxridxvnypj"))))
     (build-system pyproject-build-system)
-    (propagated-inputs (list python-autograd python-scipy))
+    (native-inputs
+     (list python-setuptools
+           python-wheel))
+    (propagated-inputs
+     (list python-autograd
+           python-scipy))
     (home-page "https://github.com/CamDavidsonPilon/autograd-gamma")
     (synopsis
      "Autograd-compatible approximations to the gamma family of functions")
@@ -183,7 +188,7 @@ family of functions.")
     (build-system pyproject-build-system)
     (propagated-inputs (list python-numpy python-scipy))
     (inputs (list fasttext))
-    (native-inputs (list pybind11))))
+    (native-inputs (list pybind11 python-setuptools python-wheel))))
 
 (define-public python-funsor
   (package
@@ -196,6 +201,8 @@ family of functions.")
        (sha256
         (base32 "0cgysij0dix0fikyz2x4f8jvaskm5s5a04s07chzaz2dw1fpxdq8"))))
     (build-system pyproject-build-system)
+    (arguments  ; disable flaky test
+     (list #:test-flags '(list "-k" "not test_integrate_variable[x23-i]")))
     (propagated-inputs (list python-makefun python-multipledispatch
                              python-numpy python-opt-einsum
                              python-typing-extensions))
@@ -210,10 +217,12 @@ family of functions.")
                          python-pytest-xdist
                          python-requests
                          python-scipy
+                         python-setuptools
                          python-sphinx
                          python-sphinx-gallery
                          python-sphinx-rtd-theme
-                         python-torchvision))
+                         python-torchvision
+                         python-wheel))
     (home-page "https://github.com/pyro-ppl/funsor")
     (synopsis "Tensor-like library for functions and distributions")
     (description
@@ -358,7 +367,8 @@ classification.")
                         "-k" "not testJSONConversionBestEffort")))))))
     (propagated-inputs
      (list python-absl-py python-contextlib2 python-pyyaml python-six))
-    (native-inputs (list python-mock python-pytest))
+    (native-inputs (list python-mock python-pytest python-setuptools
+                         python-wheel))
     (home-page "https://github.com/google/ml_collections")
     (synopsis "Python collections designed for Machine Learning usecases")
     (description
@@ -637,6 +647,50 @@ Performance is achieved by using the LLVM JIT compiler.")
 of foundation language models.  It requires models parameters to be downloaded
 independently to be able to run a LLaMA model.")
       (license license:expat))))
+
+(define-public whisper-cpp
+  (package
+    (name "whisper-cpp")
+    (version "1.7.3")
+    (source (origin
+              (method git-fetch)
+              (uri (git-reference
+                     (url "https://github.com/ggerganov/whisper.cpp")
+                     (commit (string-append "v" version))))
+              (file-name (git-file-name name version))
+              (sha256
+               (base32
+                "0rrkgrx8akw91b77kl36i03i39a79r0p69glhhidm28qfw02icjx"))))
+    (build-system cmake-build-system)
+    (arguments
+      (list
+        #:tests? #false ; uhh. They have it commented out in CMakeLists.txt
+        #:configure-flags
+        #~(list "-DBUILD_SHARED_LIBS=ON"
+                "-DGGML_BLAS=ON"
+                "-DGGML_BLAS_VENDOR=OpenBLAS"
+                (string-append "-DBLAS_INCLUDE_DIRS="
+                               #$(this-package-input "openblas")
+                               "/include")
+                (string-append "-DBLAS_LIBRARIES="
+                               #$(this-package-input "openblas")
+                               "/lib/libopenblas.so")
+
+                "-DGGML_NATIVE=OFF" ;no '-march=native'
+                "-DGGML_FMA=OFF"    ;and no '-mfma', etc.
+                "-DGGML_AVX2=OFF"
+                "-DGGML_AVX512=OFF"
+                "-DGGML_AVX512_VBMI=OFF"
+                "-DGGML_AVX512_VNNI=OFF")))
+    (native-inputs
+     (list pkg-config))
+    (inputs
+     (list openblas))
+    (synopsis "Speech recognition")
+    (description "This package provides speech recognition.")
+    (properties '((tunable? . #true))) ;use AVX512, FMA, etc. when available
+    (home-page "https://github.com/ggerganov/whisper.cpp")
+    (license license:expat)))
 
 (define-public mcl
   (package
@@ -940,6 +994,7 @@ depend on language-specific pre- or post-processing.")
          (sha256
           (base32 "018ilrp41fcclmb5lsml3aijwbmhbq3m7wy65hr1fryj0avic8fr"))))
       (build-system pyproject-build-system)
+      (native-inputs (list python-setuptools python-wheel))
       (home-page "https://github.com/sofiatolaosebikan/hopcroftkarp")
       (synopsis "Implementation of the Hopcroft-Karp algorithm")
       (description
@@ -965,7 +1020,8 @@ cardinality matching from a bipartite graph.")
                              python-numpy
                              python-scikit-learn
                              python-scipy))
-    (native-inputs (list python-pytest python-pytest-cov))
+    (native-inputs (list python-pytest python-pytest-cov python-setuptools
+                         python-wheel))
     (home-page "https://persim.scikit-tda.org")
     (synopsis "Tools for analyzing persistence diagrams in Python")
     (description
@@ -996,7 +1052,11 @@ It currently houses implementations of
     (build-system pyproject-build-system)
     (propagated-inputs (list python-numpy python-persim python-scikit-learn
                              python-scipy))
-    (native-inputs (list python-cython python-pytest))
+    (native-inputs
+     (list python-cython
+           python-pytest
+           python-setuptools
+           python-wheel))
     (home-page "https://ripser.scikit-tda.org")
     (synopsis "Persistent homology library for Python")
     (description
@@ -1047,7 +1107,7 @@ and not test_wmt22_references")
                              python-portalocker
                              python-regex
                              python-tabulate))
-    (native-inputs (list python-pytest))
+    (native-inputs (list python-pytest python-setuptools python-wheel))
     (home-page "https://github.com/mjpost/sacrebleu")
     (synopsis
      "Compute shareable, comparable, and reproducible BLEU, chrF, and TER scores")
@@ -1088,7 +1148,7 @@ unsupervised text tokenizer.")
     (build-system pyproject-build-system)
     ;; This package depends on spacy, which depends on this package.
     (arguments (list #:tests? #false))
-    (native-inputs (list python-pytest))
+    (native-inputs (list python-pytest python-setuptools python-wheel))
     (home-page "https://spacy.io")
     (synopsis "Legacy registered functions for spaCy backwards compatibility")
     (description
@@ -1109,7 +1169,7 @@ compatibility.")
     (build-system pyproject-build-system)
     ;; This package depends on spacy, which depends on this package.
     (arguments (list #:tests? #false))
-    (native-inputs (list python-pytest))
+    (native-inputs (list python-pytest python-setuptools python-wheel))
     (home-page "https://github.com/explosion/spacy-loggers")
     (synopsis "Logging utilities for SpaCy")
     (description "This package provides logging utilities for the SpaCy
@@ -1415,7 +1475,9 @@ in terms of new algorithms.")
             python-fb-re2
             python-parameterized-next
             python-pytest
-            python-pytest-runner)
+            python-pytest-runner
+            python-setuptools
+            python-wheel)
       (filter
        (lambda (pkg)
          (member (or (%current-target-system)
@@ -1779,7 +1841,9 @@ computing environments.")
      (list python-cython-3
            python-pandas
            python-pytest
-           python-pytest-xdist))
+           python-pytest-xdist
+           python-setuptools
+           python-wheel))
     (propagated-inputs
      (list python-numpy python-threadpoolctl python-scipy python-joblib))
     (home-page "https://scikit-learn.org/")
@@ -1840,7 +1904,8 @@ data analysis.")
              python-scikit-learn
              python-scipy
              python-packaging))
-      (native-inputs (list python-pytest python-pytest-cov python-cython))
+      (native-inputs (list python-pytest python-pytest-cov python-cython
+                           python-setuptools python-wheel))
       (home-page "https://github.com/scikit-learn-contrib/scikit-learn-extra")
       (synopsis "Set of tools for scikit-learn")
       (description
@@ -1905,7 +1970,8 @@ and are compatible with its API.")
                              python-srsly
                              python-typing-extensions
                              python-wasabi))
-    (native-inputs (list python-cython python-mock python-pytest))
+    (native-inputs (list python-cython python-mock python-pytest
+                         python-setuptools python-wheel))
     (home-page "https://github.com/explosion/thinc")
     (synopsis "Functional take on deep learning")
     (description
@@ -1967,6 +2033,8 @@ for scientific computing and data science (e.g. BLAS and OpenMP).")
                          python-pandas
                          python-pytest
                          python-pytest-cov
+                         python-setuptools
+                         python-wheel
                          tensorflow))
     (home-page "https://github.com/scikit-learn-contrib/imbalanced-learn")
     (synopsis "Toolbox for imbalanced dataset in machine learning")
@@ -2002,7 +2070,9 @@ It is compatible with @code{scikit-learn}.")
                          python-nose
                          python-pytest
                          python-pandas
-                         python-networkx))
+                         python-networkx
+                         python-setuptools
+                         python-wheel))
     (home-page "https://github.com/scikit-learn-contrib/hdbscan")
     (synopsis "High performance implementation of HDBSCAN clustering")
     (description "HDBSCAN - Hierarchical Density-Based Spatial Clustering of
@@ -2025,7 +2095,7 @@ to return meaningful clusters (if there are any).")
        (sha256
         (base32 "0l5dpdsk5vg7rpay81bncp04119hnl5z7zxjv63jrnm9spcwwi3g"))))
     (build-system pyproject-build-system)
-    (native-inputs (list python-pytest))
+    (native-inputs (list python-pytest python-setuptools python-wheel))
     (propagated-inputs
      (list python-importlib-metadata
            python-joblib
@@ -2147,7 +2217,9 @@ standard feature selection algorithms.")
      (list python-pytest
            python-pytest-lazy-fixture
            python-pytorch
-           python-torchvision))
+           python-torchvision
+           python-setuptools
+           python-wheel))
     (home-page "https://cleanlab.ai")
     (synopsis "Automatically find and fix dataset issues")
     (description
@@ -2179,18 +2251,18 @@ data by providing clean labels during training.")
            python-scipy
            python-tqdm))
     (native-inputs
-     (list python-pytest))))
+     (list python-pytest python-setuptools python-wheel))))
 
 (define-public python-cma
   (package
     (name "python-cma")
-    (version "3.4.0")
+    (version "4.0.0")
     (source (origin
               (method url-fetch)
               (uri (pypi-uri "cma" version))
               (sha256
                (base32
-                "0v0gs46n4ividm9viml09sllxw2cymxlp8nm2lvvwwcqp5lxksx1"))))
+                "198kdy2lxslml0g0s1sgc2zq1fsf2dh9s60lwshgrwivk1bcwa7x"))))
     (build-system python-build-system)
     (arguments
      (list #:phases #~(modify-phases %standard-phases
@@ -2220,7 +2292,7 @@ and a few related numerical optimization tools.")
         (base32 "17bk60mhkglz6s7wz6xcyhw1h4mvghc1iid0805dra7jdyafwrfn"))
        (file-name (git-file-name name version))))
     (build-system pyproject-build-system)
-    (native-inputs (list python-hypothesis))
+    (native-inputs (list python-hypothesis python-setuptools python-wheel))
     (propagated-inputs (list python-numpy))
     (home-page "https://github.com/CyberAgentAILab/cmaes")
     (synopsis "CMA-ES implementation for Python")
@@ -2247,7 +2319,7 @@ Covariance Matrix Adaptation Evolution Strategy (CMA-ES) for Python.")
       (version version)
       (build-system pyproject-build-system)
       (native-inputs
-       (list python-nose python-pytest))
+       (list python-nose python-pytest python-setuptools python-wheel))
       (propagated-inputs
        (list python-future python-numpy))
       (synopsis "Efficiently computes derivatives of NumPy code")
@@ -2386,13 +2458,15 @@ interactive learning.")
            python-networkx
            python-numpy
            python-scipy
+           python-setuptools ; For pkg_resources.
            python-six
            python-tqdm))
     (native-inputs
      (list python-black
            python-nose
            python-pymongo
-           python-pytest))
+           python-pytest
+           python-wheel))
     (home-page "https://hyperopt.github.io/hyperopt/")
     (synopsis "Library for hyperparameter optimization")
     (description "Hyperopt is a Python library for serial and parallel
@@ -2403,13 +2477,13 @@ discrete, and conditional dimensions.")
 (define-public python-deepxde
   (package
     (name "python-deepxde")
-    (version "1.12.1")
+    (version "1.12.2")
     (source (origin
               (method url-fetch)
               (uri (pypi-uri "deepxde" version))
               (sha256
                (base32
-                "1i7ibj968hxgqhv1jzkk5sph1608bkz147jmz0v943m9rqvscw10"))))
+                "07v3b7k4k4a27yb00fj5xjvflfpzs815sd9bw8zgvdkvp2fsaxsr"))))
     (build-system pyproject-build-system)
     (arguments
      (list #:tests? #f                  ; there are no tests
@@ -2421,7 +2495,8 @@ discrete, and conditional dimensions.")
                             (setenv "HOME" "/tmp"))))))
     ;; DeepXDE supported backends are TensorFlow (v1 and v2), PyTorch, JAX and
     ;; PaddlePaddle.  We test with PyTorch because we have it up to date.
-    (native-inputs (list python-pytorch python-setuptools-scm))
+    (native-inputs (list python-pytorch python-setuptools
+                         python-setuptools-scm python-wheel))
     (propagated-inputs (list python-matplotlib python-numpy
                              python-scikit-learn python-scikit-optimize
                              python-scipy))
@@ -3646,7 +3721,8 @@ in a fast and accurate way.")
                 (symlink libxgboost (string-append xgbdir "/lib"
                                                    "/libxgboost.so"))))))))
     (native-inputs
-     (list python-pandas python-pytest python-scikit-learn))
+     (list python-pandas python-pytest python-scikit-learn python-setuptools
+           python-wheel))
     (inputs
      (list xgboost))
     (propagated-inputs
@@ -3962,7 +4038,8 @@ These include a barrier, broadcast, and allreduce.")
          ;; nor is examples/plot_quantum.py
          " and not test_file_is_generated"))))
     (propagated-inputs (list python-jsmin python-numpy python-scipy))
-    (native-inputs (list python-pytest python-pytest-cov python-sphinx))
+    (native-inputs (list python-pytest python-pytest-cov python-sphinx
+                         python-setuptools python-wheel))
     (home-page "https://github.com/tensorly/tensorly")
     (synopsis "Tensor learning in Python")
     (description
@@ -4000,7 +4077,7 @@ methodxs at scale on CPU or GPU.")
           (add-before 'check 'set-numba-cache-dir
             (lambda _
               (setenv "NUMBA_CACHE_DIR" "/tmp"))))))
-    (native-inputs (list python-pytest))
+    (native-inputs (list python-pytest python-setuptools python-wheel))
     (propagated-inputs
      (list python-numba
            python-numpy
@@ -5020,6 +5097,7 @@ Neural Networks for a wide range of applications related to structured data.")
               (sha256
                (base32
                 "0mqrhq3s23mn8n4i0q791pshn3dgplp0h9ny0pmmp798q0798dzs"))))
+    (arguments (list #:tests? #f))      ; no tests in PyPI archive.
     (build-system pyproject-build-system)
     (propagated-inputs (list python-click
                              python-fastapi-for-pytorch-lightning
@@ -5031,6 +5109,7 @@ Neural Networks for a wide range of applications related to structured data.")
                              python-urllib3
                              python-uvicorn
                              python-websocket-client))
+    (native-inputs (list python-setuptools python-wheel))
     (home-page "https://lightning.ai")
     (synopsis "Lightning Cloud command line client")
     (description "This package provides a command line interface for Lightning
@@ -5048,9 +5127,14 @@ AI services.")
                (base32
                 "016zikn39apig3y6xyipw34w0w02c73z483radddbf68ivpjgz3r"))))
     (build-system pyproject-build-system)
-    (propagated-inputs (list python-importlib-metadata python-packaging
-                             python-typing-extensions))
-    (native-inputs (list python-coverage))
+    (native-inputs
+     (list python-coverage
+           python-setuptools
+           python-wheel))
+    (propagated-inputs
+     (list python-importlib-metadata
+           python-packaging
+           python-typing-extensions))
     (home-page "https://github.com/Lightning-AI/utilities")
     (synopsis "PyTorch Lightning sample project")
     (description "This package provides common Python utilities and GitHub
@@ -5093,7 +5177,8 @@ Actions for the Lightning suite of libraries.")
                          python-parameterized
                          python-pytest
                          python-pytest-cov
-                         python-scikit-learn))
+                         python-scikit-learn
+                         python-setuptools))
     (home-page "https://captum.ai")
     (synopsis "Model interpretability for PyTorch")
     (description "Captum is a model interpretability and understanding library
@@ -5123,6 +5208,7 @@ as torchvision, torchtext, and others.")
            (lambda _
              (delete-file "readchar/_win_read.py"))))))
     (propagated-inputs (list python-setuptools))
+    (native-inputs (list python-wheel))
     (home-page "https://github.com/magmax/python-readchar")
     (synopsis "Library to easily read single chars and key strokes")
     (description "This package provides a Python library to easily read single
@@ -5391,7 +5477,7 @@ implementations and an easy-to-use API to create custom metrics.  It offers:
            python-pillow-simd
            python-pytorch))
     (native-inputs
-     (list which python-pytest))
+     (list which python-pytest python-setuptools python-wheel))
     (home-page "https://pytorch.org/vision/stable/index.html")
     (synopsis "Datasets, transforms and models specific to computer vision")
     (description
@@ -5663,6 +5749,7 @@ inference.")
     (native-inputs (list python-flake8
                          python-flake8-print
                          python-pytest
+                         python-setuptools
                          python-setuptools-scm
                          python-twine))
     (home-page "https://github.com/cornellius-gp/linear_operator/")
@@ -5695,6 +5782,7 @@ linear algebra routines needed for structured matrices (or operators).")
                          python-flake8-print
                          python-nbval
                          python-pytest
+                         python-setuptools
                          python-twine))
     (home-page "https://gpytorch.ai")
     (synopsis "Implementation of Gaussian Processes in PyTorch")
@@ -5994,7 +6082,7 @@ fi"
                              ;; Required by codegen.
                              python-setuptools
                              python-sympy))
-    (native-inputs (list python-pytest python-pytest-xdist))
+    (native-inputs (list python-pytest python-pytest-xdist python-wheel))
     (home-page "https://briansimulator.org/")
     (synopsis "Clock-driven simulator for spiking neural networks")
     (description
@@ -6103,7 +6191,7 @@ performance library of basic building blocks for deep learning applications.")
     (propagated-inputs (list python-cloudpickle python-farama-notifications
                              python-importlib-metadata python-numpy
                              python-typing-extensions))
-    (native-inputs (list python-pytest python-scipy))
+    (native-inputs (list python-pytest python-scipy python-setuptools))
     (arguments
      (list
       #:phases

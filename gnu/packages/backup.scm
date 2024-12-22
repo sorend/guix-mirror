@@ -24,6 +24,7 @@
 ;;; Copyright © 2022 Maxim Cournoyer <maxim.cournoyer@gmail.com>
 ;;; Copyright © 2022 Feng Shu <tumashu@163.com>
 ;;; Copyright © 2023 Timo Wilken <guix@twilken.net>
+;;; Copyright © 2024 Nicolas Graves <ngraves@ngraves.fr>
 ;;; Copyright © 2024 jgart <jgart@dismail.de>
 ;;;
 ;;; This file is part of GNU Guix.
@@ -1334,9 +1335,12 @@ compression parameters used by Gzip.")
        (uri (pypi-uri "borgmatic" version))
        (sha256
         (base32 "0im7kx9mq1gymid88wa6yxcif4bdqpz5lag5fp9kpm8r5k13p2sr"))))
-    (build-system python-build-system)
+    (build-system pyproject-build-system)
     (arguments
      (list
+      ;; XXX: all tests fail with error: AttributeError: module
+      ;; '_pytest.runner' has no attribute 'call_runtest_hook'.
+      #:tests? #f
       #:phases #~(modify-phases %standard-phases
                    (add-after 'unpack 'configure
                      (lambda* (#:key inputs #:allow-other-keys)
@@ -1351,21 +1355,25 @@ compression parameters used by Gzip.")
                           (string-append start "'"
                                          (search-input-file inputs "bin/borg")
                                          "'")))))
-                   (replace 'check
-                     (lambda* (#:key tests? #:allow-other-keys)
-                       (when tests?
+                   (add-before 'check 'set-path
+                     (lambda _
                          ;; Tests require the installed executable.
                          (setenv "PATH"
                                  (string-append #$output "/bin" ":"
-                                                (getenv "PATH")))
-                         (invoke "pytest")))))))
-    (inputs (list borg
-                  python-apprise
-                  python-colorama
-                  python-jsonschema
-                  python-requests
-                  python-ruamel.yaml))
-    (native-inputs (list python-flexmock python-pytest python-pytest-cov))
+                                                (getenv "PATH"))))))))
+    (native-inputs
+     (list python-flexmock
+           python-pytest
+           python-pytest-cov
+           python-setuptools
+           python-wheel))
+    (inputs
+     (list borg
+           python-apprise
+           python-colorama
+           python-jsonschema
+           python-requests
+           python-ruamel.yaml))
     (home-page "https://torsion.org/borgmatic/")
     (synopsis "Simple, configuration-driven backup software")
     (description

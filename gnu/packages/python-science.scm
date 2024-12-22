@@ -53,6 +53,7 @@
   #:use-module (gnu packages check)
   #:use-module (gnu packages chemistry)
   #:use-module (gnu packages cmake)
+  #:use-module (gnu packages compression)
   #:use-module (gnu packages cpp)
   #:use-module (gnu packages crates-io)
   #:use-module (gnu packages crypto)
@@ -78,6 +79,7 @@
   #:use-module (gnu packages rust-apps)
   #:use-module (gnu packages simulation)
   #:use-module (gnu packages sphinx)
+  #:use-module (gnu packages ssh)
   #:use-module (gnu packages statistics)
   #:use-module (gnu packages time)
   #:use-module (gnu packages xdisorg)
@@ -89,8 +91,88 @@
   #:use-module (guix git-download)
   #:use-module (guix utils)
   #:use-module (guix build-system cargo)
+  #:use-module (guix build-system cmake)
   #:use-module (guix build-system python)
   #:use-module (guix build-system pyproject))
+
+(define-public pyre
+  (package
+    (name "pyre")
+    (version "1.12.5")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/pyre/pyre")
+             (commit (string-append "v" version))))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32
+         "0crmssga481q2ggwcmj40nj5n9975wri14p609jdr9hwg4vdyvj2"))))
+    (build-system cmake-build-system)
+    (arguments
+     (list
+      #:imported-modules (append %cmake-build-system-modules
+                                 %python-build-system-modules)
+      #:modules '((guix build cmake-build-system)
+                  ((guix build python-build-system) #:prefix python:)
+                  (guix build utils))
+      #:configure-flags
+      #~(list (string-append "-DPYRE_VERSION=" #$version)
+              (string-append "-DPYRE_DEST_PACKAGES="
+                             (python:site-packages %build-inputs %outputs)))
+      #:phases
+      #~(modify-phases %standard-phases
+          (add-after 'unpack 'enable-bytecode-determinism
+            (assoc-ref python:%standard-phases 'enable-bytecode-determinism))
+          ;; Move the check phase after the Python 'pyre' module
+          ;; is installed and made available.
+          (delete 'check)
+          (add-after 'install 'add-to-pythonpath
+            (lambda* (#:key inputs outputs #:allow-other-keys)
+              (python:add-installed-pythonpath inputs outputs)))
+          (add-after 'add-to-pythonpath 'wrap
+            (assoc-ref python:%standard-phases 'wrap))
+          (add-after 'add-to-pythonpath 'check
+            (lambda* (#:key tests? parallel-tests? #:allow-other-keys)
+              (when tests?
+                (setenv "CTEST_OUTPUT_ON_FAILURE" "1")
+                (let ((ignored-tests
+                       (list
+                        ;; The MPI tests are failing for unknown reasons (see:
+                        ;; https://github.com/pyre/pyre/issues/126).
+                        "tests.mpi"
+                        ;; These tests have a cleanup phase that fails
+                        ;; non-deterministically (see:
+                        ;; https://github.com/pyre/pyre/issues/125).
+                        "tests.pyre.lib.viz.flow"
+                        ;; This test expects a TCP port 22 to be listening.
+                        "tests.pyre.pkg.ipc.tcp.py"
+                        ;; These postgres tests require a running postgresql
+                        ;; daemon; they are also skipped in upstream CI.
+                        "tests.postgres.ext"
+                        ;; This test fails due to pre-1980 timestamps, not
+                        ;; supported by ZIP.
+                        "tests.pyre.pkg.filesystem.zip_open.py"
+                        ;; This one trips on the patched python3 shebang.
+                        "tests.pyre.pkg.filesystem.local_open.py")))
+                  (invoke "ctest"
+                          "-j" (if parallel-tests?
+                                   (number->string (parallel-job-count))
+                                   "1")
+                          "-E" (string-join ignored-tests "|")))))))))
+    (native-inputs (list openssh-sans-x python python-numpy pybind11 zip))
+    (inputs (list gsl hdf5 openmpi postgresql))
+    (propagated-inputs (list python-pyyaml)) ;for the Python bindings
+    (home-page "http://pyre.orthologue.com/")
+    (synopsis "Framework for building Scientific applications")
+    (description
+     "This package provides a framework for building scientific applications.
+It aims to bring state of the art software design practices to scientific
+computing, with the goal of providing a strong skeleton on which to build
+scientific codes by steering the implementation towards usability and
+maintainability.")
+    (license license:bsd-3)))
 
 (define-public python-cvxpy
   (package
@@ -370,9 +452,12 @@ routines such as routines for numerical integration and optimization.")
              (invoke "python" "setup.py" "build_ext" "--inplace"))))))
     (propagated-inputs
      (list python-dask
-           python-numpy))
+           python-numpy
+           python-click))
     (native-inputs
      (list python-cython
+           python-setuptools
+           python-wheel
            ;; The following are all needed for the tests
            htslib
            python-h5py
@@ -438,23 +523,35 @@ CMake.")
 (define-public python-scikit-fem
   (package
     (name "python-scikit-fem")
-    (version "9.0.1")
-    (source (origin
-              (method git-fetch)        ; no tests in PyPI
-              (uri (git-reference
-                    (url "https://github.com/kinnala/scikit-fem")
-                    (commit version)))
-              (file-name (git-file-name name version))
-              (sha256
-               (base32
-                "1r1c88rbaa7vjfnljbzx8paf36yzpy33bragl99ykn6i2srmjrd4"))))
+    (version "10.0.2")
+    (source
+     (origin
+       (method git-fetch)        ; no tests in PyPI
+       (uri (git-reference
+             (url "https://github.com/kinnala/scikit-fem")
+             (commit version)))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "10kvzm4fmazsrddd83m0903wan67fkj13vdp6w1iw6wm6a0b5h28"))))
     (build-system pyproject-build-system)
-    (propagated-inputs (list python-meshio python-numpy python-scipy))
+    (arguments
+     (list
+      #:test-flags #~(list
+                      ;; Tests require Jax.
+                      "--ignore=tests/test_autodiff.py"
+                      "--ignore=tests/test_examples.py")))
     (native-inputs
      (list python-autograd
            python-pyamg
+           ;; python-jax ; not packed yet
            python-pytest
-           python-shapely))
+           python-shapely
+           python-setuptools
+           python-wheel))
+    (propagated-inputs
+     (list python-meshio
+           python-numpy
+           python-scipy))
     (home-page "https://scikit-fem.readthedocs.io/en/latest/")
     (synopsis "Library for performing finite element assembly")
     (description
@@ -591,7 +688,7 @@ swarm algorithm.")
            python-scikit-learn
            python-scipy))
     (native-inputs
-     (list python-pytest))
+     (list python-pytest python-setuptools python-wheel))
     (home-page "https://scikit-optimize.github.io/")
     (synopsis "Sequential model-based optimization toolbox")
     (description "Scikit-Optimize, or @code{skopt}, is a simple and efficient
@@ -722,7 +819,11 @@ cross-validation.")
                     (lambda* (#:key tests? #:allow-other-keys)
                       (when tests?
                         (invoke "tdda" "test")))))))
-    (native-inputs (list python-numpy python-pandas))
+    (native-inputs
+     (list python-numpy
+           python-pandas
+           python-setuptools
+           python-wheel))
     (home-page "https://www.stochasticsolutions.com")
     (synopsis "Test-driven data analysis library for Python")
     (description
@@ -735,10 +836,7 @@ of regular expressions from text data and automatic test generation.")
 (define-public python-trimesh
   (package
     (name "python-trimesh")
-    ;; XXX: The latest version fails on sanity check, requiring newer
-    ;; setuptools which is not yet available on master. Update when
-    ;; python-team is merged.
-    (version "4.1.8")
+    (version "4.5.3")
     (source
      (origin
        (method git-fetch) ; no tests in PyPI
@@ -747,39 +845,36 @@ of regular expressions from text data and automatic test generation.")
              (commit version)))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "1vkp7znrlsqaiyg16py3jcqspi6yq4wh48lzng4sg248hqzhzspa"))))
+        (base32 "17fyapp8nffnnf95bmcvllvg41fjlpvlv6qndbm048hnyayixxld"))))
     (build-system pyproject-build-system)
     (arguments
      (list
       #:test-flags
-      #~(list "-k" (string-append
-                    ;; XXX: When more optional modules are available review
-                    ;; disabled tests once again.
-                    ;;
-                    ;; Disable tests requiring optional, not packed modules.
-                    "not test_bezier_example"
-                    " and not test_discrete"
-                    " and not test_dxf"
-                    " and not test_ply_path_bezier"
-                    " and not test_ply_path_line"
-                    " and not test_ply_path_multi"
-                    " and not test_revolve"
-                    " and not test_screw"
-                    " and not test_simple_closed"
-                    " and not test_simple_extrude"
-                    " and not test_simple_open"
-                    " and not test_slice_onplane"
-                    " and not test_spline_3D"
-                    " and not test_svg"))
+      ;; XXX: When more optional modules are available review
+      ;; disabled tests once again.
+      ;;
+      ;; Disable tests requiring optional, not packed modules.
+      #~(list "-k" (string-join
+                    (list "not test_bezier_example"
+                          "test_discrete"
+                          "test_dxf"
+                          "test_ply_path_bezier"
+                          "test_ply_path_line"
+                          "test_ply_path_multi"
+                          "test_revolve"
+                          "test_screw"
+                          "test_simple_closed"
+                          "test_simple_extrude"
+                          "test_simple_open"
+                          "test_slice_onplane"
+                          "test_spline_3D"
+                          "test_svg")
+                    " and not "))
       #:phases
       #~(modify-phases %standard-phases
-          (add-after 'unpack 'fix-build
-            (lambda _
-              ;; Reported upstream, see
-              ;; <https://github.com/mikedh/trimesh/pull/2314>.
-              (substitute* "trimesh/resources/templates/blender_boolean.py.tmpl"
-                (("\\$MESH_PRE")
-                 "'$MESH_PRE'")))))))
+          ;; XXX: It struggles to load and fails with error: AttributeError:
+          ;; module 'trimesh' has no attribute '__main__'.
+          (delete 'sanity-check))))
     (native-inputs
      (list python-coveralls
            python-pyinstrument
@@ -862,15 +957,17 @@ spheres, cubes, etc.")
      (list
       ;; See <https://github.com/astrofrog/mpl-scatter-density/issues/42>.
       #:test-flags #~(list "-k" "not test_default_dpi")))
-    (propagated-inputs
-     (list python-fast-histogram
-           python-matplotlib
-           python-numpy))
     (native-inputs
      (list python-pytest
            python-pytest-cov
            python-pytest-mpl
-           python-setuptools-scm))
+           python-setuptools
+           python-setuptools-scm
+           python-wheel))
+    (propagated-inputs
+     (list python-fast-histogram
+           python-matplotlib
+           python-numpy))
     (home-page "https://github.com/astrofrog/mpl-scatter-density")
     (synopsis "Matplotlib helpers to make density scatter plots")
     (description
@@ -930,7 +1027,9 @@ density maps, both for interactive and non-interactive use.")
            python-cppheaderparser
            python-pytest
            python-pyyaml
-           python-setuptools-scm))
+           python-setuptools
+           python-setuptools-scm
+           python-wheel))
     (propagated-inputs (list python-numpy python-scipy))
     (home-page "https://github.com/pyamg/pyamg")
     (synopsis "Algebraic Multigrid Solvers in Python")
@@ -990,6 +1089,30 @@ Evapotranspiration using various standard methods.")
      "This package provides a Python package for calculating
 tissue-specificity metrics for gene expression.")
     (license license:gpl3+)))
+
+(define-public python-ndindex
+  (package
+    (name "python-ndindex")
+    (version "1.7")                     ;newer versions require a newer numpy
+    (source
+     (origin
+       (method url-fetch)
+       (uri (pypi-uri "ndindex" version))
+       (sha256
+        (base32 "1lpgsagmgxzsas7g8yiv6wmyss8q57w92h70fn11rnpadsvx16xz"))))
+    (build-system pyproject-build-system)
+    (arguments (list #:test-flags #~(list "-c" "/dev/null"))) ;avoid coverage
+    (native-inputs
+     (list python-cython
+           python-numpy
+           python-pytest
+           python-setuptools
+           python-wheel))
+    (home-page "https://quansight-labs.github.io/ndindex/")
+    (synopsis "Python library for manipulating indices of ndarrays")
+    (description "This package provides a Python library for manipulating
+indices of @code{ndarrays}.")
+    (license license:expat)))
 
 (define-public python-pandas-1
   (package
@@ -1077,6 +1200,8 @@ tissue-specificity metrics for gene expression.")
            python-pytest
            python-pytest-mock
            python-pytest-xdist
+           python-setuptools
+           python-wheel
            ;; Needed to test clipboard support.
            xorg-server-for-tests))
     (home-page "https://pandas.pydata.org")
@@ -1092,7 +1217,7 @@ doing practical, real world data analysis in Python.")
 (define-public python-pandas-2
   (package
     (name "python-pandas")
-    (version "2.1.1")
+    (version "2.2.3")
     (source
      (origin
        (method git-fetch)
@@ -1101,33 +1226,48 @@ doing practical, real world data analysis in Python.")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "1v9j38bvw739csdfl98ga6fqjdm61q3p5a2l7h364kg925nbc9r1"))))
+        (base32 "00f6jnplwg7iffnxdm4hpfls0ncbarc23933xq1rm5nk5g8dcldx"))))
     (build-system pyproject-build-system)
     (arguments
      (list
       #:test-flags
       #~(list "--pyargs" "pandas"
               ;; "--exitfirst"
-              ;; FIXME "-n" (number->string (parallel-job-count))
+              "--numprocesses" (number->string (parallel-job-count))
               "-m" "not slow and not network and not db"
-              "-k" (string-append
-                    "not test_git_version"
-                    " and not test_show_versions_console"
-                    ;; Not testing ~ expansion.
-                    " and not test_expand_user"
-                    " and not test_get_handle_with_path"
-                    ;; These test access the internet (see:
-                    ;; https://github.com/pandas-dev/pandas/issues/45085).:
-                    ;; pandas/tests/io/xml/test_xml.py::test_wrong_url[lxml]
-                    ;; pandas/tests/io/xml/test_xml.py::test_wrong_url[etree]
-                    " and not test_wrong_url"
-                    ;; TODO: Missing input
-                    " and not TestS3"
-                    " and not s3"
-                    ;; This test fails when run with pytest-xdist
-                    ;; (see: https://github.com/pandas-dev/pandas/issues/39096).
-                    " and not test_memory_usage"
-                    " and not test_parsing_tzlocal_deprecated"))
+              ;; All tests errored.
+              "--ignore=pandas/tests/io/test_clipboard.py"
+              "-k" (string-join
+                    (list
+                     "not test_git_version"
+                     "test_show_versions_console"
+                     ;; Not testing ~ expansion.
+                     "test_expand_user"
+                     "test_get_handle_with_path"
+                     ;; These test access the internet (see:
+                     ;; https://github.com/pandas-dev/pandas/issues/45085).:
+                     ;; pandas/tests/io/xml/test_xml.py::test_wrong_url[lxml]
+                     ;; pandas/tests/io/xml/test_xml.py::test_wrong_url[etree]
+                     "test_wrong_url"
+                     ;; TODO: Missing input
+                     "TestS3"
+                     "s3"
+                     ;; This test fails when run with pytest-xdist
+                     ;; (see: https://github.com/pandas-dev/pandas/issues/39096).
+                     "test_memory_usage"
+                     "test_parsing_tzlocal_deprecated"
+                     ;; PyArrow is optional.
+                     "test_style_bar_with_pyarrow_NA_values"
+                     "test_very_negative_exponent"
+                     "test_usecols_no_header_pyarrow"
+                     "test_scientific_no_exponent[pyarrow-None]"
+                     "test_inspect_getmembers"
+                     ;; SciPy introduces cycle, optional.
+                     "test_savefig"
+                     ;; It requires a fresh python-tzdata, including new
+                     ;; timezones.
+                     "test_repr")
+                    " and not "))
       #:phases
       #~(modify-phases %standard-phases
           (add-after 'unpack 'version-set-by-guix
@@ -1177,13 +1317,13 @@ doing practical, real world data analysis in Python.")
     (native-inputs
      (list meson-python
            python-beautifulsoup4
-           python-cython-0.29.35
+           python-cython-3
            python-html5lib
            python-lxml
            python-matplotlib
            python-openpyxl
            python-pytest-asyncio
-           python-pytest-next
+           python-pytest
            python-pytest-localserver
            python-pytest-mock
            python-pytest-xdist
@@ -1207,7 +1347,7 @@ doing practical, real world data analysis in Python.")
     (name "python-pandas-stubs")
     ;; The versioning follows that of Pandas and uses the date of the
     ;; python-pandas-stubs release.
-    (version "2.1.1.230928")
+    (version "2.2.3.241126")
     (source
      (origin
        ;; No tests in the PyPI tarball.
@@ -1217,11 +1357,12 @@ doing practical, real world data analysis in Python.")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "13b6wcwf9ybxf492w1l8qqf2bcgch21xds5r88pfkmrvqhxwfpyr"))))
+        (base32 "0xbvin2l7h8vq9g24n4n2l49pdxbi15qghq7zkhh567p3pbmvsyb"))))
     (build-system pyproject-build-system)
     (arguments
      (list
-      #:test-flags #~(list "-k"
+      #:test-flags #~(list "--ignore=tests/test_io.py" ;requires python-calamine
+                           "-k"
                            (string-append
                             ;; The python-pyarrow package in Guix is built
                             ;; with ORC integration, but these tests fail with
@@ -1268,7 +1409,7 @@ doing practical, real world data analysis in Python.")
                          python-pyreadstat
                          python-pytest
                          python-scipy
-                         python-sqlalchemy
+                         python-sqlalchemy-2
                          python-tables
                          python-tabulate
                          python-xarray
@@ -1315,7 +1456,9 @@ a convention of suggesting best recommended practices for using
            python-numpy
            python-pytest
            python-pytest-cov
-           python-pytest-xdist))
+           python-pytest-xdist
+           python-setuptools
+           python-wheel))
     (home-page "https://nalepae.github.io/pandarallel/")
     (synopsis "Tool to parallelize Pandas operations across CPUs")
     (description
@@ -1370,7 +1513,7 @@ idea of the remaining amount of computation to be done.")
                              python-pandas-stubs ;mypy extra
                              python-pydantic
                              python-scipy ;hypotheses extra
-                             python-typeguard-4
+                             python-typeguard
                              python-typing-inspect
                              python-wrapt))
     (native-inputs (list python-dask ;dask extra
@@ -1379,8 +1522,10 @@ idea of the remaining amount of computation to be done.")
                          python-pyarrow ;needed to run fastapi tests
                          python-pytest
                          python-pytest-asyncio
+                         python-setuptools
                          python-sphinx
-                         python-uvicorn)) ;needed to run fastapi tests
+                         python-uvicorn ;needed to run fastapi tests
+                         python-wheel))
     (home-page "https://github.com/unionai-oss/pandera")
     (synopsis "Perform data validation on dataframe-like objects")
     (description
@@ -1462,6 +1607,8 @@ production-critical data pipelines or reproducible research settings.  With
                          ;; Optional imports. We do not propagate them due to
                          ;; their size.
                          python-numba ;speedup of joins
+                         python-setuptools
+                         python-wheel
                          rdkit)) ;chemistry submodule
     (home-page "https://github.com/pyjanitor-devs/pyjanitor")
     (synopsis "Tools for cleaning and transforming pandas DataFrames")
@@ -1588,7 +1735,8 @@ Python module with the same interface, but (hopefully) faster.")
            python-scikit-learn
            python-scipy))
     (native-inputs
-     (list python-pytest python-pytest-cov))
+     (list python-pytest python-pytest-cov python-setuptools
+           python-wheel))
     (home-page "https://github.com/johannfaouzi/pyts")
     (synopsis "Python package for time series classification")
     (description
@@ -1639,7 +1787,8 @@ written in C.")
                 "01g21v91f4d66xd0bvap0n6d6485w2fnq1636gx6h2s42550rlbd"))))
     (build-system pyproject-build-system)
     (propagated-inputs (list python-importlib-metadata python-numpy))
-    (native-inputs (list python-pytest python-sympy))
+    (native-inputs (list python-pytest python-setuptools python-sympy
+                         python-wheel))
     (home-page "https://numpoly.readthedocs.io/en/master/")
     (synopsis "Polynomials as a numpy datatype")
     (description "Numpoly is a generic library for creating, manipulating and
@@ -1717,11 +1866,14 @@ higher scores.")
           (add-before 'check 'build-extensions
             (lambda _
               (invoke "python" "setup.py" "build_ext" "--inplace"))))))
-    (propagated-inputs (list python-numpy))
     (native-inputs
      (list python-hypothesis
            python-pytest
-           python-setuptools-scm))
+           python-setuptools
+           python-setuptools-scm
+           python-wheel))
+    (propagated-inputs
+     (list python-numpy))
     (home-page "https://github.com/astrofrog/fast-histogram")
     (synopsis "Fast simple 1D and 2D histograms")
     (description
@@ -1850,9 +2002,13 @@ multiple deep learning frameworks.")
              ;; These are known to fail with Pandas 2
              "-k"
              (string-append "not test_datetime_conversion_warning"
-                            " and not test_timedelta_conversion_warning"))))
+                            " and not test_timedelta_conversion_warning"
+                            ;; These expect deprecation warnings that are not
+                            ;; emitted in our case.
+                            " and not test_drop_index_labels"
+                            " and not test_rename_multiindex"))))
     (native-inputs
-     (list python-setuptools-scm python-pytest))
+     (list python-setuptools python-setuptools-scm python-pytest python-wheel))
     (propagated-inputs
      (list python-numpy python-packaging python-pandas))
     (home-page "https://github.com/pydata/xarray")
@@ -2019,7 +2175,9 @@ parentdir_prefix = pytensor-
     (native-inputs (list python-cython
                          python-pytest
                          python-pytest-mock
-                         python-versioneer))
+                         python-versioneer
+                         python-setuptools
+                         python-wheel))
     (propagated-inputs (list python-cons
                              python-etuples
                              python-filelock
@@ -2157,14 +2315,20 @@ annotations on an existing boxplots and barplots generated by seaborn.")
        (sha256
         (base32 "00900bw24rxgcgwgxp9xlx0l5im96r1n5hn0r3mxvbdgc3lyyq48"))))
     (build-system pyproject-build-system)
+    ;; Pint is optional, but we do not propagate it due to its size.
+    (native-inputs
+     (list python-pint
+           python-pytest
+           python-setuptools
+           python-setuptools-scm
+           python-wheel))
     ;; Astropy is an optional import, but we do not include it as it creates a
     ;; module cycle: astronomy->python-science->astronomy.
-    (propagated-inputs (list python-h5py        ; optional import
-                             python-matplotlib  ; optional import
-                             python-numpy
-                             python-sympy))
-    ;; Pint is optional, but we do not propagate it due to its size.
-    (native-inputs (list python-pint python-pytest python-setuptools-scm))
+    (propagated-inputs
+     (list python-h5py        ; optional import
+           python-matplotlib  ; optional import
+           python-numpy
+           python-sympy))
     (home-page "https://unyt.readthedocs.io")
     (synopsis "Library for working with data that has physical units")
     (description
@@ -2444,7 +2608,9 @@ parentdir_prefix = dask_expr-
      ;; package without creating a mutually recursive dependency.
      (list python-dask/bootstrap
            python-pytest
-           python-versioneer))
+           python-setuptools
+           python-versioneer
+           python-wheel))
     (home-page "https://github.com/dask/dask-expr")
     (synopsis "Dask DataFrames with query optimization")
     (description "This is a rewrite of Dask DataFrame that includes query
@@ -2689,7 +2855,8 @@ parentdir_prefix = distributed-
            python-importlib-metadata
            python-pytest
            python-pytest-timeout
-           python-versioneer))
+           python-versioneer
+           python-wheel))
     (home-page "https://distributed.dask.org")
     (synopsis "Distributed scheduler for Dask")
     (description "Dask.distributed is a lightweight library for distributed
@@ -2882,7 +3049,9 @@ aggregated sum and more.")
                          python-pandas
                          python-pytest
                          python-pytest-cov
+                         python-setuptools
                          python-setuptools-scm
+                         python-wheel
                          tzdata-for-tests))
     (home-page "https://github.com/has2k1/plotnine")
     (synopsis "Grammar of Graphics for Python")
@@ -2986,7 +3155,9 @@ to do spectral analysis in Python.")
            python-pandas
            python-nose
            python-pytest
-           python-xarray))
+           python-setuptools
+           python-xarray
+           python-wheel))
     (home-page "https://github.com/jupyter-widgets/traittypes")
     (synopsis "Trait types for NumPy, SciPy and friends")
     (description "The goal of this package is to provide a reference
@@ -3260,7 +3431,7 @@ science including tools for accessing data sets in Python.")
                 "12i68jj9n1qj9phjnj6f0kmfhlsd3fqjlk9p6d4gs008azw5m8yn"))))
     (build-system pyproject-build-system)
     (propagated-inputs (list python-numpy))
-    (native-inputs (list pybind11 python-pytest))
+    (native-inputs (list pybind11 python-pytest python-setuptools python-wheel))
     (home-page "https://github.com/nschloe/pyfma")
     (synopsis "Fused multiply-add for Python")
     (description "@code{pyfma} provides an implementation of fused
@@ -3304,7 +3475,7 @@ functions, convolutions, artificial neural networks etc.")
                     " and not TestDatasetOverlayArray"
                     " and not TestReader"
                     " and not test_filewriter.py"))))
-    (native-inputs (list python-pytest))
+    (native-inputs (list python-pytest python-flit-core))
     (inputs (list gdcm libjpeg-turbo))
     (propagated-inputs (list python-numpy python-pillow))
     (home-page "https://github.com/pydicom/pydicom")
@@ -3350,7 +3521,7 @@ data.")
 import six
 ")))))))
     (build-system pyproject-build-system)
-    (native-inputs (list python-pandas))
+    (native-inputs (list python-pandas python-setuptools python-wheel))
     (propagated-inputs (list python-numpy python-scipy python-six
                              python-tables))
     (home-page "https://github.com/uchicago-cs/deepdish")
@@ -3401,8 +3572,13 @@ proportional-integral-derivative} controller.")
        (sha256
         (base32 "1lkj8l2mpki6x2pxcwlrplx63lhi8h9v2rzxgjfb0cppsfr8m1wp"))))
     (build-system pyproject-build-system)
-    (propagated-inputs (list python-numpy))
-    (native-inputs (list python-scipy))
+    (native-inputs
+     (list python-pytest
+           python-scipy
+           python-setuptools
+           python-wheel))
+    (propagated-inputs
+     (list python-numpy))
     (home-page "http://github.com/jakevdp/supersmoother")
     (synopsis "Python implementation of Friedman's Supersmoother")
     (description
@@ -3576,7 +3752,8 @@ NeuroML2 models.")
                     " and not test_pr_level_patient"
                     " and not test_pr_level_series"
                     " and not test_scp_cancelled"))))
-    (native-inputs (list python-pyfakefs python-pytest))
+    (native-inputs (list python-pyfakefs python-pytest python-setuptools
+                         python-wheel))
     (propagated-inputs (list python-pydicom python-sqlalchemy))
     (home-page "https://github.com/pydicom/pynetdicom")
     (synopsis "Python implementation of the DICOM networking protocol")
@@ -3666,7 +3843,12 @@ compagnies.")
                 "0mrm4rd6x1sm6hkvhk20mkqp9q53sl3lbvq6hqzyymkw1iqq6bhy"))))
     (build-system pyproject-build-system)
     (propagated-inputs (list python-lxml python-six))
-    (native-inputs (list python-pytest python-numpy python-tables))
+    (native-inputs
+     (list python-pytest
+           python-numpy
+           python-setuptools
+           python-tables
+           python-wheel))
     (home-page "https://libneuroml.readthedocs.org/en/latest/")
     (synopsis
      "Python library for working with NeuroML descriptions of neuronal models")
