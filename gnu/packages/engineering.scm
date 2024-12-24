@@ -4812,6 +4812,41 @@ server for Python and pypy3.")
     (home-page "https://freeopcua.github.io/")
     (license license:lgpl3+)))
 
+(define-public modglue
+  (package
+    (name "modglue")
+    (version "1.20")
+    (source (origin
+              (method git-fetch)
+              (uri (git-reference
+                     (url "https://github.com/kpeeters/modglue.git")
+                     (commit "89d65f5be9c737123b7beb721bd96c4eed650d9a")))
+              (file-name (git-file-name name version))
+              (sha256
+               (base32
+                "0cfrp2wyyfb6c71s5skg2g7gdg7bpvv77x6rvw7r9dqvamxsgmih"))
+              (patches
+               (search-patches "modglue-fix-build.patch"))))
+    (build-system gnu-build-system)
+    (arguments
+     `(#:parallel-build? #f
+       #:make-flags
+       (list "TIMESTAMP=-DDATETIME=\\\"\\\" -DHOSTNAME=\\\"\\\"")
+       #:phases
+       (modify-phases %standard-phases
+         (replace 'check
+           (lambda _
+             (invoke "make" "-C" "src" "tests"))))))
+    (native-inputs
+     (list pkg-config libtool))
+    (inputs
+     (list libsigc++-2))
+    (synopsis "C++ library for handling of multiple co-processes")
+    (description "This package provides a C++ library for handling of
+multiple co-processes in cadabra.")
+    (home-page "https://cadabra.science/")
+    (license license:gpl2+)))
+
 (define-public cadabra2
   (package
     (name "cadabra2")
@@ -4840,6 +4875,18 @@ server for Python and pypy3.")
                         (assoc-ref %outputs "out")))
       #:phases
       #~(modify-phases %standard-phases
+          (add-after 'unpack 'patch-paths
+            (lambda* (#:key outputs #:allow-other-keys)
+              (substitute* "client_server/ComputeThread.cc"
+               (("[(]\"cadabra-server\"[)]")
+                (string-append "(\"" (assoc-ref outputs "out")
+                               "/bin/cadabra-server\")")))
+              (substitute* "client_server/Server.cc"
+               (("'\" [+] python_path [+]")
+                (string-append "'\" + std::string(\""
+                               (assoc-ref outputs "out")
+                               "/lib/python3.10/site-packages"
+                               "\") +")))))
           (add-before 'check 'prepare-checks
             (lambda _
               (setenv "HOME" "/tmp"))))))

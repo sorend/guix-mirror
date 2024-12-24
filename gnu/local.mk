@@ -244,6 +244,7 @@ GNU_SYSTEM_MODULES =				\
   %D%/packages/dhall.scm			\
   %D%/packages/dico.scm				\
   %D%/packages/dictd.scm			\
+  %D%/packages/dotnet.scm			\
   %D%/packages/dictionaries.scm			\
   %D%/packages/diffoscope.scm			\
   %D%/packages/digest.scm			\
@@ -1120,6 +1121,8 @@ dist_patch_DATA =						\
   %D%/packages/patches/converseen-hide-non-free-pointers.patch	\
   %D%/packages/patches/cool-retro-term-wctype.patch		\
   %D%/packages/patches/coq-autosubst-1.8-remove-deprecated-files.patch		\
+  %D%/packages/patches/corefx-mono-5.4.0-patches.patch		\
+  %D%/packages/patches/corefx-mono-pre-5.8.0-patches.patch	\
   %D%/packages/patches/coreutils-gnulib-tests.patch		\
   %D%/packages/patches/cppcheck-disable-char-signedness-test.patch	\
   %D%/packages/patches/cppdap-add-CPPDAP_USE_EXTERNAL_GTEST_PACKAGE.patch\
@@ -1184,6 +1187,7 @@ dist_patch_DATA =						\
   %D%/packages/patches/eigen-fix-strict-aliasing-bug.patch	\
   %D%/packages/patches/einstein-build.patch			\
   %D%/packages/patches/elfutils-tests-ptrace.patch		\
+  %D%/packages/patches/elfutils-libdwfl-string-overflow.patch	\
   %D%/packages/patches/elixir-path-length.patch			\
   %D%/packages/patches/elm-ghc9.2.patch	\
   %D%/packages/patches/elm-offline-package-registry.patch	\
@@ -1562,6 +1566,7 @@ dist_patch_DATA =						\
   %D%/packages/patches/htslib-for-stringtie.patch		\
   %D%/packages/patches/hubbub-sort-entities.patch		\
   %D%/packages/patches/hueplusplus-mbedtls.patch		\
+  %D%/packages/patches/hugs-fix-build.patch			\
   %D%/packages/patches/hurd-64bit.patch				\
   %D%/packages/patches/hurd-refcounts-assert.patch		\
   %D%/packages/patches/hurd-rumpdisk-no-hd.patch		\
@@ -1826,8 +1831,23 @@ dist_patch_DATA =						\
   %D%/packages/patches/mpg321-CVE-2019-14247.patch		\
   %D%/packages/patches/mpg321-gcc-10.patch			\
   %D%/packages/patches/modem-manager-fix-test-wrapper.patch	\
+  %D%/packages/patches/modglue-fix-build.patch		\
   %D%/packages/patches/module-init-tools-moduledir.patch	\
   %D%/packages/patches/monero-use-system-miniupnpc.patch			\
+  %D%/packages/patches/mono-1.2.6-bootstrap.patch		\
+  %D%/packages/patches/mono-1.9.1-add-MONO_CREATE_IMAGE_VERSION.patch		\
+  %D%/packages/patches/mono-1.9.1-fixes.patch			\
+  %D%/packages/patches/mono-2.4.2.3-fixes.patch			\
+  %D%/packages/patches/mono-2.6.4-fixes.patch			\
+  %D%/packages/patches/mono-2.11.4-fixes.patch			\
+  %D%/packages/patches/mono-4.9.0-fix-runtimemetadataversion.patch		\
+  %D%/packages/patches/mono-5.4.0-patches.patch		\
+  %D%/packages/patches/mono-5.8.0-patches.patch		\
+  %D%/packages/patches/mono-5.10.0-later-mcs-changes.patch	\
+  %D%/packages/patches/mono-6.12.0-add-runpath.patch		\
+  %D%/packages/patches/mono-6.12.0-fix-AssemblyResolver.patch	\
+  %D%/packages/patches/mono-6.12.0-fix-ConditionParser.patch	\
+  %D%/packages/patches/mono-mcs-patches-from-5.10.0.patch	\
   %D%/packages/patches/mosaicatcher-unbundle-htslib.patch	\
   %D%/packages/patches/mrrescue-support-love-11.patch		\
   %D%/packages/patches/mtools-mformat-uninitialized.patch	\
@@ -1927,6 +1947,10 @@ dist_patch_DATA =						\
   %D%/packages/patches/owncloud-disable-updatecheck.patch	\
   %D%/packages/patches/p7zip-CVE-2016-9296.patch		\
   %D%/packages/patches/p7zip-CVE-2017-17969.patch		\
+  %D%/packages/patches/pnet-fix-line-number-info.patch		\
+  %D%/packages/patches/pnet-fix-off-by-one.patch		\
+  %D%/packages/patches/pnet-newer-libgc-fix.patch		\
+  %D%/packages/patches/pnet-newer-texinfo-fix.patch		\
   %D%/packages/patches/p7zip-fix-build-with-gcc-11.patch	\
   %D%/packages/patches/p7zip-remove-unused-code.patch		\
   %D%/packages/patches/pam-krb5-CVE-2020-10595.patch		\

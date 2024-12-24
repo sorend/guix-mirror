@@ -148,6 +148,7 @@
 ;;; Copyright © 2024 Spencer King <spencer.king@nursiapress.com>
 ;;; Copyright © 2024 emma thompson <bigbookofbug@proton.me>
 ;;; Copyright © 2024 Liam Hupfer <liam@hpfr.net>
+;;; Copyright © 2024 aurtzy <aurtzy@gmail.com>
 
 ;;;
 ;;; This file is part of GNU Guix.
@@ -589,7 +590,7 @@ API key.")
 (define-public emacs-chatgpt-shell
   (package
     (name "emacs-chatgpt-shell")
-    (version "1.8.1")
+    (version "1.20.1")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -598,7 +599,7 @@ API key.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "04byw3zz06fr1g185p55pdaf5bqxj3mssldbh089pmx10qdmaxqi"))))
+                "161q8d2b4sq481jh4zwagvh88wg51dsnf76n2l2b7wv3nh7cjh2m"))))
     (build-system emacs-build-system)
     (arguments
      (list #:phases
@@ -1537,6 +1538,31 @@ do manually if you wanted to keep the buffers of a project neatly isolated in
 separate, named tab groups.")
       (license license:gpl3+))))
 
+(define-public emacs-disproject
+  (package
+    (name "emacs-disproject")
+    (version "1.3.1")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/aurtzy/disproject")
+             (commit (string-append "v" version))))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "03wf14vilnysj9szcffsadhw86p68v3083dv98d99c8axm51n6hz"))))
+    (build-system emacs-build-system)
+    (propagated-inputs (list emacs-transient))
+    (home-page "https://github.com/aurtzy/disproject")
+    (synopsis "Transient interface for managing and interacting with projects")
+    (description
+     "Disproject is a package for GNU Emacs that implements Transient menus
+for dispatching project-related commands on top of the Project library.  It
+aims to provide a more capable version of the @code{project-switch-project}
+command, which it is inspired by.  Those who are familiar with Projectile may
+also find similarities to @code{projectile-commander}.")
+    (license license:gpl3+)))
+
 (define-public emacs-golden-ratio
   (let ((commit "375c9f287dfad68829582c1e0a67d0c18119dab9")
         (revision "0"))
@@ -1990,10 +2016,10 @@ leveraging built-in functionality.")
                    license:fdl1.3+)))) ; GFDLv1.3+ for the manual
 
 (define-public emacs-meyvn
-  (let ((commit "62802ab42ee021f89f980bd3de3e1336ad760944")) ;version bump
+  (let ((commit "8d00ada6daa5617fa60f76e0be2cf2f5d1babcf9")) ;version bump
     (package
       (name "emacs-meyvn")
-      (version "1.4")
+      (version "1.7")
       (source
        (origin
          (method git-fetch)
@@ -2002,7 +2028,7 @@ leveraging built-in functionality.")
                (commit commit)))
          (file-name (git-file-name name version))
          (sha256
-          (base32 "0821sk0mq1602mk3hp7igcafp8fpfg586nk41iz9syc06xbh0if7"))))
+          (base32 "0ncilsn0ih01w6hjdn529jkapiv4nnkway07j2b5fndkrlgk2ry4"))))
       (build-system emacs-build-system)
       (propagated-inputs (list emacs-cider
                                emacs-dash
@@ -4449,6 +4475,38 @@ console programs such as @code{less} and @code{mpv} and full-screen TUI
 programs such as @code{vi}, @code{top}, @code{htop} or even @code{emacs
 -nw}.")
     (license license:gpl3+)))
+
+(define-public emacs-mistty
+  (let ((revision "0")
+        (commit "6284c0f6529bcce57d183e20765052c603846115"))
+    (package
+      (name "emacs-mistty")
+      (version (git-version "1.1" revision commit))
+      (source
+       (origin
+         (method git-fetch)
+         (uri (git-reference
+               (url "https://github.com/szermatt/mistty")
+               (commit commit)))
+         (file-name (git-file-name name version))
+         (sha256
+          (base32 "1159dy63dq7kyh06q9kfvq6x4bx59w9g1slq2m3xvx2ngaiydf97"))))
+      (build-system emacs-build-system)
+      (arguments
+       (list
+        #:phases #~(modify-phases %standard-phases
+                     (add-before 'patch-el-files 'replace-bash-path
+                       (lambda* (#:key inputs #:allow-other-keys)
+                         (substitute* "mistty-term.el"
+                           (("/bin/bash")
+                            (search-input-file inputs "bin/bash"))))))))
+      (inputs (list bash))
+      (home-page "https://github.com/szermatt/mistty")
+      (synopsis "Emacs terminal major mode based on Term")
+      (description
+       "This package defines a major mode that runs a shell inside of
+a buffer, similarly to Comint mode.  It is built on top of Term.")
+      (license license:gpl3+))))
 
 (define-public emacs-counsel-bbdb
   (package
@@ -17993,6 +18051,30 @@ in English as you type.  It primarily detects \"weasel words\" and abuse of
 passive voice.")
     (license license:gpl3+)))
 
+(define-public emacs-writefreely
+  (let ((commit "cfbba9c3a34f580f39c0796966ea76b0cf98a23e")
+        (revision "0"))
+    (package
+      (name "emacs-writefreely")
+      (version (git-version "0.1.0" revision commit))
+      (source
+       (origin
+         (method git-fetch)
+         (uri (git-reference
+               (url "https://github.com/dangom/writefreely.el")
+               (commit commit)))
+         (file-name (git-file-name name version))
+         (sha256
+          (base32 "02gy3kg28igqcg7ai8n2p19q8m4xpgp5wn34n2fwz2bjymgf9g4s"))))
+      (build-system emacs-build-system)
+      (propagated-inputs (list emacs-ox-hugo emacs-request))
+      (home-page "https://github.com/dangom/writefreely.el")
+      (synopsis "Emacs interface to the WriteFreely API")
+      (description
+       "This library publishes Org mode files as posts to any instance of the
+federated blogging platform WriteFreely.")
+      (license license:gpl3+))))
+
 (define-public emacs-neotree
   (package
     (name "emacs-neotree")
@@ -18706,6 +18788,18 @@ you to deal with multiple log levels.")
        (sha256
         (base32 "0g9ciqgkipm6ag5nvyvaz0wc51hpk0wh2wwiqaybdfhzja8bbqx6"))))
     (build-system emacs-build-system)
+    (arguments
+     (list
+      #:phases #~(modify-phases %standard-phases
+                   (add-after 'unpack 'build-info-manual
+                     (lambda _
+                       (import (guix build utils))
+                       (invoke (string-append #$emacs "/bin/emacs")
+                               "README.org"
+                               "--batch"
+                               "-f"
+                               "org-texinfo-export-to-info"
+                               "--kill") #t)))))
     (native-inputs (list texinfo))
     (home-page "https://protesilaos.com/emacs/denote/")
     (synopsis "Simple notes for Emacs")
@@ -24927,7 +25021,7 @@ according to a parsing expression grammar.")
 (define-public emacs-eldev
   (package
     (name "emacs-eldev")
-    (version "1.10.3")
+    (version "1.11")
     (source
      (origin
        (method git-fetch)
@@ -24936,7 +25030,7 @@ according to a parsing expression grammar.")
              (commit version)))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "0ha2ppxqp36m26nv6lyspq6m6xvvr03cf82rygq45w729gakdw9r"))))
+        (base32 "144wf5im2fy1fv8jjik1s9zfyicphh2pi4dp6q4airrkiirmmr3m"))))
     (build-system emacs-build-system)
     (arguments
      (list
@@ -30507,25 +30601,27 @@ files are easily readable and they work nicely with version control systems.")
     (license license:gpl3+)))
 
 (define-public emacs-nerd-icons
-  (package
-    (name "emacs-nerd-icons")
-    (version "0.1.0")
-    (home-page "https://github.com/rainstormstudio/nerd-icons.el")
-    (source
-     (origin
-       (method git-fetch)
-       (uri (git-reference (url home-page) (commit version)))
-       (file-name (git-file-name name version))
-       (sha256
-        (base32
-         "0ggj6lm02m7nb5gxnqs2v2lkxsclml6kq176vam9qyg1fsm7yvdw"))))
-    (build-system emacs-build-system)
-    (arguments
-     (list #:include #~(cons "^data\\/" %default-include)))
-    (synopsis "Library for easily using nerd font icons inside Emacs")
-    (description "Nerd-icons an alternative to all-the-icons.  It works on both
+  (let ((commit "4bd9795f1f3f47cb874e10ff5c3845e037f0b3e2")
+        (revision "1"))
+    (package
+      (name "emacs-nerd-icons")
+      (version (git-version "0.1.0" revision commit))
+      (home-page "https://github.com/rainstormstudio/nerd-icons.el")
+      (source
+       (origin
+         (method git-fetch)
+         (uri (git-reference (url home-page) (commit commit)))
+         (file-name (git-file-name name version))
+         (sha256
+          (base32
+           "1imklm81jsq2jdjprsjm8pdq701c4l0rgn7l0f3l3xs602kg49l1"))))
+      (build-system emacs-build-system)
+      (arguments
+       (list #:include #~(cons "^data\\/" %default-include)))
+      (synopsis "Library for easily using nerd font icons inside Emacs")
+      (description "Nerd-icons an alternative to all-the-icons.  It works on both
 GUI and terminal, and requires a nerd font installed on your system.")
-    (license license:gpl3+)))
+      (license license:gpl3+))))
 
 (define-public emacs-all-the-icons
   (package

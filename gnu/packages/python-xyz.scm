@@ -5696,7 +5696,7 @@ code introspection, and logging.")
     (arguments
      `(#:tests? #f)) ;; Most tests seem to use the Internet.
     (propagated-inputs
-      (list git)) ;; pbr actually uses the "git" binary.
+      (list git-minimal/pinned)) ;; pbr actually uses the "git" binary.
     (native-inputs
       `(("python-fixtures" ,python-fixtures-bootstrap)
         ;; discover, coverage, hacking, subunit
@@ -14997,10 +14997,10 @@ replacement for dictionaries where immutability is desired.")
        (sha256
         (base32 "1svk94pad8gcvjwd329zmfrw09wakwh6qjvnhf6sa6k92y44i82a"))))
     (build-system pyproject-build-system)
+    (propagated-inputs (list python-typing-extensions))
     (native-inputs
      (list python-pytest
            python-setuptools
-           python-typing-extensions
            python-wheel))
     (home-page "https://github.com/carpedm20/emoji/")
     (synopsis "Emoji terminal output for Python")
@@ -33716,26 +33716,32 @@ By default it uses the open Python vulnerability database Safety DB.")
         (base32 "15x161bxr7hky7rvq0jlgf1kxg6vdf069487casmpyxry7slak3b"))))
     (build-system pyproject-build-system)
     (arguments
-     `(#:phases (modify-phases %standard-phases
-                  (add-before 'check 'disable-tests
-                    (lambda _
-                      (substitute* "tests.py"
-                        ;; Disable test requiring network access
-                        (("test_basic_conversion_from_http_url")
-                         "skip_test_basic_conversion_from_http_url")
-                        ;; Disable tests with missing files
-                        (("test_basic_conversion_from_file_pattern")
-                         "skip_test_basic_conversion_from_file_pattern")
-                        (("test_conversion_with_data_files")
-                         "skip_test_conversion_with_data_files")) #t)))))
+     (list
+      #:phases
+      #~(modify-phases %standard-phases
+          (add-before 'check 'disable-tests
+            (lambda _
+              (substitute* "tests.py"
+                ;; Disable test requiring network access
+                (("test_basic_conversion_from_http_url")
+                 "skip_test_basic_conversion_from_http_url")
+                ;; Disable tests with missing files
+                (("test_basic_conversion_from_file_pattern")
+                 "skip_test_basic_conversion_from_file_pattern")
+                (("test_conversion_with_data_files")
+                 "skip_test_conversion_with_data_files")))))))
     ;; Ideally, we would supersede texlive-xpatch with texlive-regexpatch once
     ;; the missing etoolbox.sty file is added
-    (native-inputs (list python-poetry-core
-                         (texlive-updmap.cfg (list texlive-xpatch texlive-lm
-                                                   texlive-xcolor))))
+    (native-inputs
+     (list (texlive-updmap.cfg
+            (list texlive-xpatch texlive-lm
+                  texlive-xcolor))
+           python-pip
+           python-poetry-core
+           python-setuptools))
     (inputs (list pandoc python-pandocfilters))
     (propagated-inputs (list python-wheel))
-    (home-page "https://github.com/bebraw/pypandoc")
+    (home-page "https://github.com/JessicaTegner/pypandoc")
     (synopsis "Python wrapper for pandoc")
     (description "pypandoc is a thin Python wrapper around pandoc
 and pandoc-citeproc.")

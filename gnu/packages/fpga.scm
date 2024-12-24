@@ -152,15 +152,15 @@ For synthesis, the compiler generates netlists in the desired format.")
 (define-public yosys
   (package
     (name "yosys")
-    (version "0.47")
+    (version "0.48")
     (source (origin
               (method git-fetch)
               (uri (git-reference
                     (url "https://github.com/YosysHQ/yosys")
-                    (commit version)))
+                    (commit (string-append "v" version))))
               (sha256
                (base32
-                "061sqb59vl61rshlwgv3n51x0fxd9x3lb6gfbdl7nzia8im7x0qm"))
+                "1y5yrmw8b5l2s70451rcy83h0kavdjrsavwvxff3nrgqi3q4r1sc"))
               (file-name (git-file-name name version))))
     (build-system gnu-build-system)
     (arguments
@@ -285,7 +285,7 @@ Includes the actual FTDI connector.")
     (license license:isc))))
 
 (define-public nextpnr-ice40
-  (let* ((version "0.5")
+  (let* ((version "0.7")
          (tag (string-append "nextpnr-" version)))
     (package
       (name "nextpnr-ice40")
@@ -300,7 +300,7 @@ Includes the actual FTDI connector.")
          (file-name (git-file-name name version))
          (sha256
           (base32
-           "119iqxxzbxq2qy8x20awf9gr0nf3y1yjmk36adsg89ly3rb9gwzk"))
+           "0sbhqscgmlk4q2207rsqsw99qx4fyrxx1hsd669lrk42gmk3s9lm"))
          (modules '((guix build utils)))
          (snippet
           #~(begin

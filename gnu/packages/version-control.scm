@@ -1,7 +1,7 @@
 ;;; GNU Guix --- Functional package management for GNU
 ;;; Copyright © 2013 Nikita Karetnikov <nikita@karetnikov.org>
 ;;; Copyright © 2013 Cyril Roelandt <tipecaml@gmail.com>
-;;; Copyright © 2013-2022 Ludovic Courtès <ludo@gnu.org>
+;;; Copyright © 2013-2022, 2024 Ludovic Courtès <ludo@gnu.org>
 ;;; Copyright © 2013, 2014 Andreas Enge <andreas@enge.fr>
 ;;; Copyright © 2015, 2016 Mathieu Lirzin <mthl@gnu.org>
 ;;; Copyright © 2014, 2015, 2016 Mark H Weaver <mhw@netris.org>
@@ -258,14 +258,14 @@ Python 3.3 and later, rather than on Python 2.")
 (define-public git-minimal
   (package
     (name "git-minimal")
-    (version "2.46.0")
+    (version "2.47.1")
     (source (origin
              (method url-fetch)
              (uri (string-append "mirror://kernel.org/software/scm/git/git-"
                                  version ".tar.xz"))
              (sha256
               (base32
-               "15bzq9m6c033qiz5q5gw1nqw4m452vvqax30wbms6z4bl9i384kz"))))
+               "046kdr5dhg31hjcg6wpfqnwwbaqdjyax7n8wx5s26fdf4fxzkn7k"))))
     (build-system gnu-build-system)
     (arguments
      (list
@@ -714,7 +714,7 @@ everything from small to very large projects with speed and efficiency.")
                                ".tar.xz"))
                          (sha256
                           (base32
-                           "1lvvhzypllbyd8j6m0p9qgd3gqg10gch9s7lqif8vr9n80fqn4fw"))))))))))))
+                           "04zfxwdhja82mm24isk2jxhp30q6l3nnnzv6gdrc0mmhi5d01hpz"))))))))))))
     (native-inputs
      (modify-inputs (package-native-inputs git-minimal)
        ;; For subtree documentation.
@@ -1625,7 +1625,7 @@ default) of the repository.")
     (propagated-inputs
      (list python-smmap))
     (native-inputs
-     (list git python-nose))
+     (list git-minimal/pinned python-nose))
     (home-page "https://github.com/gitpython-developers/gitdb")
     (synopsis "Python implementation of the Git object database")
     (description
@@ -1647,17 +1647,18 @@ allowing to handle large objects with a small memory footprint.")
                 "1rarp97cpjnhi106k2yhb7kygdyflmlgq0icxv3ggzl4wvszv0yz"))))
     (build-system python-build-system)
     (arguments
-     `(#:tests? #f ;XXX: Tests can only be run within the GitPython repository.
-       #:phases (modify-phases %standard-phases
-                  (add-after 'unpack 'embed-git-reference
-                    (lambda* (#:key inputs #:allow-other-keys)
-                      (substitute* "git/cmd.py"
-                        (("git_exec_name = \"git\"")
-                         (string-append "git_exec_name = \""
-                                        (assoc-ref inputs "git")
-                                        "/bin/git\""))))))))
+     (list #:tests? #f ;XXX: tests can only be run within the GitPython repository
+           #:phases
+           #~(modify-phases %standard-phases
+               (add-after 'unpack 'embed-git-reference
+                 (lambda* (#:key inputs #:allow-other-keys)
+                   (substitute* "git/cmd.py"
+                     (("git_exec_name = \"git\"")
+                      (string-append "git_exec_name = \""
+                                     (search-input-file inputs "/bin/git")
+                                     "\""))))))))
     (inputs
-     (list git))
+     (list git-minimal/pinned))
     (propagated-inputs
      (list python-gitdb python-typing-extensions))
     (native-inputs
@@ -2297,7 +2298,7 @@ visualize your public Git repositories on a web interface.")
               (invoke "git" "config" "--global" "user.name" "Your Name")
               (invoke "git" "config" "--global" "user.email" "you@example.com"))))))
     (native-inputs
-     (list git-minimal
+     (list git-minimal/pinned
            python-covdefaults
            python-coverage
            python-distlib
