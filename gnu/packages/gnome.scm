@@ -1572,7 +1572,7 @@ extraction, and lookup for applications on the desktop.")
 (define-public gnome-initial-setup
   (package
     (name "gnome-initial-setup")
-    (version "44.8")
+    (version "46.4")
     (source (origin
               (method url-fetch)
               (uri (string-append "mirror://gnome/sources/gnome-initial-setup/"
@@ -1580,7 +1580,7 @@ extraction, and lookup for applications on the desktop.")
                                   "/gnome-initial-setup-" version ".tar.xz"))
               (sha256
                (base32
-                "0y61y3rvz1hqmhjxl9mjwxcdvdxslyaghajav6l79a9yxi859508"))))
+                "1mqvvsl161pi4sv2x6b90rfs4a2166da9rkgkcpd67pwfhgyjxmr"))))
     (build-system meson-build-system)
     (arguments
      (list
@@ -1604,6 +1604,7 @@ extraction, and lookup for applications on the desktop.")
            pkg-config))
     (inputs
      (list accountsservice
+           dconf
            elogind
            gdm
            geoclue
@@ -2641,7 +2642,7 @@ GNOME Desktop.")
 (define-public gnome-keyring
   (package
     (name "gnome-keyring")
-    (version "46.1")
+    (version "46.2")
     (source (origin
               (method url-fetch)
               (uri (string-append "mirror://gnome/sources/" name "/"
@@ -2649,7 +2650,7 @@ GNOME Desktop.")
                                   name "-" version ".tar.xz"))
               (sha256
                (base32
-                "1xp31iashi7n81z4halmrw53v3lnj847k4514lzqnbzz6a8sxlxi"))))
+                "098ryv7xsnf5r58w8kdr6nahzhmrczjb72ycbqlg7dx8p1kcj9mz"))))
     (build-system gnu-build-system)
     (arguments
      (list
@@ -2659,7 +2660,7 @@ GNOME Desktop.")
                         #$output "/share/p11-kit/modules/")
          (string-append "--with-pkcs11-modules="
                         #$output "/share/p11-kit/modules/"))
-      #:parallel-tests? (not (target-riscv64?))
+      #:parallel-tests? #f              ; XXX: concurrency in dbus tests
       #:phases
       #~(modify-phases %standard-phases
           (add-after 'unpack 'fix-/bin/sh-reference
@@ -5098,7 +5099,7 @@ libxml to ease remote use of the RESTful API.")
 (define-public libshumate
   (package
     (name "libshumate")
-    (version "1.2.1")
+    (version "1.3.0")
     (source (origin
               (method url-fetch)
               (uri (string-append "mirror://gnome/sources/" name "/"
@@ -5106,7 +5107,7 @@ libxml to ease remote use of the RESTful API.")
                                   name "-" version ".tar.xz"))
               (sha256
                (base32
-                "04cwakbdr68nw4kh956xhf447fawz8badpyd76hg4ir1gq3yw18i"))))
+                "1m3mvk38cjlkxmhkq0zg75msckylc0vzizll50ii5phw53lac9w2"))))
     (build-system meson-build-system)
     (arguments
      (list #:phases
@@ -5787,7 +5788,7 @@ output devices.")
 (define-public geoclue
   (package
     (name "geoclue")
-    (version "2.6.0")
+    (version "2.7.2")
     (source
      (origin
        (method url-fetch)
@@ -5795,7 +5796,7 @@ output devices.")
         (string-append "https://gitlab.freedesktop.org/geoclue/geoclue/-/archive/"
                        version "/geoclue-" version ".tar.bz2"))
        (sha256
-        (base32 "1854i8lih1jkks5w38xv8k5gs7s8629qjg3cg96ji0ffk35yzjfd"))
+        (base32 "1ljn4k1zlfx0ymmdz8ycfb976vx8r61sx68q854r0xinl124mlh1"))
        (patches (search-patches "geoclue-config.patch"))))
     (build-system meson-build-system)
     (arguments
@@ -5813,7 +5814,7 @@ output devices.")
            `(,glib "bin")
            glib-networking
            json-glib
-           libsoup-minimal-2))
+           libsoup-minimal))
     (home-page "https://gitlab.freedesktop.org/geoclue/geoclue/-/wikis/home")
     (synopsis "Geolocation service")
     (description "Geoclue is a D-Bus service that provides location
@@ -9469,7 +9470,7 @@ properties, screen resolution, and other GNOME parameters.")
 (define-public gnome-shell
   (package
     (name "gnome-shell")
-    (version "44.10")
+    (version "46.7")
     (source (origin
               (method url-fetch)
               (uri (string-append "mirror://gnome/sources/" name "/"
@@ -9477,7 +9478,7 @@ properties, screen resolution, and other GNOME parameters.")
                                   name "-" version ".tar.xz"))
               (sha256
                (base32
-                "01pw9qnnvh64x56z1gqh0qk6vfn0ihh4zijq23f4bpz9wszlbpwf"))))
+                "0n19160ab6chcnxmwwv4m0kfz856n7851dv4ck0p08mfp39wzwhw"))))
     (build-system meson-build-system)
     (arguments
      (let ((disallowed-references
@@ -9492,8 +9493,7 @@ properties, screen resolution, and other GNOME parameters.")
         #~(list "-Dsystemd=false"
                 ;; Otherwise, the RUNPATH will lack the final path component.
                 (string-append "-Dc_link_args=-Wl,-rpath="
-                               #$output "/lib/gnome-shell")
-                "-Dsoup2=false")
+                               #$output "/lib/gnome-shell"))
         #:modules '((guix build meson-build-system)
                     (guix build utils)
                     (ice-9 match)
@@ -9515,11 +9515,11 @@ properties, screen resolution, and other GNOME parameters.")
                 (substitute* "meson.build"
                   (("gtk_update_icon_cache: true")
                    "gtk_update_icon_cache: false"))))
-            (add-after 'unpack 'unbreak-perf-tests
+            (add-after 'unpack 'unbreak-shell-tests
               (lambda _
                 ;; Lest non-fatal dbus warnings be made fatal again…
                 (substitute* "tests/meson.build"
-                  (("perf_testenv\\.set\\('G_DEBUG'" all)
+                  (("shell_testenv\\.set\\('G_DEBUG'" all)
                    (string-append "# " all)))))
             (add-before 'configure 'record-absolute-file-names
               (lambda* (#:key inputs #:allow-other-keys)
@@ -9559,7 +9559,7 @@ properties, screen resolution, and other GNOME parameters.")
                    (lambda (prog)
                      (wrap-program (string-append #$output "/bin/" prog)
                        `("GI_TYPELIB_PATH" ":" prefix (,gi-typelib-path))))
-                   '("gnome-shell" "gnome-extensions-app"))
+                   '("gnome-shell" "gnome-extensions" "gnome-extensions-app"))
                   (substitute* (string-append #$output "/share/gnome-shell/"
                                               "org.gnome.Shell.Extensions")
                     (("imports\\.package\\.start" all)
@@ -9579,13 +9579,7 @@ properties, screen resolution, and other GNOME parameters.")
                                     "[imports.gi.GLib.getenv('GST_PLUGIN_SYSTEM_PATH'),"
                                     "'" gst-plugin-path "'].filter(v => v).join(':'),"
                                     "true);\n"
-                                    all)))
-                  (for-each
-                   (lambda (prog)
-                     (wrap-program (string-append #$output "/bin/" prog)
-                       `("GUIX_PYTHONPATH"      ":" prefix (,python-path))
-                       `("GI_TYPELIB_PATH" ":" prefix (,gi-typelib-path))))
-                   '("gnome-shell-perf-tool")))))
+                                    all))))))
             (add-after 'install 'rewire
               (lambda* (#:key inputs #:allow-other-keys)
                 (for-each
@@ -11058,7 +11052,7 @@ functionality and behavior.")
 (define-public folks
   (package
     (name "folks")
-    (version "0.15.8")
+    (version "0.15.9")
     (source (origin
               (method url-fetch)
               (uri (string-append
@@ -11067,10 +11061,13 @@ functionality and behavior.")
                     "folks-" version ".tar.xz"))
               (sha256
                (base32
-                "1hj9brran2azy3scyf913svhxjrmya83fi7x239h33rp7vxnljlm"))))
+                "0ps1243l4vladlylj6f3h830lam2fi43kp1z2qzz6lf3amrv6493"))))
     (build-system meson-build-system)
     (arguments
-     '(#:phases
+     '(;; Tests are broken since GLib 2.80
+       ;; See <https://gitlab.gnome.org/GNOME/folks/-/issues/140>.
+       #:tests? #f
+       #:phases
        (modify-phases %standard-phases
          (add-after 'unpack 'skip-gtk-update-icon-cache
            ;; Don't create 'icon-theme.cache'.
