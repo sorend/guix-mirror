@@ -49,6 +49,7 @@
   #:use-module (gnu packages fonts)
   #:use-module (gnu packages fontutils)
   #:use-module (gnu packages freedesktop)
+  #:use-module (gnu packages gcc)
   #:use-module (gnu packages gdb)
   #:use-module (gnu packages ghostscript)
   #:use-module (gnu packages gnupg)
@@ -1383,7 +1384,7 @@ KDE Frameworks components.")
 (define-public kwin
   (package
     (name "kwin")
-    (version "6.1.4")
+    (version "6.2.5")
     (source (origin
               (method url-fetch)
               (uri (string-append "mirror://kde/stable/plasma/"
@@ -1392,7 +1393,7 @@ KDE Frameworks components.")
               (patches (search-patches "kwin-unwrap-executable-name-for-dot-desktop-search.patch"))
               (sha256
                (base32
-                "0fpbmp6rshr3irmlzxcpsjchfp65ch91pb1kmlnaj8zaim3cxzzw"))))
+                "0j38fxgxqyvhyj84cagvmab7y8rind82bdr9k72ch18iwjk51i2w"))))
     (build-system qt-build-system)
     (arguments
      (list
@@ -1458,9 +1459,8 @@ KDE Frameworks components.")
                          (list
                           ;; Fails on an Apple M1 (aarch64) with the following error:
                           ;; TestColorspaces::roundtripConversion fails
-                          #$@(if (target-aarch64?)
-                                 #~("kwin-testColorspaces")
-                                 #~())
+                          "kwin-testColorspaces"
+
                           "kwin-testDrm" ;; require Drm
                           "kwin-testInputMethod"
                           "kwin-testPlasmaWindow" ;; require plasma-workspace qml module.
@@ -1475,7 +1475,21 @@ KDE Frameworks components.")
                           "kwin-testNightColor-waylandonly"
                           "kwin-testScriptedEffects"
                           "kwayland-testServerSideDecoration"
-                          "kwayland-testWaylandSurface")
+                          "kwayland-testWaylandSurface"
+
+                          "kwin-testLibinputDevice"
+                          "kwin-testLockScreen"
+                          "kwin-testTabBox"
+                          "kwin-testKeyboardLayout"
+                          "kwin-testQuickTiling"
+                          "kwin-testDbusInterface"
+                          "kwin-testX11KeyRead"
+                          "kwin-testVirtualKeyboardDBus"
+                          "kwin-testGlobalShortcuts"
+                          "kwin-testKWinBindings"
+                          "kwin-testMinimizeAllScript"
+                          "kwin-testLibinputDevice"
+                          "kwin-testX11Window")
                          "|"))))))))
     (native-inputs (list extra-cmake-modules
                          dbus
@@ -1486,6 +1500,7 @@ KDE Frameworks components.")
                          wayland-protocols
                          xorg-server-for-tests
                          python-minimal
+                         gcc-14 ;; for <format> header
                          ;; for QtWaylandScanner
                          qtwayland))
     (inputs (list breeze
@@ -1514,6 +1529,7 @@ KDE Frameworks components.")
                   knewstuff
                   knotifications
                   kpackage
+                  kpipewire
                   krunner
                   kscreenlocker
                   ktextwidgets
@@ -1525,6 +1541,7 @@ KDE Frameworks components.")
                   kguiaddons
                   libqaccessibilityclient
                   lcms
+                  libcanberra
                   libcap
                   libepoxy
                   libglvnd ; For OpenGLES
@@ -1538,6 +1555,7 @@ KDE Frameworks components.")
                   qtmultimedia
                   qtwayland
                   qtsensors
+                  qtsvg
                   wayland
                   xcb-util ;fails at build time without this
                   xcb-util-cursor
