@@ -65,7 +65,7 @@
 ;;; Copyright © 2023 David Elsing <david.elsing@posteo.net>
 ;;; Copyright © 2024 Herman Rimm <herman@rimm.ee>
 ;;; Copyright © 2024 Foundation Devices, Inc. <hello@foundation.xyz>
-;;; Copyright © 2024 Artyom V. Poptsov <poptsov.artyom@gmail.com>
+;;; Copyright © 2024, 2025 Artyom V. Poptsov <poptsov.artyom@gmail.com>
 ;;; Copyright © 2024 Zheng Junjie <873216071@qq.com>
 ;;;
 ;;; This file is part of GNU Guix.
@@ -158,6 +158,7 @@
   #:use-module (gnu packages gl)
   #:use-module (gnu packages imagemagick)
   #:use-module (gnu packages m4)
+  #:use-module (gnu packages man)
   #:use-module (gnu packages mpi)
   #:use-module (gnu packages multiprecision)
   #:use-module (gnu packages ncurses)
@@ -870,6 +871,43 @@ extremely fast @dfn{abstract data types} (ADT) such as hash tables b-trees,
 and much more.")
     (license license:lgpl3+)))
 
+(define-public gfan
+  (package
+    (name "gfan")
+    (version "0.7")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (string-append "https://users-math.au.dk/jensen/software"
+                           "/gfan/gfan" version ".tar.gz"))
+       (sha256
+        (base32 "17lqripnsdb5hn7nnhgn4siajgh1jh9nkaplca3akm74w5bkg0xb"))))
+    (build-system gnu-build-system)
+    (arguments
+     (list
+      #:make-flags #~(list (string-append "PREFIX=" #$output)
+                           (string-append "CC=" #$(cc-for-target))
+                           (string-append "CXX=" #$(cxx-for-target)))
+      #:phases #~(modify-phases %standard-phases
+                   (delete 'configure)
+                   ;; cddlib is distributed with the 'cddlib' header name,
+                   ;; but gfan expects it to be named 'cdd'.  Substitute
+                   ;; the include headers to make gfan find it.
+                   (add-after 'unpack 'fix-cdd-reference
+                     (lambda _
+                       (substitute* '("src/lp_cdd.cpp"
+                                      "src/gfanlib_zcone.cpp"
+                                      "src/app_librarytest.cpp")
+                         (("#include \"cdd") "#include \"cddlib")))))))
+    (inputs (list cddlib gmp))
+    (home-page "https://users-math.au.dk/jensen/software/gfan/gfan.html")
+    (synopsis "Compute Gröbner fans and tropical varieties")
+    (description "Gfan is a software package for computing Gröbner fans and
+tropical varieties.")
+    ;; homepage/gfan.html: "Gfan is distributed under the terms of the GPL
+    ;; license version 2 or 3 as desired"
+    (license license:gpl2)))
+
 (define-public 4ti2
   (package
     (name "4ti2")
@@ -897,6 +935,45 @@ combinatorial problems on linear spaces.  Among others, it solves systems
 of linear equations, computes extreme rays of polyhedral cones, solves
 integer programming problems and computes Markov bases for statistics.")
     (license license:gpl2+)))
+
+(define-public sympow
+  (package
+    (name "sympow")
+    (version "2.023.7")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+         (url "https://gitlab.com/rezozer/forks/sympow")
+         (commit (string-append "v" version))))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32
+         "0ilnxygkj4g5arjiyd16k00cvnjlqs0cpc8hk64kbqhl877mm5i9"))))
+    (build-system gnu-build-system)
+    (arguments
+     (list #:tests? #f ; no tests
+           #:phases #~(modify-phases %standard-phases
+                        (replace 'configure
+                          (lambda* (#:key inputs #:allow-other-keys)
+                            (substitute* "Configure"
+                              (("/bin/sh") (search-input-file inputs "/bin/bash")))
+                            (setenv "PREFIX" #$output)
+                            (setenv "VARPREFIX" #$output)
+                            (invoke "bash" "./Configure"))))))
+    (native-inputs (list bash-minimal coreutils help2man pari-gp which))
+    (home-page "https://gitlab.com/rezozer/forks/sympow")
+    (synopsis "Symmetric power elliptic curve L-functions")
+    (description "SYMPOW is a mathematical program to compute special values
+of symmetric power elliptic curve L-functions; it can compute up to about 64
+digits of precision.")
+    ;; bsd-2 with extra stipulation that users be informed of sympow's
+    ;; "less restrictive license" if it's included in a program with a more
+    ;; restrictive license.  However, since sympow includes fpu.c which is
+    ;; gpl2+ the whole package can only be distributed via GPL anyway.
+    ;; See also <https://gitlab.com/rezozer/forks/sympow/-/issues/7>.
+    (license (license:non-copyleft "file:///COPYING"
+                                   "See COPYING in the distribution."))))
 
 (define-public cddlib
   (package
@@ -2946,7 +3023,7 @@ can solve two kinds of problems:
 (define-public octave-cli
   (package
     (name "octave-cli")
-    (version "9.2.0")
+    (version "9.3.0")
     (source
      (origin
        (method url-fetch)
@@ -2954,7 +3031,7 @@ can solve two kinds of problems:
                            version ".tar.xz"))
        (sha256
         (base32
-         "01sqfqrglzkjp20sg45fjd43hbjj069a1gn0r8sv01ciazxplh91"))))
+         "1ws5h5q9vzm8lwkxnvc39iikyvvxpb6q4jwcy9v3pqdp7m8nh93i"))))
     (build-system gnu-build-system)
     (inputs
      (list alsa-lib
@@ -5249,7 +5326,7 @@ point numbers.")
 (define-public wxmaxima
   (package
     (name "wxmaxima")
-    (version "24.02.2")
+    (version "24.11.0")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -5258,7 +5335,7 @@ point numbers.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "1k2fbhyg7xrbk6ivfns6sq68rrbcl5dn84s64viv6iavk3ws033v"))))
+                "1q66qv7m7dky9h7m6dzvlw6pkzixna4bhrdkz11sg7bv3a9qrlfy"))))
     (build-system cmake-build-system)
     (native-inputs (list gettext-minimal))
     (inputs (list bash-minimal
@@ -5502,6 +5579,37 @@ from the GotoBLAS2-1.13 BSD version.")
      "This package uses PLT trampolines to provide a BLAS and LAPACK demuxing
 library.")
     (license license:expat)))
+
+(define-public palp
+  (package
+    (name "palp")
+    (version "2.21")
+    (source (origin
+              (method url-fetch)
+              (uri (string-append
+                    "http://hep.itp.tuwien.ac.at/~kreuzer/CY/palp/palp-"
+                    version ".tar.gz"))
+              (sha256
+               (base32
+                "1myxjv0jxgr9acchwnjh9g5l61wxwiva3q6c1d6892lr37r7njky"))))
+    (build-system gnu-build-system)
+    (arguments
+     (list #:make-flags #~(list (string-append "CC=" #$(cc-for-target)))
+           #:tests? #f ; no tests
+           #:phases #~(modify-phases %standard-phases
+                        (delete 'configure)
+                        (replace 'install
+                          (lambda _
+                            (for-each
+                             (lambda (name)
+                               (install-file name (string-append #$output "/bin")))
+                             '("class.x" "cws.x" "mori.x" "nef.x" "poly.x")))))))
+    (home-page "http://hep.itp.tuwien.ac.at/~kreuzer/CY/CYpalp.html")
+    (synopsis "Package for Analyzing Lattice Polytopes")
+    (description
+     "PALP is a set of programs for calculations with lattice polytopes and
+applications to toric geometry.")
+    (license license:gpl3)))
 
 (define-public blis
   (package
@@ -7282,7 +7390,7 @@ evaluates expressions using the standard order of operations.")
 (define-public xaos
   (package
     (name "xaos")
-    (version "4.3.2")
+    (version "4.3.3")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -7291,7 +7399,7 @@ evaluates expressions using the standard order of operations.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "0a5n3g1xcsd8k65q5skm4xsdllr3mmkahh4vi59db1l0jv81v06q"))))
+                "0imq6rvvjwjgmrfr25yr5lmhmqr4s6a5174jhah90mhf7pb62j0i"))))
     (build-system gnu-build-system)
     (native-inputs `(("gettext" ,gettext-minimal)
                      ("qtbase" ,qtbase)
@@ -10525,7 +10633,7 @@ architecture.")
          "1i632v3f64q3v1i0p0x850mjhgad49fl24dl6r20r4wa1mhalmp0"))))
     (build-system pyproject-build-system)
     (propagated-inputs (list python-chardet python-click python-pyyaml))
-    (native-inputs (list python-pytest))
+    (native-inputs (list python-pytest python-setuptools python-wheel))
     (home-page "https://mathics.org/")
     (synopsis
      "Character tables and tokenizer for Mathics and the Wolfram language")
@@ -10579,13 +10687,17 @@ the Wolfram language.")
              (substitute* "mathics/builtin/files_io/files.py"
               (("https://raw.githubusercontent.com/Mathics3/mathics-core/master/README.rst")
                (string-append (getcwd) "/README.rst")))))
+         (add-before 'check 'prepare-check
+           (lambda* (#:key inputs outputs #:allow-other-keys)
+             ; Doesn't work: (add-installed-pythonpath inputs outputs)
+             (setenv "PYTHONPATH" (getcwd))))
          (add-before 'check 'prepare-locales
            (lambda _
              ;; Otherwise 210 tests fail because the real output would use
              ;; unicode arrow characters.  With this, only 18 (symbolic) tests fail.
              (setenv "MATHICS_CHARACTER_ENCODING" "ASCII"))))))
     (build-system pyproject-build-system)
-    (native-inputs (list python-pytest))
+    (native-inputs (list python-pytest python-setuptools python-wheel))
     (inputs (list llvm))
     (propagated-inputs (list python-mpmath
                              python-pint
@@ -10669,3 +10781,52 @@ Mathics3.")
     (synopsis "A Django front end for Mathics3.")
     (description "This package provides a Django front end for Mathics3.")
     (license license:gpl3)))
+
+(define-public lie
+  (package
+    (name "lie")
+    (version "2.2.2")
+    ;; Original: <http://www-math.univ-poitiers.fr/~maavl/LiE/conLiE.tar.gz>
+    ;; This source has the license file added as allowed on
+    ;; <http://www-math.univ-poitiers.fr/~maavl/LiE/>.
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/daym/LiE")
+             (commit (string-append "v" version))))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "0qb9y08mdl2wr77lf61wv4xks429sw99xacb9gh91w242z0nbcqn"))))
+    (build-system gnu-build-system)
+    (arguments
+     `(#:parallel-build? #f
+       ;; There are test input files under progs/--but no expected results.
+       #:tests? #f
+       #:phases
+       (modify-phases %standard-phases
+         (replace 'configure
+           (lambda* (#:key outputs #:allow-other-keys)
+             (substitute* "make_lie"
+              (("`/bin/pwd`")
+               (string-append (assoc-ref outputs "out")
+                              "/bin")))))
+         (add-after 'install 'install-lie-program
+           (lambda* (#:key outputs #:allow-other-keys)
+             (for-each
+               (lambda (name)
+                 (install-file name
+                               (string-append (assoc-ref outputs "out")
+                                              "/bin")))
+                  '("lie" "Lie.exe")))))))
+    (native-inputs
+     (list bison))
+    (inputs
+     (list readline))
+    (synopsis "Lie group computer algebra module")
+    (description "This package provides a computer algebra module for Lie
+groups.  Documentation is available on
+@url{http://www-math.univ-poitiers.fr/~maavl/pdf/LiE-manual.pdf}.")
+    (home-page "http://www-math.univ-poitiers.fr/~maavl/LiE/")
+    ;; <http://www-math.univ-poitiers.fr/~maavl/LiE/> says LGPL.
+    (license license:lgpl3+)))

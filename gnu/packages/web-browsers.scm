@@ -1,7 +1,7 @@
 ;;; GNU Guix --- Functional package management for GNU
 ;;; Copyright © 2014 John Darrington <jmd@gnu.org>
 ;;; Copyright © 2014, 2019 Mark H Weaver <mhw@netris.org>
-;;; Copyright © 2015, 2016, 2019, 2021-2023 Efraim Flashner <efraim@flashner.co.il>
+;;; Copyright © 2015, 2016, 2019, 2021-2023, 2025 Efraim Flashner <efraim@flashner.co.il>
 ;;; Copyright © 2016 Kei Kebreau <kkebreau@posteo.net>
 ;;; Copyright © 2017, 2024 Eric Bavier <bavier@posteo.net>
 ;;; Copyright © 2018–2021 Tobias Geerinckx-Rice <me@tobias.gr>
@@ -732,7 +732,7 @@ is fully configurable and extensible in Common Lisp.")
 (define-public lagrange
   (package
     (name "lagrange")
-    (version "1.17.6")
+    (version "1.18.4")
     (source
      (origin
        (method url-fetch)
@@ -740,7 +740,7 @@ is fully configurable and extensible in Common Lisp.")
         (string-append "https://git.skyjake.fi/skyjake/lagrange/releases/"
                        "download/v" version "/lagrange-" version ".tar.gz"))
        (sha256
-        (base32 "0fsjn74cmrchqgnj88yzdxyj1gm0i2vrzh69b9b9bi7y2wk9il5r"))
+        (base32 "0c3dwsp8zkx2nzmd5mskcf91n20mjk7dlzgy6gn3df6brw57awk9"))
        (modules '((guix build utils)))
        (snippet
         '(begin
@@ -750,8 +750,12 @@ is fully configurable and extensible in Common Lisp.")
            (delete-file-recursively "lib/sealcurses")))))
     (build-system cmake-build-system)
     (arguments
-     `(#:tests? #false                  ;no tests
-       #:configure-flags (list "-DTFDN_ENABLE_SSE41=OFF")))
+     (list
+       #:tests? #false                  ;no tests
+       #:configure-flags
+       #~(list "-DTFDN_ENABLE_SSE41=OFF"
+               (string-append "-DUNISTRING_DIR="
+                              #$(this-package-input "libunistring")))))
     (native-inputs
      (list pkg-config zip))
     (inputs
@@ -860,7 +864,7 @@ http, and https via third-party applications.")
 (define-public tinmop
   (package
     (name "tinmop")
-    (version "0.9.9.14142135623")
+    (version "0.9.9.1414213562373")
     (source
      (origin
        (method git-fetch)
@@ -869,20 +873,23 @@ http, and https via third-party applications.")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "02kp527gyh60fm2ss92wy3k3m9fih82wvzndri98sj2zc0wgcnki"))))
+        (base32 "1grcngb6rnyzkdkf52m62m1kmd8nxm9m85bpg2py5mp3ghf5y5gp"))))
     (build-system gnu-build-system)
     (native-inputs
      (list autoconf
            automake
+           bash-completion
            gnu-gettext
            libjpeg-turbo
            imagemagick
            mandoc
            nano
            openssl
+           pkg-config
            sbcl
            tk
            unzip
+           which
            xdg-utils))
     (inputs
      (list ncurses
@@ -909,7 +916,6 @@ http, and https via third-party applications.")
            sbcl-log4cl
            sbcl-marshal
            sbcl-nodgui
-           sbcl-osicat
            sbcl-parse-number
            sbcl-percent-encoding
            sbcl-purgatory
@@ -920,6 +926,7 @@ http, and https via third-party applications.")
            sbcl-unix-opts
            sbcl-usocket
            sbcl-yason
+           sdl2-ttf
            sqlite))
     (arguments
      `(#:tests? #f
@@ -939,15 +946,16 @@ http, and https via third-party applications.")
                (("AC_PATH_PROGS.+GIT")
                 "dnl")
                (("AC_PATH_PROG.+GPG")
-                "dnl"))
-             #t))
-         (add-after 'configure 'fix-asdf
-           (lambda* (#:key inputs #:allow-other-keys)
-             (substitute* "Makefile.in"
-               (("LISP_COMPILER) ")
-                (string-concatenate
-                 '("LISP_COMPILER) --eval \"(require 'asdf)\" "
-                   "--eval \"(push \\\"$$(pwd)/\\\" asdf:*central-registry*)\"  "))))
+                "dnl")
+               (("AC_PATH_PROG.+SDL2")
+                "dnl ")
+               (("AC_CHECK_HEADER.+ttf")
+                "dnl "))
+             (substitute* "Makefile.am"
+               (("dist_completion_DATA")
+                "#")
+               (("completiondir")
+                "#"))
              #t)))))
     (synopsis
      "Gemini, gopher, kami and mastodon/pleroma client with a terminal interface")

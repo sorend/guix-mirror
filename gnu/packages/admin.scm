@@ -1,5 +1,5 @@
 ;;; GNU Guix --- Functional package management for GNU
-;;; Copyright © 2012-2024 Ludovic Courtès <ludo@gnu.org>
+;;; Copyright © 2012-2025 Ludovic Courtès <ludo@gnu.org>
 ;;; Copyright © 2013 Cyril Roelandt <tipecaml@gmail.com>
 ;;; Copyright © 2014, 2015, 2016, 2018, 2019, 2020 Mark H Weaver <mhw@netris.org>
 ;;; Copyright © 2014, 2015-2018, 2020-2023 Eric Bavier <bavier@posteo.net>
@@ -47,7 +47,7 @@
 ;;; Copyright © 2021 muradm <mail@muradm.net>
 ;;; Copyright © 2021 pineapples <guixuser6392@protonmail.com>
 ;;; Copyright © 2021 Petr Hodina <phodina@protonmail.com>
-;;; Copyright © 2021-2024 Artyom V. Poptsov <poptsov.artyom@gmail.com>
+;;; Copyright © 2021-2025 Artyom V. Poptsov <poptsov.artyom@gmail.com>
 ;;; Copyright © 2022 Wamm K. D. <jaft.r@outlook.com>
 ;;; Copyright © 2022 Roman Riabenko <roman@riabenko.com>
 ;;; Copyright © 2022 Petr Hodina <phodina@protonmail.com>
@@ -70,6 +70,9 @@
 ;;; Copyright © 2024 Vinicius Monego <monego@posteo.net>
 ;;; Copyright © 2024 nathan <nathan_mail@nborghese.com>
 ;;; Copyright © 2024 Nikita Domnitskii <nikita@domnitskii.me>
+;;; Copyright © 2024 Ashish SHUKLA <ashish.is@lostca.se>
+;;; Copyright © 2024 Ashvith Shetty <ashvithshetty10@gmail.com>
+;;; Copyright © 2025 Dariqq <dariqq@posteo.net>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -137,6 +140,7 @@
   #:use-module (gnu packages freedesktop)
   #:use-module (gnu packages gawk)
   #:use-module (gnu packages gettext)
+  #:use-module (gnu packages gcc)
   #:use-module (gnu packages gl)
   #:use-module (gnu packages glib)
   #:use-module (gnu packages gnome)
@@ -157,10 +161,12 @@
   #:use-module (gnu packages libunwind)
   #:use-module (gnu packages libusb)
   #:use-module (gnu packages linux)
+  #:use-module (gnu packages logging)
   #:use-module (gnu packages lua)
   #:use-module (gnu packages m4)
   #:use-module (gnu packages mail)
   #:use-module (gnu packages man)
+  #:use-module (gnu packages maths)
   #:use-module (gnu packages markup)
   #:use-module (gnu packages mcrypt)
   #:use-module (gnu packages mpi)
@@ -195,6 +201,7 @@
   #:use-module (gnu packages time)
   #:use-module (gnu packages tls)
   #:use-module (gnu packages version-control)
+  #:use-module (gnu packages vulkan)
   #:use-module (gnu packages web)
   #:use-module (gnu packages xdisorg)
   #:use-module (gnu packages xml)
@@ -417,14 +424,26 @@ interface and is based on GNU Guile.")
 (define-public shepherd-1.0
   (package
     (inherit shepherd-0.10)
-    (version "1.0.0")
+    (version "1.0.1")
     (source (origin
               (method url-fetch)
               (uri (string-append "mirror://gnu/shepherd/shepherd-"
                                   version ".tar.gz"))
               (sha256
                (base32
-                "0z4yxl8g0k3b6k4x7b3ks10x31hs46j5kmw0ah5cr417n0rszrp8"))))))
+                "1i8h4wp11nkn85vj79yh2sgzh5adgdvi6fgng4gkniycw58h0pc9"))))
+    (arguments
+     (substitute-keyword-arguments (package-arguments shepherd-0.10)
+       ((#:configure-flags flags #~'())
+        #~(list "--localstatedir=/var"
+
+                ;; Gzip and zstd are used by the log rotation service.
+                (string-append "--with-gzip=" #$(this-package-input "gzip")
+                               "/bin/gzip")
+                (string-append "--with-zstd=" #$(this-package-input "zstd")
+                               "/bin/zstd")))))
+    (inputs (modify-inputs (package-inputs shepherd-0.10)
+              (append gzip zstd)))))
 
 (define-public shepherd shepherd-0.10)
 
@@ -1714,7 +1733,7 @@ maintenance releases.")
 (define-public radvd
   (package
     (name "radvd")
-    (version "2.19")
+    (version "2.20")
     (source
      (origin
        (method git-fetch)
@@ -1723,7 +1742,7 @@ maintenance releases.")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "1df827m3vkjq2bcs5y9wg2cygvpdwl8ppl446qqhyym584gz54nl"))))
+        (base32 "090b8953cq7pvxf8i5wsippsi3zc8jxy559k6jpfjjmbbvl8zlmk"))))
     (build-system gnu-build-system)
     (native-inputs
      (list autoconf
@@ -1732,8 +1751,11 @@ maintenance releases.")
            check
            flex
            pkg-config))
+    (inputs (list libbsd))
     (arguments
-     `(#:configure-flags '("--with-check")))
+     (if (%current-target-system)
+         (list)
+         (list #:configure-flags #~(list "--with-check"))))
     (home-page "https://radvd.litech.org/")
     (synopsis "IPv6 Router Advertisement Daemon")
     (description
@@ -2558,14 +2580,14 @@ network, which causes enabled computers to power on.")
 (define-public dmidecode
   (package
     (name "dmidecode")
-    (version "3.5")
+    (version "3.6")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "mirror://savannah/dmidecode/dmidecode-"
                            version ".tar.xz"))
        (sha256
-        (base32 "0wy0khw02sr59f43fdahh6as1xc3jv7n8abj59p1j9cfxqsngmvr"))))
+        (base32 "1blbvmsxba71fmjxckh0cn7x68kim7qlx6ilv0df7brxxkrna374"))))
     (build-system gnu-build-system)
     (arguments
      (list #:tests? #f                  ; no 'check' target
@@ -3129,7 +3151,7 @@ modules and plugins that extend Ansible.")
 (define-public debops
   (package
     (name "debops")
-    (version "3.2.2")
+    (version "3.2.4")
     (source
      (origin
        (method git-fetch)
@@ -3138,10 +3160,11 @@ modules and plugins that extend Ansible.")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "03d94bzljnw65f1ra7bxsl8q2l6g8gxcy8kqhm69ib08j50qa0h6"))
+        (base32 "0y7bmrnynbw0hz88shfv301a9fsank2cx86fvb7jx6g6kkbsa9pz"))
        (patches
         (search-patches "debops-setup-py-avoid-git.patch"))))
     (build-system pyproject-build-system)
+    (native-inputs (list python-setuptools python-wheel))
     (inputs
      (list ansible
            encfs
@@ -3267,6 +3290,79 @@ able to adapt itself dynamically to the overall system load.  Children
 processes and threads of the specified process may optionally share the same
 limits.")
     (license license:gpl2+)))
+
+(define-public corectrl
+  (package
+    (name "corectrl")
+    (version "1.4.3")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://gitlab.com/corectrl/corectrl")
+             (commit (string-append "v" version))))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "0qpc04xxzv4jbqqlraqriipix4ph7bm1hfiry807jjp668i9n25d"))
+       (patches (search-patches "corectrl-polkit-install-dir.patch"))))
+    (build-system qt-build-system)
+    (arguments
+     (list
+      #:configure-flags #~(list "-DINSTALL_DBUS_FILES_IN_PREFIX=true"
+                                (string-append "-DPOLKIT_POLICY_INSTALL_DIR="
+                                               #$output
+                                               "/share/polkit-1/actions")
+                                (string-append "-DWITH_PCI_IDS_PATH="
+                                               #$(this-package-input "hwdata")
+                                               "/share/hwdata/pci.ids"))
+      #:phases
+      #~(modify-phases %standard-phases
+          (add-after 'unpack 'embed-absolute-references
+            (lambda* (#:key inputs #:allow-other-keys)
+              (substitute* "src/core/info/common/cpuinfolscpu.cpp"
+                (("\"lscpu\"")
+                 (string-append
+                  "\"" (search-input-file inputs "bin/lscpu") "\"")))
+              (substitute* "src/core/info/common/gpuinfovulkan.cpp"
+                (("\"vulkaninfo\"")
+                 (string-append
+                  "\"" (search-input-file inputs "bin/vulkaninfo") "\"")))
+              (substitute* (list "src/core/info/common/swinfomesa.cpp"
+                                 "src/core/info/common/gpuinfoopengl.cpp")
+                (("\"glxinfo\"")
+                 (string-append
+                  "\"" (search-input-file inputs "bin/glxinfo") "\""))))))))
+    ;; Text formatting only supported since C++20, which is available in gcc-13.
+    ;; https://en.cppreference.com/w/cpp/compiler_support#cpp_lib_format_201907L
+    (native-inputs (list catch2-3
+                         gcc-13
+                         pkg-config
+                         qttools-5))
+    (inputs (list dbus
+                  botan
+                  hwdata
+                  mesa-utils
+                  polkit
+                  procps
+                  pugixml
+                  qtcharts-5
+                  qtdeclarative-5
+                  qtquickcontrols2-5
+                  qtsvg-5
+                  qtwayland-5
+                  quazip
+                  spdlog
+                  trompeloeil
+                  units
+                  util-linux
+                  vulkan-tools
+                  zlib))
+    (home-page "https://gitlab.com/corectrl/corectrl")
+    (synopsis "Profile based system control utility")
+    (description
+     "CoreCtrl allows you to control with ease your computer hardware using
+application profiles.")
+    (license (list license:gpl3))))
 
 (define-public autojump
   (package
@@ -4148,7 +4244,7 @@ you are running, what theme or icon set you are using, etc.")
 (define-public hyfetch
   (package
     (name "hyfetch")
-    (version "1.4.11")
+    (version "1.99.0")
     (source
      (origin
        (method git-fetch)
@@ -4158,7 +4254,7 @@ you are running, what theme or icon set you are using, etc.")
        (file-name (git-file-name name version))
        (sha256
         (base32
-         "1ymj72virh8y8gwgg3j3skf6j0zn7p0plcza57lln1drnjspycy7"))))
+         "02bc6dhwvf1daqlsw3am9y2wjfkhs8lpw3vgdxw74jg0w9bpzg8q"))))
     (build-system python-build-system)
     (arguments (list #:tests? #f))      ;no tests
     (inputs (list python-typing-extensions))
@@ -4367,7 +4463,7 @@ information tool.")
 (define-public fastfetch
   (package
     (name "fastfetch")
-    (version "2.16.0")
+    (version "2.34.1")
     (source
      (origin
        (method git-fetch)
@@ -4376,17 +4472,36 @@ information tool.")
              (commit version)))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "112dvfx7gvp6n20i1lkd0jbh897jf7bxjxq96bj4099j3x313y3m"))))
+        (base32 "1fb8ix2wxvqb414gvc6174dwigpixswbysq7yp9c3rw3c55r294h"))
+       (modules '((guix build utils)))
+       (snippet '(begin
+                   (delete-file-recursively "src/3rdparty")))))
     (build-system cmake-build-system)
+    (arguments
+     (list
+      #:configure-flags #~(list "-DENABLE_SYSTEM_YYJSON=ON"
+                                "-DBUILD_FLASHFETCH=OFF"
+                                "-DBUILD_TESTS=ON"
+                                "-DINSTALL_LICENSE=OFF"
+                                "-DBINARY_LINK_TYPE=dynamic"
+                                "-DENABLE_DIRECTX_HEADERS=OFF"
+                                (string-append "-DCUSTOM_PCI_IDS_PATH="
+                                               #$(this-package-input "hwdata")
+                                               "/share/hwdata/pci.ids")
+                                (string-append "-DCUSTOM_AMDGPU_IDS_PATH="
+                                               #$(this-package-input "libdrm")
+                                               "share/libdrm/amdgpu.ids"))))
     (inputs (list dbus
                   glib
+                  hwdata
                   imagemagick
+                  libdrm
                   libxcb
                   mesa
                   wayland
+                  yyjson
                   zlib)) ;for imagemagick and an #ifdef
-    (native-inputs (list pkg-config))
-    (arguments (list #:tests? #f)) ; no test target
+    (native-inputs (list pkg-config python-minimal))
     (home-page "https://github.com/fastfetch-cli/fastfetch")
     (synopsis "Display system information in a stylized manner")
     (description
@@ -5100,7 +5215,7 @@ elogind's uaccess feature.")
 (define-public jc
   (package
     (name "jc")
-    (version "1.25.3")
+    (version "1.25.4")
     (source
      (origin
        ;; The PyPI tarball lacks the test suite.
@@ -5110,7 +5225,7 @@ elogind's uaccess feature.")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "0ay5wh00fzblibvvcz3jh83n8mpkfsfqmix93fz9za5kf3gpk7na"))))
+        (base32 "0lb7608h3vaw5gqlaf1ryd84m2mirfl7gdnhzadrjlh6h8b3lkgp"))))
     (build-system pyproject-build-system)
     (arguments
      (list #:phases
@@ -5647,7 +5762,7 @@ it won't take longer to install 15 machines than it would to install just 2.")
 (define-public greetd
   (package
     (name "greetd")
-    (version "0.9.0")
+    (version "0.10.3")
     (home-page "https://git.sr.ht/~kennylevinsen/greetd")
     (source (origin
               (method git-fetch)
@@ -5656,25 +5771,28 @@ it won't take longer to install 15 machines than it would to install just 2.")
                     (commit version)))
               (file-name (git-file-name name version))
               (sha256
-               (base32 "1b79lb0vikh5vwpdlyga6zwzm11gpsd7ghp8zb0q2m6mlqlj5by3"))))
+               (base32 "1j3c7skby9scsq6p1f6nacbiy9b26y1sswchdsp8p3vv7fgdh2wf"))))
     (build-system cargo-build-system)
     (arguments
      `(#:cargo-inputs
-       (("rust-nix" ,rust-nix-0.26)
+       (("rust-async-trait" ,rust-async-trait-0.1)
+        ("rust-enquote" ,rust-enquote-1)
+        ("rust-getopts" ,rust-getopts-0.2)
+        ("rust-libc" ,rust-libc-0.2)
+        ("rust-nix" ,rust-nix-0.27)
         ("rust-pam-sys" ,rust-pam-sys-0.5)
         ("rust-rpassword" ,rust-rpassword-5)
-        ("rust-users" ,rust-users-0.11)
         ("rust-serde" ,rust-serde-1)
         ("rust-serde-json" ,rust-serde-json-1)
-        ("rust-libc" ,rust-libc-0.2)
-        ("rust-tokio" ,rust-tokio-1)
-        ("rust-getopts" ,rust-getopts-0.2)
         ("rust-thiserror" ,rust-thiserror-1)
-        ("rust-async-trait" ,rust-async-trait-0.1)
-        ("rust-enquote" ,rust-enquote-1))
+        ("rust-tokio" ,rust-tokio-1))
+       #:install-source? #f
        #:phases
        (modify-phases %standard-phases
-         (delete 'package)
+         (add-after 'unpack 'patch-/bin/sh
+           (lambda* (#:key inputs #:allow-other-keys)
+             (substitute* "greetd/src/session/worker.rs"
+               (("/bin/sh") (search-input-file inputs "/bin/sh")))))
          (add-after 'build 'build-man-pages
            (lambda* (#:key inputs #:allow-other-keys)
              (define (scdoc-cmd doc lvl)
@@ -5759,73 +5877,70 @@ This allows greetd-pam-mount to auto-(un)mount @env{XDG_RUNTIME_DIR} without
 interfering with any pam-mount configuration.")))
 
 (define-public wlgreet
-  (let ((commit "7e79d6004fc5e765a5c3ece6d377f8c5999d9dfa")
-        (revision "1"))
-    (package
-      (name "wlgreet")
-      (version (git-version "0.4.1" revision commit))
-      (source (origin
-                (method git-fetch)
-                (uri (git-reference
-                      (url "https://git.sr.ht/~kennylevinsen/wlgreet")
-                      (commit commit)))
-                (file-name (git-file-name name version))
-                (sha256
-                 (base32
-                  "039a05v6c2i3al86k4fncqr3z47dnrz7y8wmhx6wvm08zx8s89ww"))))
-      (build-system cargo-build-system)
-      (arguments
-       (list #:cargo-inputs
-             `(("rust-chrono" ,rust-chrono-0.4)
-               ("rust-getopts" ,rust-getopts-0.2)
-               ("rust-greetd-ipc" ,rust-greetd-ipc-0.9)
-               ("rust-lazy-static" ,rust-lazy-static-1)
-               ("rust-memmap2" ,rust-memmap2-0.3)
-               ("rust-nix" ,rust-nix-0.25)
-               ("rust-os-pipe" ,rust-os-pipe-1)
-               ("rust-rusttype" ,rust-rusttype-0.9)
-               ("rust-serde" ,rust-serde-1)
-               ("rust-smithay-client-toolkit"
-                ,rust-smithay-client-toolkit-0.15)
-               ("rust-toml" ,rust-toml-0.5)
-               ("rust-wayland-client" ,rust-wayland-client-0.29)
-               ("rust-wayland-protocols" ,rust-wayland-protocols-0.29))
-             #:phases
-             #~(modify-phases %standard-phases
-                 (add-after 'unpack 'remove-bundled-fonts
-                   (lambda _
-                     (delete-file-recursively "fonts")))
-                 (add-after 'remove-bundled-fonts 'fix-font-references
-                   (lambda* (#:key inputs #:allow-other-keys)
-                     (substitute* "src/draw.rs"
-                       (("\\.\\./fonts/dejavu/DejaVuSansMono\\.ttf" _)
-                        (search-input-file
-                         inputs
-                         "share/fonts/truetype/DejaVuSansMono.ttf"))
-                       (("\\.\\./fonts/Roboto-Regular\\.ttf" _)
-                        (search-input-file
-                         inputs
-                         "share/fonts/truetype/Roboto-Regular.ttf")))))
-                 (add-after 'configure 'fix-library-references
-                   (lambda* (#:key inputs vendor-dir #:allow-other-keys)
-                     (substitute* (find-files vendor-dir "\\.rs$")
-                       (("lib(wayland-.*|xkbcommon)\\.so" so-file)
-                        (search-input-file
-                         inputs
-                         (string-append "lib/" so-file)))))))))
-      (inputs
-       (list font-dejavu
-             font-google-roboto
-             libxkbcommon
-             wayland))
-      (home-page "https://git.sr.ht/~kennylevinsen/wlgreet")
-      (synopsis "Bare-bones Wayland-based greeter for @command{greetd}")
-      (description
-       "@command{wlgreet} provides a @command{greetd} greeter
+  (package
+    (name "wlgreet")
+    (version "0.5.0")
+    (source (origin
+              (method git-fetch)
+              (uri (git-reference
+                    (url "https://git.sr.ht/~kennylevinsen/wlgreet")
+                    (commit version)))
+              (file-name (git-file-name name version))
+              (sha256
+               (base32
+                "0d7lfx5jg2w7fp7llwrirnbsp27nv74f21mhrspd9ilk2cacf12d"))))
+    (build-system cargo-build-system)
+    (arguments
+     (list #:cargo-inputs
+           `(("rust-chrono" ,rust-chrono-0.4)
+             ("rust-getopts" ,rust-getopts-0.2)
+             ("rust-greetd-ipc" ,rust-greetd-ipc-0.10)
+             ("rust-lazy-static" ,rust-lazy-static-1)
+             ("rust-memmap2" ,rust-memmap2-0.3)
+             ("rust-nix" ,rust-nix-0.25)
+             ("rust-os-pipe" ,rust-os-pipe-1)
+             ("rust-rusttype" ,rust-rusttype-0.9)
+             ("rust-serde" ,rust-serde-1)
+             ("rust-toml" ,rust-toml-0.5)
+             ("rust-wayland-client" ,rust-wayland-client-0.29)
+             ("rust-smithay-client-toolkit" ,rust-smithay-client-toolkit-0.15)
+             ("rust-wayland-protocols" ,rust-wayland-protocols-0.29))
+           #:phases
+           #~(modify-phases %standard-phases
+               (add-after 'unpack 'remove-bundled-fonts
+                 (lambda _
+                   (delete-file-recursively "fonts")))
+               (add-after 'remove-bundled-fonts 'fix-font-references
+                 (lambda* (#:key inputs #:allow-other-keys)
+                   (substitute* "src/draw.rs"
+                     (("\\.\\./fonts/dejavu/DejaVuSansMono\\.ttf")
+                      (search-input-file
+                       inputs
+                       "share/fonts/truetype/DejaVuSansMono.ttf"))
+                     (("\\.\\./fonts/Roboto-Regular\\.ttf")
+                      (search-input-file
+                       inputs
+                       "share/fonts/truetype/Roboto-Regular.ttf")))))
+               (add-after 'configure 'fix-library-references
+                 (lambda* (#:key inputs vendor-dir #:allow-other-keys)
+                   (substitute* (find-files vendor-dir "\\.rs$")
+                     (("lib(wayland-.*|xkbcommon)\\.so" so-file)
+                      (search-input-file
+                       inputs
+                       (string-append "lib/" so-file)))))))))
+    (inputs
+     (list font-dejavu
+           font-google-roboto
+           libxkbcommon
+           wayland))
+    (home-page "https://git.sr.ht/~kennylevinsen/wlgreet")
+    (synopsis "Bare-bones Wayland-based greeter for @command{greetd}")
+    (description
+     "@command{wlgreet} provides a @command{greetd} greeter
 that runs on a Wayland compositor such as @command{sway}.  It
 is implemented with pure Wayland APIs, so it does not depend
 on a GUI toolkit.")
-      (license license:gpl3))))
+    (license license:gpl3)))
 
 (define-public libseat
   (package
@@ -6299,9 +6414,7 @@ file or files to several hosts.")
         (base32 "0qr6ikq2ds8bq35iw480qyhf3d43dj61wiwp8587n3mgqf5djx8w"))))
     (build-system cargo-build-system)
     (arguments
-     (list #:cargo-test-flags `(list "--release" "--"
-                                     "--skip=test_apparent_size")
-           #:install-source? #f
+     (list #:install-source? #f
            #:cargo-inputs `(("rust-ansi-term" ,rust-ansi-term-0.12)
                             ("rust-chrono" ,rust-chrono-0.4)
                             ("rust-clap" ,rust-clap-4)

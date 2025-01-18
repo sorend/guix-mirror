@@ -67,7 +67,7 @@
 ;;; Copyright © 2023 Evgeny Pisemsky <mail@pisemsky.site>
 ;;; Copyright © 2024 Tomas Volf <~@wolfsden.cz>
 ;;; Copyright © 2024 Zheng Junjie <873216071@qq.com>
-;;; Copyright © 2024 Artyom V. Poptsov <poptsov.artyom@gmail.com>
+;;; Copyright © 2024, 2025 Artyom V. Poptsov <poptsov.artyom@gmail.com>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -347,7 +347,7 @@ and its related documentation.")
 (define-public miniflux
   (package
     (name "miniflux")
-    (version "2.2.3")
+    (version "2.2.4")
     (source
      (origin
        (method git-fetch)
@@ -356,7 +356,7 @@ and its related documentation.")
              (commit version)))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "0bllgjv7cdqrk3dm98dmp7mx0wmcbh410jcdcvid7z5qkr0fiy07"))))
+        (base32 "15h9ip7a9n64n9fn6ylpriyz79rilbzw2swb6zjr1fwqyrjcx5l7"))))
     (build-system go-build-system)
     (arguments
      (list
@@ -397,6 +397,7 @@ and its related documentation.")
            go-github-com-tdewolff-minify-v2
            go-github-com-yuin-goldmark
            go-golang-org-x-crypto
+           go-golang-org-x-image
            go-golang-org-x-net
            go-golang-org-x-oauth2
            go-golang-org-x-term
@@ -476,7 +477,7 @@ replacing them with data URIs.")
 (define-public monolith
   (package
     (name "monolith")
-    (version "2.8.1")
+    (version "2.8.3")
     (source
      (origin
        (method git-fetch)
@@ -485,24 +486,33 @@ replacing them with data URIs.")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "0xr63302yb5k9c2sihd1iy97j5c44d4jrzfaiwm81d9li577ih58"))))
+        (base32 "082xh0zmmy9abz7y3zjybbwffq7d0j1jl78ggzbwwanvam65v0dp"))))
     (build-system cargo-build-system)
     (arguments
-     `(#:cargo-inputs
+     `(#:install-source? #f
+       #:cargo-inputs
        (("rust-atty" ,rust-atty-0.2)
-        ("rust-base64" ,rust-base64-0.21)
+        ("rust-base64" ,rust-base64-0.22)
         ("rust-chrono" ,rust-chrono-0.4)
         ("rust-clap" ,rust-clap-3)
-        ("rust-cssparser" ,rust-cssparser-0.33)
+        ("rust-cssparser" ,rust-cssparser-0.34)
         ("rust-encoding-rs" ,rust-encoding-rs-0.8)
-        ("rust-html5ever" ,rust-html5ever-0.24)
+        ("rust-html5ever" ,rust-html5ever-0.27)
+        ("rust-markup5ever-rcdom" ,rust-markup5ever-rcdom-0.3)
+        ("rust-openssl" ,rust-openssl-0.10)
         ("rust-percent-encoding" ,rust-percent-encoding-2)
         ("rust-regex" ,rust-regex-1)
-        ("rust-reqwest" ,rust-reqwest-0.11)
+        ("rust-reqwest" ,rust-reqwest-0.12)
         ("rust-sha2" ,rust-sha2-0.10)
         ("rust-url" ,rust-url-2))
        #:cargo-development-inputs
-       (("rust-assert-cmd" ,rust-assert-cmd-2))))
+       (("rust-assert-cmd" ,rust-assert-cmd-2))
+       #:phases
+       (modify-phases %standard-phases
+         (add-after 'unpack 'dont-default-to-vendored-openssl
+           (lambda _
+             (substitute* "Cargo.toml"
+               ((".*\"vendored-openssl\".*") "")))))))
     (native-inputs
      (list pkg-config))
     (inputs
@@ -528,14 +538,14 @@ the same, being completely separated from the Internet.")
     ;; Track the ‘mainline’ branch.  Upstream considers it more reliable than
     ;; ’stable’ and recommends that “in general you deploy the NGINX mainline
     ;; branch at all times” (https://www.nginx.com/blog/nginx-1-6-1-7-released/)
-    (version "1.27.1")
+    (version "1.27.2")
     (source (origin
               (method url-fetch)
               (uri (string-append "https://nginx.org/download/nginx-"
                                   version ".tar.gz"))
               (sha256
                (base32
-                "1z5x0i0k1hmnxm7mb3dfn6qrz9am96my5ivinxl3gsp1dj5acyxx"))))
+                "1yi53dd6babjg3xx1jl19d0y0xkdi2yjg9pw790w38mkl31wy7m9"))))
     (build-system gnu-build-system)
     (inputs (list libxcrypt libxml2 libxslt openssl pcre zlib))
     (arguments
@@ -626,9 +636,9 @@ and as a proxy to reduce the load on back-end HTTP or mail servers.")
 
 (define-public nginx-documentation
   ;; This documentation should be relevant for the current nginx package.
-  (let ((version "1.27.1")
-        (revision 3114)
-        (changeset "051789a80bcb"))
+  (let ((version "1.27.2")
+        (revision 3130)
+        (changeset "cee30b2e0ae2"))
     (package
       (name "nginx-documentation")
       (version (simple-format #f "~A-~A-~A" version revision changeset))
@@ -640,7 +650,7 @@ and as a proxy to reduce the load on back-end HTTP or mail servers.")
                (file-name (string-append name "-" version))
                (sha256
                 (base32
-                 "0p198cjnhypssmj4mrj6wx2lbrfgw84i2fa4ydzdbjgkdzp803mv"))))
+                 "1d8rkhry7y2mm6gfq8xzqwyivy2zyl1d96wcx4q5r58mhj8pk2c6"))))
       (build-system gnu-build-system)
       (arguments
        '(#:tests? #f                    ; no test suite
@@ -5284,8 +5294,8 @@ Cloud.")
     (license license:expat)))
 
 (define-public guix-data-service
-  (let ((commit "62d6b5901331ad5f78ac65a8a9cb5410b60942cb")
-        (revision "56"))
+  (let ((commit "c886685e9284da4bbed9377f70dd70da9e7ca29f")
+        (revision "58"))
     (package
       (name "guix-data-service")
       (version (string-append "0.0.1-" revision "." (string-take commit 7)))
@@ -5297,7 +5307,7 @@ Cloud.")
                 (file-name (git-file-name name version))
                 (sha256
                  (base32
-                  "0nfh13sgp9f66bpm476866lpwgfzhxg0k04rxbxnxq2qqij3s9g4"))))
+                  "0rg8ydzg4s984bvz73343vqb3fkykk7x48121c1rzdiakh3ndp1i"))))
       (build-system gnu-build-system)
       (arguments
        (list
@@ -5594,7 +5604,7 @@ JSON, XML, properties, CSV and TSV.")
 (define-public go-github-com-itchyny-gojq
   (package
     (name "go-github-com-itchyny-gojq")
-    (version "0.12.16")
+    (version "0.12.17")
     (source
      (origin
        (method git-fetch)
@@ -5603,7 +5613,7 @@ JSON, XML, properties, CSV and TSV.")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "0favs281iaq98cmqwf47amk12xpksznpwgfid24z8migkp8628wl"))))
+        (base32 "0raipf3k392bihjk6kddzl3xsnap8wlvhplngmzx2vkp2f11x6fc"))))
     (build-system go-build-system)
     (arguments
      (list
@@ -6514,14 +6524,14 @@ config files---you only have to specify the www root.")
 (define-public goaccess
   (package
     (name "goaccess")
-    (version "1.7.2")
+    (version "1.9.3")
     (source (origin
               (method url-fetch)
               (uri (string-append "http://tar.goaccess.io/goaccess-"
                                   version ".tar.gz"))
               (sha256
                (base32
-                "0sqjkla4fjw5h49x675qibp860bk0haajc3i31m1q782kjiap6hf"))
+                "0dvqxk9rbsp24fp1r5xdz7rcnvvl0q26p07nfmgmzaf4wd4yxw29"))
               (modules '((guix build utils)))
               (snippet '(substitute* '("src/error.h"
                                        "src/parser.c")
@@ -7399,7 +7409,13 @@ file links.")
       #~(modify-phases %standard-phases
           (add-after 'unpack 'relax-cargo-requirements
             (lambda _
-              (substitute* "Cargo.toml" (("~") "")))))
+              (substitute* "Cargo.toml" (("~") ""))))
+          (add-after 'install 'install-data
+            (lambda _
+              (invoke "make" (string-append "PREFIX=" #$output)
+                      "copy-data"))))
+      #:parallel-tests? #f  ; As per the Makefile
+      #:install-source? #f
       #:cargo-inputs
       `(("rust-ansi-parser" ,rust-ansi-parser-0.6)
         ("rust-dirs" ,rust-dirs-3)
@@ -8637,7 +8653,7 @@ compressed JSON header blocks.
 (define-public nghttp3
   (package
     (name "nghttp3")
-    (version "1.6.0")
+    (version "1.7.0")
     (source
      (origin
        (method url-fetch)
@@ -8646,7 +8662,7 @@ compressed JSON header blocks.
                            "nghttp3-" version ".tar.gz"))
        (sha256
         (base32
-         "186bjczm7hqs3icp5ss66pi78dinpsbyn15h2hhcmyhh7h8jzyd1"))))
+         "09iv9n47kr7nfc4wmbv2nadv19sixf0f3z7w5pr6cfr64gn4d9br"))))
     (build-system gnu-build-system)
     (native-inputs
      (list pkg-config))

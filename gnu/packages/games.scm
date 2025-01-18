@@ -1517,6 +1517,58 @@ practise.")
                    license:gpl1+        ;ansidecl.h
                    license:bsd-3))))    ;random.c
 
+(define-public doom-runner
+  (package
+    (name "doom-runner")
+    (version "1.8.3")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/Youda008/DoomRunner")
+             (commit (string-append "v" version))))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "0rpywq95zy9w0wj1262x4rf84c52wg1rgf0by549qph6fybn34rn"))))
+    (build-system qt-build-system)
+    (arguments
+     (list
+      #:tests? #f                       ;no tests
+      #:phases
+      #~(modify-phases %standard-phases
+          (replace 'configure
+            (lambda _
+              (substitute* "DoomRunner.pro"
+                (("/usr")
+                 #$output))
+              (invoke "qmake" "DoomRunner.pro" "-spec" "linux-g++"
+                      "\"CONFIG+=release\"")))
+          (add-after 'install 'install-xdg
+            (lambda _
+              (with-directory-excursion "Install/XDG"
+                (install-file "DoomRunner.desktop"
+                              (string-append #$output
+                                             "/share/applications"))
+                (let ((install-icon
+                       (lambda (size)
+                         (install-file (simple-format
+                                        #f "DoomRunner.~sx~s.png"
+                                        size size)
+                                       (simple-format
+                                        #f "~a/share/icons/hicolor/~sx~s/apps"
+                                        #$output size size)))))
+                  (for-each install-icon
+                            '(16 24 32 48 64 128)))))))))
+    (home-page "https://github.com/Youda008/DoomRunner")
+    (synopsis "Launcher for Doom engine games")
+    (description
+     "Doom Runner is yet another launcher of common Doom source ports (like
+GZDoom, Zandronum, PrBoom, ...) with graphical user interface.  It is
+written in C++ and Qt, and it is designed around the idea of presets
+for various multi-file modifications to allow one-click switching
+between them and minimize any repetitive work.")
+    (license license:gpl3)))
+
 (define-public falltergeist
   (package
     (name "falltergeist")
@@ -4005,14 +4057,14 @@ Portable Game Notation.")
 (define-public gtypist
   (package
     (name "gtypist")
-    (version "2.9.5")
+    (version "2.10")
     (source (origin
               (method url-fetch)
               (uri (string-append "mirror://gnu/gtypist/gtypist-"
-                                  version ".tar.xz"))
+                                  version ".tar.gz"))
               (sha256
                (base32
-                "0xzrkkmj0b1dw3yr0m9hml2y634cc4h61im6zwcq57s7285z8fn1"))
+                "0b2ncxk6vw9d8qi6l08w1ghf06ra78wqyvaz0dnlrj22azcrrrzi"))
               (modules '((guix build utils)))
               (snippet
                ;; We do not provide `ncurses.h' within an `ncursesw'
@@ -4781,7 +4833,7 @@ falling, themeable graphics and sounds, and replays.")
 (define-public wesnoth
   (package
     (name "wesnoth")
-    (version "1.18.0")
+    (version "1.18.3")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -4790,7 +4842,7 @@ falling, themeable graphics and sounds, and replays.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "0ar0zkyl4rzqgambmdqhklscx478liql1k458ax64bp4xw441kfc"))))
+                "0habv0whb0y0r52sjln7yin1nfm3vjjxqlavm7jarcrg2s3v743k"))))
     (build-system cmake-build-system)
     (arguments
      (list #:tests? #f                  ;no test target
@@ -6725,7 +6777,7 @@ for Un*x systems with X11.")
 (define-public freeciv
   (package
    (name "freeciv")
-   (version "3.0.8")
+   (version "3.1.3")
    (source
     (origin
      (method url-fetch)
@@ -6737,10 +6789,10 @@ for Un*x systems with X11.")
                   (version-major+minor version) "/" version
                   "/freeciv-" version ".tar.xz")))
      (sha256
-      (base32 "1m3nwz0aad6p33zvmdldbw39riw2xqn99b6384bvx448c8ps6niv"))))
+      (base32 "0bvz5hqppj589w08bzrfzf5m6nwfwrzgg03lqb3p8hspjkx8c43l"))))
    (build-system gnu-build-system)
    (inputs
-    (list curl cyrus-sasl gtk+ sdl-mixer zlib))
+    (list curl cyrus-sasl gtk+ sdl2-mixer sqlite zlib))
    (native-inputs
     (list pkg-config))
    (home-page "https://www.freeciv.org/")
@@ -7217,7 +7269,7 @@ with the mouse isn’t always trivial.")
      (list pkg-config))
     (home-page "http://level7.org.uk/chroma/")
     (synopsis "Abstract puzzle game")
-    (description "Chroma is an abstract puzzle game. A variety of colourful
+    (description "Chroma is an abstract puzzle game.  A variety of colourful
 shapes are arranged in a series of increasingly complex patterns, forming
 fiendish traps that must be disarmed and mysterious puzzles that must be
 manipulated in order to give up their subtle secrets.  Initially so
@@ -7292,7 +7344,7 @@ fish.  The whole game is accompanied by quiet, comforting music.")
 (define-public crawl
   (package
     (name "crawl")
-    (version "0.31.0")
+    (version "0.32.1")
     (source
      (origin
        (method git-fetch)
@@ -7301,7 +7353,7 @@ fish.  The whole game is accompanied by quiet, comforting music.")
              (commit version)))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "0igrl0a9qd2g27q3wr86xjkpqcqs4y7bh3na1saqvpd4vc8mbayk"))
+        (base32 "1bdy1gdp0hx9ypj61jvd19wrfn0ilbs682nck0ld9nc0rw5wa64f"))
        (patches (search-patches "crawl-upgrade-saves.patch"))))
     (build-system gnu-build-system)
     (inputs
@@ -7629,7 +7681,7 @@ at their peak of economic growth and military prowess.
 (define-public open-adventure
   (package
     (name "open-adventure")
-    (version "1.19")
+    (version "1.20")
     (source
      (origin
        (method git-fetch)
@@ -7638,7 +7690,7 @@ at their peak of economic growth and military prowess.
              (commit version)))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "19nspsvkzh3xw70mwlvralfr2ia7a8knd9s7x7abmjvk8p5rx468"))))
+        (base32 "0lbggjmh9g4zvnzzqz0qspmc24yg25bjalm06dlvhd22vz7hrfy5"))))
     (build-system gnu-build-system)
     (arguments
      (list
@@ -8893,7 +8945,7 @@ ncurses for text display.")
 (define-public naev
   (package
     (name "naev")
-    (version "0.11.5")
+    (version "0.12.0")
     (source
      (origin
        (method git-fetch)
@@ -8903,7 +8955,7 @@ ncurses for text display.")
              (recursive? #t))) ; for game data
        (file-name (git-file-name name version))
        (sha256
-        (base32 "1wwgnlljcr3zhmxpb21lp9zgyyd198g6bisgykdj868b500f9lxx"))))
+        (base32 "14rvwacvc2gqyh193w8ymaznqrrymbznndfp6f5fjcs90iqnc4p5"))))
     (build-system meson-build-system)
     (arguments
      ;; XXX: Do not add debugging symbols, which cause the build to fail.
@@ -9224,7 +9276,7 @@ your score gets higher, you level up and the blocks fall faster.")
 (define-public endless-sky
   (package
     (name "endless-sky")
-    (version "0.10.6")
+    (version "0.10.10")
     (source
      (origin
        (method git-fetch)
@@ -9233,7 +9285,7 @@ your score gets higher, you level up and the blocks fall faster.")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "1iaiyv9fqgg269wjcyfn1akhh0wfrf64gh5jg3wzxwn24pm77flw"))))
+        (base32 "1nwim56ii3z6f9gxvmf9q4i5chlsgk3kjisz8li6ivr595wq5502"))))
     (build-system cmake-build-system)
     (arguments
      (list #:configure-flags #~(list "-DES_USE_VCPKG=0"
@@ -9251,7 +9303,8 @@ your score gets higher, you level up and the blocks fall faster.")
                    (substitute* "CMakeLists.txt"
                      (("games\\)") "bin)")))))))
     (inputs
-     (list glew
+     (list catch2-3
+           glew
            libjpeg-turbo
            libmad
            libpng
@@ -12117,7 +12170,7 @@ disassembly of the DOS version, extended with new features.")
 (define-public fheroes2
   (package
     (name "fheroes2")
-    (version "1.0.11")
+    (version "1.1.5")
     (source
      (origin
        (method git-fetch)
@@ -12126,7 +12179,7 @@ disassembly of the DOS version, extended with new features.")
              (commit version)))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "1i1a4dynlb5kl55rmfmib2jha1b2igw5jyiiyla1fxgkbkjnbf27"))))
+        (base32 "1zi8p8932pnmgjqm08l2ql5lwdrl9bcsm8bzf66hciw85l6dlbi3"))))
     (build-system cmake-build-system)
     (arguments
      `(#:tests? #f                      ; no tests
@@ -12148,7 +12201,7 @@ play; it will look for them at @file{~/.local/share/fheroes2} folder.")
 (define-public vcmi
   (package
     (name "vcmi")
-    (version "1.5.7")
+    (version "1.6.2")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -12157,7 +12210,7 @@ play; it will look for them at @file{~/.local/share/fheroes2} folder.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "0jgxhq6rz43ild16lmpcf6xbzdhilxpbvknlxy92sxfazyarcg07"))
+                "0j7761s5qhc6parr0pakkjha2w45yn3fqxy1y4lgdjr3jb9saba3"))
               (patches (search-patches "vcmi-disable-privacy-breach.patch"))))
     (build-system cmake-build-system)
     (arguments

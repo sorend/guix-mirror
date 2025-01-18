@@ -59,6 +59,7 @@
 ;;; Copyright © 2024 Parnikkapore <poomklao@yahoo.com>
 ;;; Copyright © 2024 hapster <o.rojon@posteo.net>
 ;;; Copyright © 2024 Nikita Domnitskii <nikita@domnitskii.me>
+;;; Copyright © 2024 Ashish SHUKLA <ashish.is@lostca.se>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -168,6 +169,7 @@
   #:use-module (gnu packages ncurses)
   #:use-module (gnu packages netpbm)
   #:use-module (gnu packages networking)
+  #:use-module (gnu packages pantheon)
   #:use-module (gnu packages pcre)
   #:use-module (gnu packages pdf)
   #:use-module (gnu packages perl)
@@ -999,7 +1001,7 @@ settings (aliasing, linear interpolation and cubic interpolation).")
 (define-public hydrogen
   (package
     (name "hydrogen")
-    (version "1.2.3")
+    (version "1.2.4")
     (source
      (origin
        (method git-fetch)
@@ -1008,7 +1010,7 @@ settings (aliasing, linear interpolation and cubic interpolation).")
              (commit version)))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "0qb16yn3igs95silvngwy5mjwlzsyz5axwbd3lz6pjhwbf81rn7d"))))
+        (base32 "1i5gz5zck8s0kskjgnx9c75gh7zx0kbjsqzl2765f99p9svprirq"))))
     (build-system cmake-build-system)
     (arguments
      `(#:test-target "tests"
@@ -2251,16 +2253,21 @@ for path in [path for path in sys.path if 'site-packages' in path]: site.addsite
           (add-after 'install 'wrap-program
             (lambda* (#:key outputs #:allow-other-keys)
               ;; Make sure 'solfege' runs with the correct PYTHONPATH.
-              (let ((path (getenv "GUIX_PYTHONPATH")))
+              (let ((python-path (getenv "GUIX_PYTHONPATH"))
+                    (typelib-path (getenv "GI_TYPELIB_PATH")))
                 (wrap-program (search-input-file outputs "bin/solfege")
-                  `("GUIX_PYTHONPATH" ":" prefix (,path)))))))))
+                  `("GUIX_PYTHONPATH" ":" prefix (,python-path))
+                  `("GI_TYPELIB_PATH" ":" prefix (,typelib-path)))))))))
     (inputs
      (list bash-minimal
            python-wrapper
+           python-pycairo
            python-pygobject
            gettext-minimal
            gtk+
            lilypond))
+    (propagated-inputs
+     (list timidity++))                 ; default player
     (native-inputs
      (list autoconf
            automake
@@ -2868,6 +2875,58 @@ although the author maintains that the quality and accuracy of each emulation
 is subjective.")
     (license license:gpl3+)))
 
+(define-public tuner
+  (package
+    (name "tuner")
+    (version "1.5.6")
+    (source (origin
+              (method git-fetch)
+              (uri (git-reference
+                     (url "https://github.com/louis77/tuner")
+                     (commit (string-append "v" version))))
+              (file-name (git-file-name name version))
+              (sha256 (base32 "0zz91n56vdwhjwqscl21016i4l4lx3m6ja0fnrapmf16bdl0rrai"))))
+    (build-system meson-build-system)
+    (native-inputs
+     (list desktop-file-utils ; update-desktop-database
+           gettext-minimal
+           `(,glib "bin") ; glib-compile-schemas
+           ; for org.gnome.system.proxy schema
+           gsettings-desktop-schemas
+           `(,gtk "bin") ; gtk-update-icon-cache
+           pkg-config
+           vala))
+    (inputs
+      (list bash-minimal
+            glib
+            granite-6
+            gtk+
+            libgee
+            gstreamer
+            gst-plugins-base   ; for gstreamer 'playbin'
+            gst-plugins-good   ; for gstreamer 'scaletempo'
+            gst-plugins-bad
+            libsoup
+            json-glib-minimal))
+    (arguments
+      (list
+        #:glib-or-gtk? #t
+        #:phases
+        #~(modify-phases %standard-phases
+            (add-after 'install 'wrap-tuner
+             (lambda* (#:key outputs #:allow-other-keys)
+               (let ((out             (assoc-ref outputs "out"))
+                     (gst-plugin-path (getenv "GST_PLUGIN_SYSTEM_PATH")))
+                 (wrap-program (string-append out "/bin/com.github.louis77.tuner")
+                   `("GST_PLUGIN_SYSTEM_PATH" ":" prefix (,gst-plugin-path)))))))))
+    (home-page "https://github.com/louis77/tuner")
+    (synopsis "Application to discover and play internet radio stations")
+    (description "Tuner is a minimalist radio station player to discover and
+listen to your favourite internet radio stations.  The application consists of a radio
+station catalogue sourced from radio-browser.info, and has presets of selections of
+stations based on random, top, trending, genre.")
+    (license license:gpl3+)))
+
 (define-public tuxguitar
   (package
     (name "tuxguitar")
@@ -3281,25 +3340,34 @@ browser.")
 (define-public drumstick
   (package
     (name "drumstick")
-    (version "2.3.1")
+    (version "2.10.0")
     (source (origin
               (method url-fetch)
               (uri (string-append "mirror://sourceforge/drumstick/"
                                   version "/drumstick-" version ".tar.bz2"))
               (sha256
                (base32
-                "1rs248pkgn6d29nkvw9ab6dvi1vsz220jdmz1ddzr29cpyc0adfh"))))
-    (build-system cmake-build-system)
+                "1ggwf9qzaj8vh66g29cb4m0i2cxvkgzl944m5pvj87lpsvahfnmc"))))
+    (build-system qt-build-system)
     (arguments
-     `(#:tests? #f))                      ; no test target
+     (list #:qtbase qtbase
+           #:tests? #f)) ;no test target
     (inputs
-     (list qtbase-5 qtsvg-5 qttools-5 alsa-lib))
+     (list alsa-lib
+           fluidsynth
+           pipewire
+           pulseaudio
+           qt5compat
+           qtsvg
+           qtwayland
+           sonivox))
     (native-inputs
      (list pkg-config
            libxslt ; for xsltproc
            docbook-xsl
            doxygen
-           graphviz)) ; for dot
+           graphviz ; for dot
+           qttools))
     (home-page "https://drumstick.sourceforge.io/")
     (synopsis "C++ MIDI library")
     (description
@@ -3314,22 +3382,31 @@ backends, including ALSA, OSS, Network and FluidSynth.")
 (define-public vmpk
   (package
     (name "vmpk")
-    (version "0.8.4")
+    (version "0.9.0")
     (source (origin
               (method url-fetch)
               (uri (string-append "mirror://sourceforge/vmpk/vmpk/"
                                   version "/vmpk-" version ".tar.bz2"))
               (sha256
                (base32
-                "0kh8pns9pla9c47y2nwckjpiihczg6rpg96aignsdsd7vkql69s9"))))
-    (build-system cmake-build-system)
+                "1ndwmshw3skfcxb3f606hv4y80hfisfp5bdc81a0f0qrpx6f2zn4"))))
+    (build-system qt-build-system)
     (arguments
-     `(#:tests? #f))  ; no test target
+     (list #:qtbase qtbase
+           #:tests? #f  ; no test target
+           #:phases
+           #~(modify-phases %standard-phases
+               (add-after 'install 'wrap-drumstick
+                 (lambda* (#:key inputs #:allow-other-keys)
+                   (wrap-program (string-append #$output "/bin/vmpk")
+                     `("DRUMSTICKRT" =
+                       (,(search-input-directory inputs
+                                            "/lib/drumstick2")))))))))
     (inputs
-     (list drumstick qtbase-5 qtsvg-5 qtx11extras))
+     (list drumstick qt5compat qtsvg qtwayland))
     (native-inputs
      (list libxslt ;for xsltproc
-           docbook-xml-4.4 docbook-xsl qttools-5 pkg-config))
+           docbook-xml-4.4 docbook-xsl qttools pkg-config))
     (home-page "https://vmpk.sourceforge.io/")
     (synopsis "Virtual MIDI piano keyboard")
     (description
@@ -3956,7 +4033,7 @@ event-based scripts for scrobbling, notifications, etc.")
 (define-public picard
   (package
     (name "picard")
-    (version "2.12.2")
+    (version "2.12.3")
     (source (origin
               (method url-fetch)
               (uri (string-append
@@ -3964,7 +4041,7 @@ event-based scripts for scrobbling, notifications, etc.")
                     "picard/picard-" version ".tar.gz"))
               (sha256
                (base32
-                "01244105zy1f1g22ivhx9pjd1acqbkycfr9r44h70jyml5abc7z5"))))
+                "0rhscvb46img4flh5dnjvnfdl7fsz9437hg3ixfx8kwv1pbg8zx4"))))
     (build-system python-build-system)
     (arguments
      (list
@@ -4440,7 +4517,7 @@ with a number of bugfixes and changes to improve IT playback.")
     (synopsis "Live looping sampler")
     (description
      "SooperLooper is a live looping sampler capable of immediate loop
-recording, overdubbing, multiplying, reversing and more. It allows for
+recording, overdubbing, multiplying, reversing and more.  It allows for
 multiple simultaneous multi-channel loops limited only by your computer's
 available memory.")
     (license license:gpl2+)))
@@ -5623,7 +5700,7 @@ specification and header.")
 (define-public rosegarden
   (package
     (name "rosegarden")
-    (version "24.06")
+    (version "24.12")
     (source
      (origin
        (method url-fetch)
@@ -5631,7 +5708,7 @@ specification and header.")
                            (version-major+minor version) "/"
                            "rosegarden-" version ".tar.xz"))
        (sha256
-        (base32 "09www13ndba14krzycwm44qgcy7j11wa6a6xiqh6i2hjghlx8v46"))))
+        (base32 "1k0mpxpakcywss7pi50nzn54ak90svjavr4qk6yi9bq9dc9ncgvz"))))
     (build-system cmake-build-system)
     (arguments
      (list
@@ -5843,10 +5920,39 @@ your favorite sampled sounds and bashing away on a MIDI controller.")
 the electronic or dubstep genre.")
       (license license:gpl3+))))
 
+(define-public sonivox
+  (package
+    (name "sonivox")
+    (version "3.6.14")
+    (source (origin
+              (method git-fetch)
+              (uri (git-reference
+                    (url "https://github.com/pedrolcl/sonivox")
+                    (commit (string-append "v" version))))
+              (file-name (git-file-name name version))
+              (sha256
+               (base32
+                "0zn9v4lxjpnpdlpnv2px8ch3z0xagmqlvff5pd39pss3mxfp32g0"))))
+    (build-system cmake-build-system)
+    (arguments
+     (list #:configure-flags
+           (if (%current-target-system)
+               #~(list "-DBUILD_TESTING=OFF")
+               #~(list "-DBUILD_TESTING=ON"))))
+    (native-inputs
+     (list googletest))
+    (home-page "https://github.com/pedrolcl/sonivox")
+    (synopsis "Fork of the AOSP platform_external_sonivox")
+    (description "This project is a fork of the Android Open Source Project
+@code{platform_external_sonivox}.  It is a Wave Table synthesizer, using
+embedded samples.  It also supports external DLS soundfont files.  It is also a
+real time GM synthesizer.")
+    (license license:asl2.0)))
+
 (define-public sonivox-eas
   (package
     (name "sonivox-eas")
-    (version "1.3.0")
+    (version "1.5.1")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -5855,11 +5961,13 @@ the electronic or dubstep genre.")
               (file-name (string-append name "-" version "-checkout"))
               (sha256
                (base32
-                "1ygmlrsdzxii2dvj6id2ai3xv3klw2x67ip5rcp823jzczl0wpjd"))))
-    (build-system cmake-build-system)
-    (arguments '(#:tests? #f)) ; there are no tests
+                "1y67bi2vcwb1avwz18i41q85cmqx9svwx4q3kpmh951l49s9k8vz"))))
+    (build-system qt-build-system)
+    (arguments
+     (list #:qtbase qtbase
+           #:tests? #f)) ; there are no tests
     (inputs
-     (list alsa-lib drumstick pulseaudio qtbase-5))
+     (list alsa-lib drumstick pulseaudio qtwayland sonivox))
     (native-inputs
      (list pkg-config))
     (home-page "https://github.com/pedrolcl/Linux-SonivoxEas")
@@ -5867,9 +5975,7 @@ the electronic or dubstep genre.")
     (description "This project is a real time General MIDI synthesizer based
 on the Sonivox EAS Synthesizer by Google.  It does not need external
 soundfonts, using embedded samples instead.")
-    ;; Sonivox is released under the ASL2.0; the rest of the code is under
-    ;; GPLv2+.
-    (license (list license:gpl2+ license:asl2.0))))
+    (license license:gpl2+)))
 
 (define-public whysynth
   (package
@@ -7905,11 +8011,10 @@ Renoise, VCV Rack, or SuperCollider.")
     (home-page "https://thentrythis.org/projects/samplebrain/")
     (synopsis "Sample mashing synthesizer designed by Aphex Twin")
     (description
-     "Samplebrain chops samples up into a 'brain' of
-interconnected small sections called blocks which are connected into a network
-by similarity.  It processes a target sample, chopping it up into blocks in
-the same way, and tries to match each block with one in its brain to play in
-realtime.")
+     "Samplebrain chops samples up into a 'brain' of interconnected small
+sections called blocks which are connected into a network by similarity.  It
+processes a target sample, chopping it up into blocks in the same way, and
+tries to match each block with one in its brain to play in realtime.")
     (license license:gpl2+)))
 
 (define-public le-biniou-data

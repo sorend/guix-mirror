@@ -1,5 +1,5 @@
 # GNU Guix --- Functional package management for GNU
-# Copyright © 2012-2024 Ludovic Courtès <ludo@gnu.org>
+# Copyright © 2012-2025 Ludovic Courtès <ludo@gnu.org>
 # Copyright © 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2022, 2023, 2024 Andreas Enge <andreas@enge.fr>
 # Copyright © 2016 Mathieu Lirzin <mthl@gnu.org>
 # Copyright © 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021 Mark H Weaver <mhw@netris.org>
@@ -69,6 +69,7 @@
 # Copyright © 2024 Fabio Natali <me@fabionatali.com>
 # Copyright © 2024 Noé Lopez <noelopez@free.fr>
 # Copyright © 2024 Runciter <runciter@whispers-vpn.org>
+# Copyright © 2024 Ashvith Shetty <ashvithshetty10@gmail.com>
 #
 # This file is part of GNU Guix.
 #
@@ -100,6 +101,7 @@ GNU_SYSTEM_MODULES =				\
   %D%/compression.scm				\
   %D%/home.scm					\
   %D%/home/services.scm			\
+  %D%/home/services/admin.scm			\
   %D%/home/services/desktop.scm			\
   %D%/home/services/dict.scm			\
   %D%/home/services/dotfiles.scm		\
@@ -211,10 +213,15 @@ GNU_SYSTEM_MODULES =				\
   %D%/packages/cppi.scm				\
   %D%/packages/cran.scm				\
   %D%/packages/crates-apple.scm		\
+  %D%/packages/crates-audio.scm		\
+  %D%/packages/crates-check.scm			\
+  %D%/packages/crates-compression.scm		\
   %D%/packages/crates-crypto.scm		\
+  %D%/packages/crates-database.scm		\
   %D%/packages/crates-io.scm			\
   %D%/packages/crates-graphics.scm		\
   %D%/packages/crates-gtk.scm			\
+  %D%/packages/crates-shell.scm		\
   %D%/packages/crates-tls.scm			\
   %D%/packages/crates-vcs.scm			\
   %D%/packages/crates-web.scm			\
@@ -504,6 +511,7 @@ GNU_SYSTEM_MODULES =				\
   %D%/packages/noweb.scm			\
   %D%/packages/nss.scm				\
   %D%/packages/ntp.scm				\
+  %D%/packages/nushell.scm			\
   %D%/packages/nutrition.scm			\
   %D%/packages/nvi.scm				\
   %D%/packages/nx.scm				\
@@ -832,6 +840,7 @@ GNU_SYSTEM_MODULES =				\
   %D%/tests/cups.scm				\
   %D%/tests/databases.scm			\
   %D%/tests/desktop.scm				\
+  %D%/tests/dns.scm				\
   %D%/tests/dict.scm				\
   %D%/tests/docker.scm				\
   %D%/tests/emacs.scm				\
@@ -1121,6 +1130,7 @@ dist_patch_DATA =						\
   %D%/packages/patches/converseen-hide-non-free-pointers.patch	\
   %D%/packages/patches/cool-retro-term-wctype.patch		\
   %D%/packages/patches/coq-autosubst-1.8-remove-deprecated-files.patch		\
+  %D%/packages/patches/corectrl-polkit-install-dir.patch	\
   %D%/packages/patches/corefx-mono-5.4.0-patches.patch		\
   %D%/packages/patches/corefx-mono-pre-5.8.0-patches.patch	\
   %D%/packages/patches/coreutils-gnulib-tests.patch		\
@@ -1131,6 +1141,7 @@ dist_patch_DATA =						\
   %D%/packages/patches/crc32c-unbundle-googletest.patch		\
   %D%/packages/patches/crda-optional-gcrypt.patch		\
   %D%/packages/patches/clucene-contribs-lib.patch               \
+  %D%/packages/patches/csvkit-set-locale-for-tests.patch			\
   %D%/packages/patches/cube-nocheck.patch			\
   %D%/packages/patches/cups-minimal-Address-PPD-injection-issues.patch	\
   %D%/packages/patches/curl-CVE-2024-8096.patch			\
@@ -1173,7 +1184,6 @@ dist_patch_DATA =						\
   %D%/packages/patches/doc++-segfault-fix.patch			\
   %D%/packages/patches/dovecot-opensslv3.patch			\
   %D%/packages/patches/dovecot-trees-support-dovecot-2.3.patch	\
-  %D%/packages/patches/doxygen-hurd.patch			\
   %D%/packages/patches/dstat-fix-crash-when-specifying-delay.patch	\
   %D%/packages/patches/dstat-skip-devices-without-io.patch	\
   %D%/packages/patches/dtc-meson-cell-overflow.patch		\
@@ -1280,6 +1290,7 @@ dist_patch_DATA =						\
   %D%/packages/patches/flann-cmake-3.11.patch			\
   %D%/packages/patches/flatpak-fix-path.patch			\
   %D%/packages/patches/flatpak-fix-fonts-icons.patch	\
+  %D%/packages/patches/flatpak-fix-icon-validation.patch	\
   %D%/packages/patches/flatpak-unset-gdk-pixbuf-for-sandbox.patch	\
   %D%/packages/patches/fluxbox-1.3.7-no-dynamic-cursor.patch	\
   %D%/packages/patches/fluxbox-1.3.7-gcc.patch			\
@@ -1639,7 +1650,6 @@ dist_patch_DATA =						\
   %D%/packages/patches/libgeotiff-fix-tests-with-proj-9.3.0.patch	\
   %D%/packages/patches/libgeotiff-fix-tests-with-proj-9.3.1.patch	\
   %D%/packages/patches/libgeotiff-fix-tests-on-i386.patch	\
-  %D%/packages/patches/libgpg-error-hurd64.patch		\
   %D%/packages/patches/libguestfs-syms.patch            	\
   %D%/packages/patches/libobjc2-unbundle-robin-map.patch	\
   %D%/packages/patches/librewolf-use-system-wide-dir.patch	\
@@ -1847,6 +1857,7 @@ dist_patch_DATA =						\
   %D%/packages/patches/mono-mcs-patches-from-5.10.0.patch	\
   %D%/packages/patches/mosaicatcher-unbundle-htslib.patch	\
   %D%/packages/patches/mrrescue-support-love-11.patch		\
+  %D%/packages/patches/mrustc-patches.patch			\
   %D%/packages/patches/mtools-mformat-uninitialized.patch	\
   %D%/packages/patches/mupen64plus-ui-console-notice.patch	\
   %D%/packages/patches/musl-cross-locale.patch			\
@@ -1980,7 +1991,6 @@ dist_patch_DATA =						\
   %D%/packages/patches/python-pillow-use-zlib-1.3.patch	\
   %D%/packages/patches/python-pydocstyle-add-support-for-pep701.patch	\
   %D%/packages/patches/python-pyreadstat-link-libiconv.patch	\
-  %D%/packages/patches/python-pyls-black-41.patch		\
   %D%/packages/patches/python-sip-include-dirs.patch	\
   %D%/packages/patches/python-sgmllib3k-assertions.patch	\
   %D%/packages/patches/python-sphobjinv-defer-ssl-import.patch	\
@@ -2004,6 +2014,7 @@ dist_patch_DATA =						\
   %D%/packages/patches/strace-readlink-tests.patch		\
   %D%/packages/patches/sunxi-tools-remove-sys-io.patch	\
   %D%/packages/patches/p11-kit-hurd.patch			\
+  %D%/packages/patches/pari-gp-qfcvp.patch                      \
   %D%/packages/patches/patch-hurd-path-max.patch		\
   %D%/packages/patches/perl-5.14-autosplit-default-time.patch	\
   %D%/packages/patches/perl-5.14-module-pluggable-search.patch	\
@@ -2175,21 +2186,21 @@ dist_patch_DATA =						\
   %D%/packages/patches/ruby-mustache-1.1.1-fix-race-condition-tests.patch \
   %D%/packages/patches/ruby-nokogiri.patch			\
   %D%/packages/patches/ruby-x25519-automatic-fallback-non-x86_64.patch \
-  %D%/packages/patches/rustc-1.54.0-src.patch			\
   %D%/packages/patches/rust-1.64-fix-riscv64-bootstrap.patch	\
   %D%/packages/patches/rust-1.70-fix-rustix-build.patch	\
   %D%/packages/patches/rust-1.78-unwinding-fix.patch		\
   %D%/packages/patches/rust-1.81-fix-riscv64-bootstrap.patch	\
-  %D%/packages/patches/rust-cargo-edit-remove-ureq.patch	\
   %D%/packages/patches/rust-ring-0.17-ring-core.patch		\
   %D%/packages/patches/rust-ndarray-remove-blas-src-dep.patch	\
   %D%/packages/patches/rust-ndarray-0.13-remove-blas-src.patch	\
   %D%/packages/patches/rust-ndarray-0.14-remove-blas-src.patch	\
   %D%/packages/patches/rust-nettle-disable-vendor.patch		 \
+  %D%/packages/patches/rust-onenote-parser-for-clamav-deps.patch	\
+  %D%/packages/patches/rust-onenote-parser-for-clamav-parse-in-memory-buffer.patch	\
+  %D%/packages/patches/rust-onenote-parser-for-clamav-property-type.patch	\
   %D%/packages/patches/rust-poem-1-fewer-deps.patch		\
   %D%/packages/patches/rust-rspec-1-remove-clippy.patch	\
   %D%/packages/patches/rust-trash-2-update-windows.patch	\
-  %D%/packages/patches/rust-webbrowser-remove-unsupported-os.patch	\
   %D%/packages/patches/rust-wl-clipboard-rs-newer-wl.patch      \
   %D%/packages/patches/rw-igraph-0.10.patch			\
   %D%/packages/patches/rxvt-unicode-fix-cursor-position.patch	\
@@ -2376,6 +2387,7 @@ dist_patch_DATA =						\
   %D%/packages/patches/webrtc-audio-processing-x86-no-sse.patch	\
   %D%/packages/patches/webrtc-for-telegram-desktop-unbundle-libsrtp.patch \
   %D%/packages/patches/websocketpp-fix-for-cmake-3.15.patch	\
+  %D%/packages/patches/whisper-cpp-enable-tests.patch           \
   %D%/packages/patches/wmctrl-64-fix.patch			\
   %D%/packages/patches/wmfire-dont-inline-draw-fire.patch	\
   %D%/packages/patches/wmfire-update-for-new-gdk-versions.patch	\
@@ -2411,9 +2423,27 @@ dist_patch_DATA =						\
   %D%/packages/patches/xygrib-fix-finding-data.patch		\
   %D%/packages/patches/xygrib-newer-proj.patch			\
   %D%/packages/patches/yggdrasil-extra-config.patch	\
+  %D%/packages/patches/zig-0.9-build-respect-PKG_CONFIG-env-var.patch	\
+  %D%/packages/patches/zig-0.9-fix-runpath.patch		\
   %D%/packages/patches/zig-0.9-riscv-support.patch		\
-  %D%/packages/patches/zig-use-baseline-cpu-by-default.patch	\
-  %D%/packages/patches/zig-use-system-paths.patch		\
+  %D%/packages/patches/zig-0.9-use-baseline-cpu-by-default.patch	\
+  %D%/packages/patches/zig-0.9-use-system-paths.patch		\
+  %D%/packages/patches/zig-0.10-build-respect-PKG_CONFIG-env-var.patch	\
+  %D%/packages/patches/zig-0.10-fix-runpath.patch		\
+  %D%/packages/patches/zig-0.10-use-system-paths.patch		\
+  %D%/packages/patches/zig-0.10.0-610-bootstrap-resolve-conflicts.patch	\
+  %D%/packages/patches/zig-0.10.0-675-TypeOf-hack.patch		\
+  %D%/packages/patches/zig-0.10.0-747-CallOptions.patch		\
+  %D%/packages/patches/zig-0.10.0-1638-re-add-qualCast.patch	\
+  %D%/packages/patches/zig-0.11-build-respect-PKG_CONFIG-env-var.patch	\
+  %D%/packages/patches/zig-0.11-fix-runpath.patch		\
+  %D%/packages/patches/zig-0.11-use-system-paths.patch		\
+  %D%/packages/patches/zig-0.12-build-respect-PKG_CONFIG-env-var.patch	\
+  %D%/packages/patches/zig-0.12-fix-runpath.patch		\
+  %D%/packages/patches/zig-0.12-use-baseline-cpu-by-default.patch	\
+  %D%/packages/patches/zig-0.12-use-system-paths.patch		\
+  %D%/packages/patches/zig-0.13-build-respect-PKG_CONFIG-env-var.patch	\
+  %D%/packages/patches/zig-0.13-fix-runpath.patch		\
   %D%/packages/patches/zsh-egrep-failing-test.patch		\
   %D%/packages/patches/zuo-bin-sh.patch
 

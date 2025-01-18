@@ -23,7 +23,7 @@
 ;;; Copyright © 2021 Hong Li <hli@mdc-berlin.de>
 ;;; Copyright © 2021, 2022, 2023 Simon Tournier <zimon.toutoune@gmail.com>
 ;;; Copyright © 2021 Felix Gruber <felgru@posteo.net>
-;;; Copyright © 2022, 2023, 2024 Navid Afkhami <navid.afkhami@mdc-berlin.de>
+;;; Copyright © 2022-2025 Navid Afkhami <navid.afkhami@mdc-berlin.de>
 ;;; Copyright © 2022 Antero Mejr <antero@mailbox.org>
 ;;; Copyright © 2024 Alexis Simon <alexis.simon@runbox.com>
 ;;; Copyright © 2024 Spencer King <spencer.king@geneoscopy.com>
@@ -83,6 +83,7 @@
   #:use-module (gnu packages cpp)
   #:use-module (gnu packages cpio)
   #:use-module (gnu packages cran)
+  #:use-module (gnu packages crates-compression)
   #:use-module (gnu packages crates-io)
   #:use-module (gnu packages curl)
   #:use-module (gnu packages docbook)
@@ -2356,7 +2357,7 @@ and sequence consensus.")
 (define-public python-cyvcf2
   (package
     (name "python-cyvcf2")
-    (version "0.30.28")
+    (version "0.31.1")
     (source
      (origin
        (method git-fetch)
@@ -2365,7 +2366,7 @@ and sequence consensus.")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "16yhfax509zyip8kkq2b0lflx5bdq5why7d785ayrqyzzq2rxqkk"))
+        (base32 "02x7ic2q4x3sfwx9n2sxg0a79iifjal0a68fqp9ljsfvdx4b7nq5"))
        (modules '((guix build utils)))
        (snippet
         ;; Delete bundled library
@@ -2394,7 +2395,11 @@ and sequence consensus.")
               (setenv "CYTHONIZE" "1")
               (setenv "CYVCF2_HTSLIB_MODE" "EXTERNAL"))))))
     (inputs (list curl htslib libdeflate openssl zlib))
-    (native-inputs (list python-cython python-pytest))
+    (native-inputs
+     (list python-cython
+           python-pytest
+           python-setuptools
+           python-wheel))
     (propagated-inputs
      (list python-click
            python-coloredlogs
@@ -2879,6 +2884,33 @@ algorithmic improvements and is scalable for larger data sets (millions of
 cells).")
     (license license:expat)))
 
+(define-public python-ngesh
+  (package
+    (name "python-ngesh")
+    (version "1.0")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/tresoldi/ngesh")
+             (commit (string-append "v" version))))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "07sj4x95b5hvx57pw24f80sk4ag4hkg1z6wzym3pzi8n5gn85n1z"))))
+    (build-system pyproject-build-system)
+    (propagated-inputs (list python-ete3 python-numpy python-six))
+    (native-inputs (list python-black python-flake8 python-pytest python-twine
+                         python-wheel))
+    (home-page "https://github.com/tresoldi/ngesh")
+    (synopsis "Library for phylogenetic tree simulation")
+    (description
+     "Ngesh is a Python library and CLI tool for simulating phylogenetic trees
+and data.  It is intended for benchmarking phylogenetic methods, especially in
+historical linguistics andstemmatology.  The generation of stochastic
+phylogenetic trees also goes by the name simulationmethods for phylogenetic
+trees, synthetic data generation, or just phylogenetic tree simulation.")
+    (license license:expat)))
+
 (define-public python-parabam
   (package
     (name "python-parabam")
@@ -3107,36 +3139,29 @@ phylogenetic markers, and can also scale to very large phylogenies comprising
 (define-public python-pybedtools
   (package
     (name "python-pybedtools")
-    (version "0.9.0")
+    (version "0.10.0")
     (source (origin
               (method url-fetch)
               (uri (pypi-uri "pybedtools" version))
               (sha256
                (base32
-                "18rhzk08d3rpxhi5xh6pqg64x6v5q3daw6y3v54k85v4swncjrwj"))))
+                "0q8if5bd8zgv5xvr5zs4pj8y60yzl8i5jz8xfk6bw4xh4fnvlvqs"))))
     (build-system pyproject-build-system)
     (arguments
-     `(#:modules ((srfi srfi-26)
+     (list
+      #:modules '((srfi srfi-26)
                   (guix build utils)
                   (guix build python-build-system)
                   (guix build pyproject-build-system))
-       ;; See https://github.com/daler/pybedtools/issues/192
-       #:phases
-       (modify-phases %standard-phases
-         (add-after 'unpack 'disable-broken-tests
+      #:test-flags
+      ;; Requires internet access.
+      '(list "-k" "not test_chromsizes")
+      #:phases
+      '(modify-phases %standard-phases
+         (add-after 'unpack 'fix-references
            (lambda _
-             (substitute* "pybedtools/test/test_helpers.py"
-               ;; Requires internet access.
-               (("def test_chromsizes")
-                "def _do_not_test_chromsizes")
-               ;; Broken as a result of the workaround used in the check phase
-               ;; (see: https://github.com/daler/pybedtools/issues/192).
-               (("def test_getting_example_beds")
-                "def _do_not_test_getting_example_beds"))
-             ;; This issue still occurs on python2
              (substitute* "pybedtools/test/test_issues.py"
-               (("def test_issue_303")
-                "def _test_issue_303"))))
+               (("'/bin/bash'") (string-append "'" (which "bash") "'")))))
          ;; Force the Cythonization of C++ files to guard against compilation
          ;; problems.
          (add-after 'unpack 'remove-cython-generated-files
@@ -3152,27 +3177,25 @@ phylogenetic markers, and can also scale to very large phylogenies comprising
          (add-after 'remove-cython-generated-files 'generate-cython-extensions
            (lambda _
              (invoke "python" "setup.py" "cythonize")))
-         (replace 'check
+         (add-before 'check 'build-extensions
            (lambda _
-             ;; The tests need to be run from elsewhere...
-             (mkdir-p "/tmp/test")
-             (copy-recursively "pybedtools/test" "/tmp/test")
-             (with-directory-excursion "/tmp/test"
-               (invoke "pytest" "-v" "--doctest-modules")))))))
+             ;; Cython extensions have to be built before running the tests.
+             (invoke "python" "setup.py" "build_ext" "--inplace"))))))
     (propagated-inputs
-     (list bedtools samtools python-matplotlib python-pysam
-           python-pyyaml))
-    (native-inputs
-     (list python-numpy
+     (list bedtools samtools
+           kentutils ;for bedGraphToBigWig
+           python-numpy
            python-pandas
-           python-cython
-           kentutils ; for bedGraphToBigWig
-           python-six
-           python-setuptools
-           python-wheel
-           ;; For the test suite.
+           python-psutil
+           python-pysam
+           python-pyyaml))
+    (inputs
+     (list zlib))
+    (native-inputs
+     (list python-cython
            python-pytest
-           python-psutil))
+           python-setuptools
+           python-wheel))
     (home-page "https://pythonhosted.org/pybedtools/")
     (synopsis "Python wrapper for BEDtools programs")
     (description
@@ -6480,7 +6503,7 @@ copies of a pattern of nucleotides.  Tandem Repeats Finder is a program to
 locate and display tandem repeats in DNA sequences.  In order to use the
 program, the user submits a sequence in FASTA format.  The output consists of
 two files: a repeat table file and an alignment file.  Submitted sequences may
-be of arbitrary length. Repeats with pattern size in the range from 1 to 2000
+be of arbitrary length.  Repeats with pattern size in the range from 1 to 2000
 bases are detected.")
     (license license:agpl3+)))
 
@@ -7436,6 +7459,45 @@ ChIP-Seq, and analysis of metagenomic data.")
 variety of diversity measures including those that make use of phylogenetic
 similarity of community members.")
    (license license:gpl3+)))
+
+(define-public fast5
+  (package
+    (name "fast5")
+    (version "0.6.5")
+    (source (origin
+              (method git-fetch)
+              (uri (git-reference
+                    (url "https://github.com/mateidavid/fast5")
+                    (commit (string-append "v" version))))
+              (file-name (git-file-name name version))
+              (sha256
+               (base32
+                "1dsq3x1662ck1bcmcmqhblnhmypfppgysblgj2xr4lr6fl4si4pk"))))
+    (build-system pyproject-build-system)
+    (arguments
+     (list
+      #:tests? #f                       ;There are no tests.
+      #:phases
+      #~(modify-phases %standard-phases
+          (add-after 'unpack 'use-system-hdf5
+            (lambda* (#:key inputs outputs #:allow-other-keys)
+              (setenv "HDF5_INCLUDE_DIR"
+                      (string-append #$(this-package-input "hdf5") "/include"))
+              (setenv "HDF5_LIB_DIR"
+                      (string-append #$(this-package-input "hdf5") "/lib"))))
+          (add-after 'unpack 'chdir
+            (lambda _
+              (chdir "python"))))))
+    (inputs (list hdf5))
+    (propagated-inputs
+     (list python-dateutil))
+    (native-inputs
+     (list python-cython python-setuptools python-wheel))
+    (home-page "https://github.com/mateidavid/fast5")
+    (synopsis "Library for accessing Oxford Nanopore sequencing data")
+    (description "This package provides a lightweight C++ library for accessing
+Oxford Nanopore Technologies sequencing data.")
+    (license license:expat)))
 
 (define-public fanc
   (let ((commit "354401e52ba2320e6b1ba0d3b5aab3541d31c9f3")
@@ -18798,34 +18860,36 @@ implementation differs in these ways:
                             " and not test_pca_n_pcs"
                             " and not test_pca_chunked"
                             " and not test_pca_sparse"
-                            " and not test_pca_reproducible"))
+                            " and not test_pca_reproducible"
+
+                            ;; File is missing
+                            " and not test_pbmc3k")
+             ;; TODO: I can't get the plotting tests to work, even with Xvfb.
+             "--ignore=scanpy/tests/test_plotting.py"
+             "--ignore=scanpy/tests/test_embedding_plots.py"
+             "--ignore=scanpy/tests/test_preprocessing.py"
+             "--ignore=scanpy/tests/test_read_10x.py"
+
+             ;; These two fail with "ValueError: I/O operation on closed file."
+             "--ignore=scanpy/tests/test_neighbors_key_added.py"
+
+             ;; These tests require Internet access.
+             "--ignore-glob=scanpy/tests/notebooks.*"
+             "--ignore=scanpy/tests/test_clustering.py"
+             "--ignore=scanpy/tests/test_datasets.py"
+             "--ignore=scanpy/tests/test_normalization.py"
+             "--ignore=scanpy/tests/test_score_genes.py"
+             "--ignore=scanpy/tests/test_highly_variable_genes.py"
+             ;; The following tests requires 'scanorama', which isn't packaged
+             ;; yet.
+             "--ignore=scanpy/tests/external/test_scanorama_integrate.py")
        #:phases
        #~(modify-phases %standard-phases
            (add-after 'unpack 'pretend-version
              (lambda _
                (setenv "SETUPTOOLS_SCM_PRETEND_VERSION" #$version)))
-           (add-after 'unpack 'delete-bad-tests
+           (add-after 'unpack 'discover-anndata
              (lambda _
-               ;; These tests require Internet access.
-               (delete-file-recursively "scanpy/tests/notebooks")
-               (delete-file "scanpy/tests/test_clustering.py")
-               (delete-file "scanpy/tests/test_datasets.py")
-               (delete-file "scanpy/tests/test_normalization.py")
-               (delete-file "scanpy/tests/test_score_genes.py")
-               (delete-file "scanpy/tests/test_highly_variable_genes.py")
-
-               ;; TODO: I can't get the plotting tests to work, even with Xvfb.
-               (delete-file "scanpy/tests/test_embedding_plots.py")
-               (delete-file "scanpy/tests/test_preprocessing.py")
-               (delete-file "scanpy/tests/test_read_10x.py")
-
-               ;; These two fail with "ValueError: I/O operation on closed file."
-               (delete-file "scanpy/tests/test_neighbors_key_added.py")
-
-               ;; The following tests requires 'scanorama', which isn't
-               ;; packaged yet.
-               (delete-file "scanpy/tests/external/test_scanorama_integrate.py")
-
                (setenv "PYTHONPATH"
                        (string-append (getcwd) ":"
                                       #$(this-package-native-input "python-anndata:source") ":"
@@ -19360,6 +19424,17 @@ includes operations like compartment, insulation or peak calling.")
             (base32
              "14gq7r9b64ff56l5f8h8zc2i2y3xri646jl0anb74japqxrwvlna"))))
     (build-system pyproject-build-system)
+    (arguments
+     (list
+      #:phases
+      '(modify-phases %standard-phases
+         ;; TODO: this must be fixed in python-tables
+         (add-before 'check 'find-blosc2
+           (lambda* (#:key inputs #:allow-other-keys)
+             (setenv "LD_LIBRARY_PATH"
+                     (dirname (search-input-file
+                               inputs "/lib/libblosc2.so"))))))))
+    (inputs (list c-blosc2))
     (propagated-inputs
      (list python-cooler
            python-intervaltree
@@ -20055,7 +20130,7 @@ datasets.")
 memory (each interval is represented by about 3 words + whatever the
 cargo is) and has semantics that are appropriate for genomic intervals
 (namely, intervals can overlap and queries will return all matches
-together). It also designed to be used in two phases: a construction
+together).  It also designed to be used in two phases: a construction
 phase + query phase).")
       (license license:expat))))
 

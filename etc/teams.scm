@@ -707,7 +707,7 @@ GLib/GIO, GTK, GStreamer and Webkit."
 
 (define-member (person "("
                        "paren@disroot.org")
-  home mentors)
+  )
 
 (define-member (person "Simon Tournier"
                        "zimon.toutoune@gmail.com")
@@ -724,10 +724,6 @@ GLib/GIO, GTK, GStreamer and Webkit."
 (define-member (person "Vagrant Cascadian"
                        "vagrant@reproducible-builds.org")
   reproduciblebuilds)
-
-(define-member (person "Zhu Zihao"
-                       "all_but_last@163.com")
-  localization xfce)
 
 (define-member (person "Maxim Cournoyer"
                        "maxim.cournoyer@gmail.com")
@@ -752,6 +748,10 @@ GLib/GIO, GTK, GStreamer and Webkit."
 (define-member (person "Ekaitz Zarraga"
                        "ekaitz@elenq.tech")
   bootstrap zig)
+
+(define-member (person "Divya Ranjan Pattanaik"
+                       "divya@subvertising.org")
+  emacs rust haskell)
 
 (define-member (person "Clément Lassieur"
                        "clement@lassieur.org")
@@ -792,6 +792,10 @@ GLib/GIO, GTK, GStreamer and Webkit."
 (define-member (person "Janneke Nieuwenhuizen"
                        "janneke@gnu.org")
   bootstrap core-packages home hurd installer)
+
+(define-member (person "Ian Eure"
+                       "ian@retrospec.tv")
+  mozilla emacs)
 
 
 (define (find-team name)

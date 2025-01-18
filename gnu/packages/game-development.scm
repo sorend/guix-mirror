@@ -6,7 +6,7 @@
 ;;; Copyright © 2015, 2016, 2017 David Thompson <davet@gnu.org>
 ;;; Copyright © 2016-2021, 2023, 2024 Efraim Flashner <efraim@flashner.co.il>
 ;;; Copyright © 2016, 2017, 2020 Kei Kebreau <kkebreau@posteo.net>
-;;; Copyright © 2016, 2018, 2019, 2024 Ricardo Wurmus <rekado@elephly.net>
+;;; Copyright © 2016, 2018, 2019, 2024, 2025 Ricardo Wurmus <rekado@elephly.net>
 ;;; Copyright © 2016, 2017, 2018 Julian Graham <joolean@gmail.com>
 ;;; Copyright © 2017–2021 Tobias Geerinckx-Rice <me@tobias.gr>
 ;;; Copyright © 2017 Manolis Fragkiskos Ragkousis <manolis837@gmail.com>
@@ -286,7 +286,7 @@ offers a wide range of functions, including par-score calculations.")
    (home-page "https://github.com/Doom-Utils/deutex")
    (synopsis "WAD file composer for Doom and related games")
    (description
-    "DeuTex is a wad composer for Doom, Heretic, Hexen and Strife. It can be
+    "DeuTex is a wad composer for Doom, Heretic, Hexen and Strife.  It can be
 used to extract the lumps of a wad and save them as individual files.
 Conversely, it can also build a wad from separate files.  When extracting a
 lump to a file, it does not just copy the raw data, it converts it to an
@@ -351,7 +351,7 @@ DeuTex has functions such as merging wads, etc.")
       (synopsis "GRF development tools")
       (description
        "The @dfn{Graphics Resource File} (GRF) development tools are a set of
-tools for developing (New)GRFs. It includes a number of smaller programs, each
+tools for developing (New)GRFs.  It includes a number of smaller programs, each
 with a specific task:
 @enumerate
 @item @code{grfcodec} decodes and encodes GRF files for OpenTTD.
@@ -481,7 +481,7 @@ files) into @file{.grf} and/or @file{.nfo} files.")
          (add-before 'build 'build-ext
            (lambda _
              (invoke "python" "setup.py" "build_ext" "--inplace"))))))
-    (native-inputs (list swig))
+    (native-inputs (list swig python-setuptools python-wheel))
     (home-page "https://github.com/pybox2d/pybox2d")
     (synopsis "2D game physics for Python")
     (description
@@ -991,14 +991,14 @@ archive on a per-file basis.")
 (define-public love
   (package
     (name "love")
-    (version "11.4")
+    (version "11.5")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "https://github.com/love2d/love/releases/download/"
                            version "/love-" version "-linux-src.tar.gz"))
        (sha256
-        (base32 "0sak3zjpzfs3ys315m8qvszi946fz76jcpsb58j11wplyp5fwbz3"))))
+        (base32 "0fachzyfl26gwg13l5anfppzljxpmd0pvwpap0lgva8syx1hhvh6"))))
     (build-system gnu-build-system)
     (native-inputs
      (list pkg-config))
@@ -2209,6 +2209,10 @@ scripted in a Python-like language.")
                              "platform/linuxbsd/fontconfig-so_wrap.c"
                              "platform/linuxbsd/libudev-so_wrap.c"
                              "platform/linuxbsd/speechd-so_wrap.c"
+                             "platform/linuxbsd/wayland/dynwrappers/libdecor-so_wrap.c"
+                             "platform/linuxbsd/wayland/dynwrappers/wayland-client-core-so_wrap.c"
+                             "platform/linuxbsd/wayland/dynwrappers/wayland-cursor-so_wrap.c"
+                             "platform/linuxbsd/wayland/dynwrappers/wayland-egl-core-so_wrap.c"
                              "platform/linuxbsd/x11/display_server_x11.cpp"
                              "platform/linuxbsd/x11/dynwrappers/xcursor-so_wrap.c"
                              "platform/linuxbsd/x11/dynwrappers/xext-so_wrap.c"
@@ -2226,6 +2230,10 @@ scripted in a Python-like language.")
                             "libfontconfig.so.1"
                             "libudev.so.1"
                             "libspeechd.so.2"
+                            "libdecor-0.so.0"
+                            "libwayland-client.so.0"
+                            "libwayland-cursor.so.0"
+                            "libwayland-egl.so.1"
                             "libXrandr.so.2"
                             "libXcursor.so.1"
                             "libXext.so.6"
@@ -2263,6 +2271,20 @@ scripted in a Python-like language.")
                 (("./thirdparty/linuxbsd_headers/xkbcommon/xkbcommon-keysyms.h")
                  (string-append
                   (search-input-file inputs "include/xkbcommon/xkbcommon-keysyms.h"))))))
+          (add-after 'unbundle-xkbcommon 'unbundle-wayland
+            (lambda* (#:key inputs #:allow-other-keys)
+              (substitute* "platform/linuxbsd/wayland/SCsub"
+                ;; This first file does not exist in a "protocol" directory of
+                ;; our wayland package, so this can't be grouped with the
+                ;; other substitutions.
+                (("#thirdparty/wayland/protocol/wayland.xml")
+                 (search-input-file inputs "share/wayland/wayland.xml"))
+                (("#thirdparty/wayland-protocols")
+                 (string-append
+                  #$(this-package-input "wayland-protocols") "/share/wayland-protocols"))
+                (("#thirdparty/wayland")
+                 (string-append
+                    #$(this-package-input "wayland") "/share/wayland")))))
           (replace 'install
             (lambda* (#:key inputs #:allow-other-keys)
               (let ((zenity (search-input-file inputs "bin/zenity")))
@@ -2311,6 +2333,7 @@ scripted in a Python-like language.")
            libpng
            harfbuzz
            icu4c
+           libdecor
            libtheora
            libvorbis
            libvpx
@@ -2329,6 +2352,8 @@ scripted in a Python-like language.")
            pulseaudio
            speech-dispatcher
            vulkan-loader
+           wayland
+           wayland-protocols
            wslay
            zenity
            zlib
@@ -2630,22 +2655,18 @@ people base their games, ports to new platforms, and other projects.")
       (license license:gpl2))))
 
 (define-public inform
-  ;; The latest release does not yet have a build system.
-  ;; This commit is the earliest to have one.
-  (let ((commit "20cbfff96015938809d0e3da6cd0d83b76d27f14")
-        (revision "0"))
     (package
       (name "inform")
-      (version (git-version "6.41" revision commit))
+      (version "6.42")
       (source
        (origin
          (method git-fetch)
          (uri (git-reference
                (url "https://jxself.org/git/inform.git")
-               (commit commit)))
+               (commit (string-append "v" version))))
          (file-name (git-file-name name version))
          (sha256
-          (base32 "19z8pgrj1s2irany5s6xxwsm3bdnri1as46fdi16zdp4aah523jy"))))
+          (base32 "1gb7b8y4qq9n3r4giqr4shzn3xli6aiaax7k4lzlgic7w1x3zjfl"))))
       (build-system gnu-build-system)
       (native-inputs (list autoconf automake))
       (synopsis "The Inform 6 compiler")
@@ -2654,7 +2675,7 @@ people base their games, ports to new platforms, and other projects.")
 This version of the compiler has been modified slightly to work better when the
 Inform standard library is in a non-standard location.")
       (home-page "https://jxself.org/git/inform.git")
-      (license license:gpl3+))))
+      (license license:gpl3+)))
 
 (define-public informlib
   (package

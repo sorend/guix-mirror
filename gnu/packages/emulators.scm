@@ -746,7 +746,7 @@ The following systems are supported:
 (define-public mgba
   (package
     (name "mgba")
-    (version "0.10.3")
+    (version "0.10.4")
     (source
      (origin
        (method git-fetch)
@@ -756,7 +756,7 @@ The following systems are supported:
        (file-name (git-file-name name version))
        (sha256
         (base32
-         "1h4wsx76kylsn4f4418swbp6zjp1x94dfn751iks1i6i529pfay1"))
+         "0lfn5jhgqb06f1i1b8w8fvbi4fy4k8dvialblwg8h49qjqmf610q"))
        (modules '((guix build utils)))
        (snippet
         ;; Make sure we don't use the bundled software.
@@ -1463,6 +1463,58 @@ System (NES/Famicom) emulator Nestopia, with enhancements from members of the
 emulation community.  It provides highly accurate emulation.")
     (license license:gpl2+)))
 
+(define (make-libretro-beetle-psx name hw)
+  (let ((commit "80d3eba272cf6efab6b76e4dc44ea2834c6f910d")
+	(revision "0"))
+   (package
+    (name name)
+    ;; Use Mednafen core version as base. Defined in libretro_options.h:10
+    (version (git-version "0.9.44.1" revision commit))
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/libretro/beetle-psx-libretro")
+             (commit commit)))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "14kkrlqhv9pqmbqlv8vvcp0ps938dmg8pk47d7zzc8piq51hkawk"))))
+    (build-system gnu-build-system)
+    (arguments
+     (list #:make-flags #~(list (string-append "HAVE_HW=" #$(if hw "1" "0"))
+                                (string-append "CC=" #$(cc-for-target))
+                                (string-append "GIT_VERSION=" #$commit)
+                                (string-append "prefix=" #$output))
+           #:tests? #f                  ;no tests
+           #:phases #~(modify-phases %standard-phases
+                        (delete 'configure)
+			(replace 'install ;there is no install target
+			  (lambda* (#:key outputs #:allow-other-keys)
+			    (let* ((libretro (string-append
+					      (assoc-ref outputs "out")
+					      "/lib/libretro")))
+			      (install-file (string-append "mednafen_psx_"
+                                                           #$(if hw "hw_" "")
+                                                           "libretro.so")
+					    libretro)))))))
+    (inputs (list mesa))
+    (home-page "https://github.com/libretro/beetle-psx-libretro")
+    (synopsis "Standalone port of Mednafen PSX to libretro")
+    (description
+     "Beetle PSX is a port/fork of Mednafen's PSX module to the libretro
+API.  Additional features include PBP/CHD file format support,
+high-resolution software rendering, OpenGL and Vulkan renderers, and
+PGXP perspective correct texturing.  For those seeking improved visuals
+and performance, Beetle PSX HW provides a hardware-accelerated alternative
+with its OpenGL and Vulkan renderer.")
+    (license license:gpl2+))))
+
+(define-public libretro-beetle-psx
+  (make-libretro-beetle-psx "libretro-beetle-psx" #f))
+
+(define-public libretro-beetle-psx-hw
+  (make-libretro-beetle-psx "libretro-beetle-psx-hw" #t))
+
 (define-public libretro-lowresnx
   (package
     (name "libretro-lowresnx")
@@ -1607,7 +1659,7 @@ metadata about each known libretro core.  The snapshot is taken from the
 (define-public retroarch-joypad-autoconfig
   (package
     (name "retroarch-joypad-autoconfig")
-    (version "1.19.0")
+    (version "1.20.0")
     (source
      (origin
        (method git-fetch)
@@ -1617,7 +1669,7 @@ metadata about each known libretro core.  The snapshot is taken from the
        (file-name (git-file-name name version))
        (sha256
         (base32
-         "1gg4nc2wjqz72z40diqbanfkfalvb9hhb8scwn51v2w704rm634b"))))
+         "0nlz3j3575dlv9s15250qrhi90xcs6mg5i40g4lhq1hbwd075lsd"))))
     (build-system gnu-build-system)
     (arguments
      (list #:tests? #f                  ;no meaningful test suite
@@ -2574,14 +2626,14 @@ that compiles to WebAssembly.")
 (define-public scummvm
   (package
     (name "scummvm")
-    (version "2.8.1")
+    (version "2.9.0")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "https://downloads.scummvm.org/frs/scummvm/" version
                            "/scummvm-" version ".tar.xz"))
        (sha256
-        (base32 "1dr70z1dkfw2gp43jq0qp7g73glr36a7qdcv1jvp1m927nhz95vy"))))
+        (base32 "0lllm5fsmb5gdrxnpfryyl85i4sb1dkrqw97j7q4glkhplr3bcym"))))
     (build-system gnu-build-system)
     (arguments
      (list

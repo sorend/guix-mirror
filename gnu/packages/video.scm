@@ -130,6 +130,7 @@
   #:use-module (gnu packages check)
   #:use-module (gnu packages compression)
   #:use-module (gnu packages cpp)
+  #:use-module (gnu packages crates-check)
   #:use-module (gnu packages crates-io)
   #:use-module (gnu packages crates-graphics)
   #:use-module (gnu packages curl)
@@ -1317,14 +1318,17 @@ on the Invidious instances only as a fallback method.")
     (build-system cmake-build-system)
     (native-inputs
      ;; XXX: ASM optimization fails on i686-linux, see <https://bugs.gnu.org/41768>.
-     (if (string-prefix? "i686" (%current-system))
-         '()
-         `(("nasm" ,nasm))))
+     (if (target-x86-64?)
+         (list nasm)
+         '()))
     (arguments
      `(#:tests? #f ; tests are skipped if ENABLE_ASSEMBLY is TRUE.
        #:configure-flags
-         ;; Ensure position independent code for everyone.
          (list "-DENABLE_PIC=TRUE"
+               "-DLINKED_10BIT=ON"
+               "-DLINKED_12BIT=ON"
+               "-DEXTRA_LIB=x265_main10.a;x265_main12.a"
+               "-DEXTRA_LINK_FLAGS=-L../build-10bit -L../build-12bit"
                (string-append "-DCMAKE_INSTALL_PREFIX="
                               (assoc-ref %outputs "out")))
        #:phases
@@ -1343,7 +1347,7 @@ on the Invidious instances only as a fallback method.")
            (lambda* (#:key (configure-flags '()) #:allow-other-keys #:rest args)
              (mkdir "../build-12bit")
              (with-directory-excursion "../build-12bit"
-               (apply invoke
+               (invoke
                  "cmake" "../source"
                  ,@(if (target-aarch64?)
                      '("-DENABLE_ASSEMBLY=OFF")
@@ -1355,8 +1359,9 @@ on the Invidious instances only as a fallback method.")
                  "-DHIGH_BIT_DEPTH=ON"
                  "-DEXPORT_C_API=OFF"
                  "-DENABLE_CLI=OFF"
-                 "-DMAIN12=ON"
-                 configure-flags)
+                 "-DENABLE_SHARED=OFF"
+                 "-DENABLE_PIC=TRUE"
+                 "-DMAIN12=ON")
                (substitute* (cons "cmake_install.cmake"
                                   (append
                                     (find-files "CMakeFiles/x265-shared.dir")
@@ -1367,7 +1372,7 @@ on the Invidious instances only as a fallback method.")
            (lambda* (#:key (configure-flags '()) #:allow-other-keys #:rest args)
              (mkdir "../build-10bit")
              (with-directory-excursion "../build-10bit"
-               (apply invoke
+               (invoke
                  "cmake" "../source"
                  ,@(if (target-aarch64?)
                      '("-DENABLE_ASSEMBLY=OFF")
@@ -1379,19 +1384,14 @@ on the Invidious instances only as a fallback method.")
                  "-DHIGH_BIT_DEPTH=ON"
                  "-DEXPORT_C_API=OFF"
                  "-DENABLE_CLI=OFF"
-                 configure-flags)
+                 "-DENABLE_SHARED=OFF"
+                 "-DENABLE_PIC=TRUE")
                (substitute* (cons "cmake_install.cmake"
                                   (append
                                     (find-files "CMakeFiles/x265-shared.dir")
                                     (find-files "CMakeFiles/x265-static.dir")))
                  (("libx265") "libx265_main10"))
                ((assoc-ref %standard-phases 'build)))))
-         (add-after 'install 'install-more-libs
-           (lambda args
-             (with-directory-excursion "../build-12bit"
-               ((assoc-ref %standard-phases 'install)))
-             (with-directory-excursion "../build-10bit"
-               ((assoc-ref %standard-phases 'install)))))
          (add-before 'strip 'move-static-libs
            (lambda* (#:key outputs #:allow-other-keys)
              (let ((out (assoc-ref outputs "out"))
@@ -1582,14 +1582,14 @@ quality and performance.")
 (define-public libva
   (package
     (name "libva")
-    (version "2.19.0")
+    (version "2.22.0")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "https://github.com/intel/libva/releases/download/"
                            version "/libva-" version ".tar.bz2"))
        (sha256
-        (base32 "0x113spshsjcqh4pk8rkqq4r8vxf1nm83ym6ppp7zpsrsncfffwn"))))
+        (base32 "1f7dwwyndigv032dny23wqp1myz7v3rv734zynrm53accm825np3"))))
     (build-system gnu-build-system)
     (native-inputs
      (list config pkg-config))
@@ -2877,7 +2877,7 @@ Jellyfin.  It has support for various media files without transcoding.")
 (define-public gallery-dl
   (package
     (name "gallery-dl")
-    (version "1.27.4")
+    (version "1.28.2")
     (source (origin
               (method url-fetch)
               (uri (string-append "https://github.com/mikf/gallery-dl"
@@ -2885,7 +2885,7 @@ Jellyfin.  It has support for various media files without transcoding.")
                                   version ".tar.gz"))
               (sha256
                (base32
-                "13qq16fi6zq356qbnwb8a898m7gq20r67j2lmb4g37389yqvkk6v"))))
+                "0j4hxp1lbcxgg34ilzhcpxvswgnvvrlk66pn3w9ksv5g8jdz7rpi"))))
     (build-system python-build-system)
     (inputs (list python-requests ffmpeg))
     (home-page "https://github.com/mikf/gallery-dl")
@@ -3166,7 +3166,7 @@ YouTube.com and many more sites.")
 (define-public yt-dlp
   (package
     (name "yt-dlp")
-    (version "2024.12.13")
+    (version "2025.01.15")
     (source
      (origin
        (method git-fetch)
@@ -3178,7 +3178,7 @@ YouTube.com and many more sites.")
        (snippet '(substitute* "pyproject.toml"
                    (("^.*Programming Language :: Python :: 3\\.13.*$") "")))
        (sha256
-        (base32 "1659zblb5a06g033161s3qdndcafkkkz3zcm05vdk1zcjca9drbk"))))
+        (base32 "1f9pp1d77x39xl4lwwqmijgv1ky7ycm0qh45ki4394j30fa4dm3p"))))
     (build-system pyproject-build-system)
     (arguments
      `(#:tests? ,(not (%current-target-system))
@@ -5945,7 +5945,7 @@ create smoother and stable videos.")
 (define-public libopenshot
   (package
     (name "libopenshot")
-    (version "0.3.3")
+    (version "0.4.0")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -5954,7 +5954,7 @@ create smoother and stable videos.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "0jfp0kdncwmw8gqk0z8frpc4xdv9rxwh4z5m5l6mkyy320hr8zgm"))
+                "190zw15wqfdvpff4b4bshnff1m2lv85qvfhnhqjqh82qjjf17fnf"))
               (modules '((guix build utils)))
               (snippet '(begin
                           ;; Allow overriding of the python installation dir
@@ -6008,7 +6008,7 @@ API.  It includes bindings for Python, Ruby, and other languages.")
 (define-public openshot
   (package
     (name "openshot")
-    (version "3.2.1")
+    (version "3.3.0")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -6017,7 +6017,7 @@ API.  It includes bindings for Python, Ruby, and other languages.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "1hh5sggvnfayzgj1h9h7wp9k0n44lj2z32am9g51whkyzl5pp5nd"))
+                "0x7fv1c3cr28z5nccw4lv61wnj013l8594p2fyrm1cxjpppka0pr"))
        (modules '((guix build utils)))
        (snippet
         '(begin
@@ -6550,7 +6550,7 @@ result in several formats:
                  '())
              (list pkg-config rust-cargo-c)))
     (inputs
-     (list libgit2-1.7 zlib))
+     (list libgit2-1.8 zlib))
     (home-page "https://github.com/xiph/rav1e/")
     (synopsis "Fast and safe AV1 encoder")
     (description "@code{rav1e} is an AV1 video encoder.  It is designed to

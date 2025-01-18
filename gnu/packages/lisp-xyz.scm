@@ -697,6 +697,35 @@ weight, temperature, names of physical quantitites, etc.")
 (define-public ecl-acclimation
   (sbcl-package->ecl-package sbcl-acclimation))
 
+(define-public sbcl-ecclesia
+  (let ((commit "605debb6f28f120243da66c281274011e292ce46"))
+    (package
+      (name "sbcl-ecclesia")
+      (version (git-version "0.0.0" "0" commit))
+      (source
+       (origin
+         (method git-fetch)
+         (uri (git-reference
+               (url "https://github.com/s-expressionists/Ecclesia")
+               (commit commit)))
+         (file-name (git-file-name name version))
+         (sha256
+          (base32
+           "0lmy03lqk82301b86pli9qd6493q6fr7vd5h29j4gwc778awbmf5"))))
+      (build-system asdf-build-system/sbcl)
+      (inputs (list sbcl-acclimation))
+      (home-page "https://github.com/s-expressionists/Ecclesia")
+      (synopsis "Utilities for parsing Lisp code")
+      (description "This library contains utilities for parsing Common Lisp
+code.")
+      (license license:bsd-2))))
+
+(define-public cl-ecclesia
+  (sbcl-package->cl-source-package sbcl-ecclesia))
+
+(define-public ecl-ecclesia
+  (sbcl-package->ecl-package sbcl-ecclesia))
+
 (define-public sbcl-acl-compat
   ;; There does not seem to be proper releases.
   (let ((commit "cac1d6920998ddcbee8310a873414732e707d8e5"))
@@ -3853,7 +3882,7 @@ REPL for the terminal.")
      (synopsis "Circularly readable streams for Common Lisp")
      (description
       "Circular-Streams allows you to read streams circularly by wrapping real
-streams. Once you reach end-of-file of a stream, it's file position will be
+streams.  Once you reach end-of-file of a stream, its file position will be
 reset to 0 and you're able to read it again.")
      (license license:llgpl))))
 
@@ -5972,7 +6001,7 @@ joysticks, and other such HID devices.")
        "This is a system for two dimensional computational geometry for Common Lisp.
 
 Note: the system assumes exact rational arithmetic, so no floating point
-coordinates are allowed. This is not checked when creating geometric
+coordinates are allowed.  This is not checked when creating geometric
 objects.")
       ;; The .asd says BSD-style but the LICENSE.txt is expat.
       (license license:expat))))
@@ -6311,8 +6340,8 @@ and running graph algorithms.")
       (description
        "These common lisp sources contain two variants of the Nelder-Mead
 algorithm.  The original algorithm and a provably convergent, reliable variant
-by A. Bürmen et al, called the
-@acronym{GRNMA, Grid Restrained Nelder Mead Algorithm}.")
+by A. Bürmen et al, called the @acronym{GRNMA, Grid Restrained Nelder Mead
+Algorithm}.")
       (home-page "https://github.com/quil-lang/cl-grnm")
       (license license:expat))))
 
@@ -9374,6 +9403,46 @@ to serve as a building block for such an interface.")
 
 (define-public ecl-cl-rmath
   (sbcl-package->ecl-package sbcl-cl-rmath))
+
+(define-public sbcl-cl-semver
+  (let ((commit "b125d2c49ea6d370302dde73a6e0841c0e928184")
+        (revision "0"))
+    (package
+      (name "sbcl-cl-semver")
+      (version (git-version "0.0.0" revision commit))
+      (source
+       (origin
+         (method git-fetch)
+         (uri (git-reference
+               (url "https://github.com/cldm/cl-semver")
+               (commit commit)))
+         (file-name (git-file-name "cl-semver" version))
+         (sha256
+          (base32 "1zlcn7lrpvjiixgqm4yxnqqwak1hxfmxmchkpvrly41yhl586ril"))))
+      (build-system asdf-build-system/sbcl)
+      (native-inputs (list sbcl-stefil))
+      (inputs
+       (list sbcl-alexandria
+             sbcl-esrap
+             sbcl-named-readtables))
+      (home-page "https://github.com/cldm/cl-semver")
+      (synopsis "Semantic version handling in Common Lisp")
+      (description
+       "This package provides a Common Lisp implementation of the semantic
+versioning specification: @url{http://semver.org}.")
+      (license license:expat))))
+
+(define-public ecl-cl-semver
+  (let ((pkg (sbcl-package->ecl-package sbcl-cl-semver)))
+    (package
+      (inherit pkg)
+      (arguments
+       (substitute-keyword-arguments (package-arguments pkg)
+         ;; TODO: https://github.com/cldm/cl-semver/issues/9
+         ((#:tests? _ #f) #f))))))
+
+(define-public cl-semver
+  (sbcl-package->cl-source-package sbcl-cl-semver))
 
 (define-public sbcl-cl-setlocale
   (let ((commit "f660d07dac72bc3e99caae1c6c8a789991e2694c")
@@ -12458,7 +12527,7 @@ based on code from chapter 24 of the book @emph{Practical Common Lisp}.")
 (define-public sbcl-command-line-args
   (package
     (name "sbcl-command-line-args")
-    (version "0.1.1")
+    (version "0.1.2")
     (source
      (origin
        (method git-fetch)
@@ -12467,7 +12536,7 @@ based on code from chapter 24 of the book @emph{Practical Common Lisp}.")
              (commit (string-append "v" version))))
        (file-name (git-file-name "cl-command-line-args" version))
        (sha256
-        (base32 "140xnz2v0v3hfg3dp2fhidw8ns6lxd3a5knm07wqdp48ksg119wy"))))
+        (base32 "1ds3s26lbl7j8i3m8d7c69jdcpwdc21qjqd9sarrz6mw1i26xfd5"))))
     (build-system asdf-build-system/sbcl)
     (arguments
      '(#:asd-systems '("whereiseveryone.command-line-args")))
@@ -12490,7 +12559,13 @@ interface is meant to be easy and non-intrusive.")
   (sbcl-package->cl-source-package sbcl-command-line-args))
 
 (define-public ecl-command-line-args
-  (sbcl-package->ecl-package sbcl-command-line-args))
+  (let ((pkg (sbcl-package->ecl-package sbcl-command-line-args)))
+    (package
+      (inherit pkg)
+      (arguments
+       (substitute-keyword-arguments (package-arguments pkg)
+         ;; The tests only work on SBCL.
+         ((#:tests? _ #f) #f))))))
 
 (define-public sbcl-command-line-arguments
   (let ((commit "fbac862fb01c0e368141204f3f639920462c23fe")
@@ -22382,7 +22457,7 @@ testing and installation.
 
 @itemize
 @item Simple way to fetch Git submodules and “do the right thing” for
-setup. This may effectively supersede Quicklisp. A benefit of using Git
+setup.  This may effectively supersede Quicklisp.  A benefit of using Git
 submodules over the default Quicklisp distribution is improved
 reproducibility.
 @item Test helpers, like distinction between offline and online tests, or
@@ -26851,7 +26926,7 @@ C Library.")
       (synopsis "Utility kit for CL-SDL2")
       (description
        "This is a utility kit for @code{cl-sdl2} that provides something similar to
-GLUT. However, it's also geared at being useful for \"real\" applications or
+GLUT.  However, it's also geared at being useful for \"real\" applications or
 games.")
       (license license:expat))))
 
@@ -27441,11 +27516,11 @@ running into parallelism problems when having to change directory.")
   (sbcl-package->ecl-package sbcl-simple-inferiors))
 
 (define-public sbcl-simple-matrix
-  (let ((commit "76b1df400cc38e21677b7b6dac659fbf627d4571")
+  (let ((commit "878c68fc66d4d88e0bc69f6f2b7050e6ea292345")
         (revision "0"))
     (package
       (name "sbcl-simple-matrix")
-      (version (git-version "1.2" revision commit))
+      (version (git-version "1.3" revision commit))
       (source
        (origin
          (method git-fetch)
@@ -27454,7 +27529,7 @@ running into parallelism problems when having to change directory.")
                (commit commit)))
          (file-name (git-file-name "cl-simple-matrix" version))
          (sha256
-          (base32 "0f9flha00p1px1bj84wk7alfss1qnr434w1dp075sq04rk0hm4md"))))
+          (base32 "0a89zwcr3pl6xjfnja39rv7ybda62inl1kjdl5xic59qk1k0pjr8"))))
       (build-system asdf-build-system/sbcl)
       (native-inputs (list sbcl-fiveam))
       (synopsis "Matrix library for Common Lisp")
@@ -27834,12 +27909,12 @@ processes that doesn't run under Emacs.  Lisp processes created by
     (synopsis "SLIme-based TEst runner for FiveAM and Parachute Tests")
     (description
      "Slite interactively runs your Common Lisp tests (currently only FiveAM
-and Parachute are supported). It allows you to see the summary of test
+and Parachute are supported).  It allows you to see the summary of test
 failures, jump to test definitions, rerun tests with debugger all from inside
 Emacs.
 
 In order to work, this also requires the slite Common Lisp system to be
-present. See the code@{*cl-slite packages}.")))
+present.  See the @code{*cl-slite packages}.")))
 
 (define-public sbcl-slot-extra-options
   (let ((commit "29517d980325cd63744f1acf4cfe5c8ccec2b318"))
@@ -31786,24 +31861,24 @@ of octave or matlab.")
 (define-public ecl-vgplot
   (sbcl-package->ecl-package sbcl-vgplot))
 
-(define-public sbcl-virality
-  (let ((commit "cdc19cca9b028f0c30d14ed8b3e51359dd46069a")
-        (revision "1"))
+(define-public sbcl-colony
+  (let ((commit "54d020e80192e325311feffa1ecb00f02416541a")
+        (revision "0"))
     (package
-      (name "sbcl-virality")
-      (version (git-version "0.3.0" revision commit))
+      (name "sbcl-colony")
+      (version (git-version "0.1.0" revision commit))
       (source
        (origin
          (method git-fetch)
          (uri (git-reference
-               (url "https://github.com/bufferswap/ViralityEngine")
+               (url "https://github.com/colonyengine/colony")
                (commit commit)))
-         (file-name (git-file-name "cl-virality" version))
+         (file-name (git-file-name "cl-colony" version))
          (sha256
-          (base32 "1s25aapkqcr8fxi0i9wjw0n4jax7r4a9d9wflpr3sqz2vgrg2lz6"))))
+          (base32 "0wgjr2ss7j42pzx4vx9l9c82i7b1h6ph9b7gi4b1ipjv7bv0ncf5"))))
       (build-system asdf-build-system/sbcl)
       (arguments
-       `(#:asd-systems '("virality"
+       `(#:asd-systems '("colony"
                          "vorigin"
                          "vorigin.test"
                          "vshadow"
@@ -31821,6 +31896,7 @@ of octave or matlab.")
                          delete-file
                          (find-files "."
                                      "^xXx-SYSTEM-NAME-xXx\\.asd$")))))))
+      (native-inputs (list sbcl-parachute))
       (inputs
        (list sbcl-3b-bmfont
              sbcl-babel
@@ -31844,27 +31920,27 @@ of octave or matlab.")
              sbcl-static-vectors
              sbcl-trivial-features
              sbcl-varjo))
-      (home-page "https://github.com/bufferswap/ViralityEngine")
+      (home-page "https://github.com/colonyengine/colony")
       (synopsis "Component-based game engine written in Common Lisp")
       (description
-       "Virality Engine provides a system and workflow that helps describe the
+       "Colony provides a system and workflow that helps describe the
 elements needed to write 2D or 3D games.  It was designed with several domain
 specific languages that make it easier to describe, manipulate, and use assets
 commonly found in game making.  Such assets include (but are not limited to)
 textures, materials, shader programs, and scene trees of actors that are
-available for instantiation.  Virality Engine also knows how to accept input
+available for instantiation.  Colony Engine also knows how to accept input
 from keyboards and most joysticks and gamepads.
 
 The component system is a hybrid model between an ECS and an object model.  The
 components are defined similar to CLOS defclass, and regular generic methods
 can be used with them.  Components are added to Actors which represent game
 concepts like players, scenery, effects, etc.  We define a component protocol
-invoked by Virality Engine to move your components to the next state and
+invoked by Colony Engine to move your components to the next state and
 render them each frame.")
       (license license:expat))))
 
-(define-public cl-virality
-  (sbcl-package->cl-source-package sbcl-virality))
+(define-public cl-colony
+  (sbcl-package->cl-source-package sbcl-colony))
 
 (define-public sbcl-vom
   (let ((commit "1aeafeb5b74c53741b79497e0ef4acf85c92ff24")
@@ -32831,3 +32907,40 @@ compression/decompression using bindings to the libzstd C library.")
 
 (define-public ecl-zstd
   (sbcl-package->ecl-package sbcl-zstd))
+
+(define-public sbcl-cl-transducers
+  (package
+    (name "sbcl-cl-transducers")
+    (version "1.3.0")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/fosskers/cl-transducers")
+             (commit (string-append "v" version))))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "0p7fqkmv0rfi5d7mmm9600qpix003bqr7as148pk157s1d44vncg"))))
+    (build-system asdf-build-system/sbcl)
+    (arguments
+     '(#:asd-systems '("transducers" "transducers/jzon" "transducers/fset")))
+    (native-inputs
+     (list sbcl-cl-str
+           sbcl-parachute))
+    (inputs
+     (list sbcl-fset
+           sbcl-jzon
+           sbcl-trivia))
+    (home-page "https://fosskers.github.io/cl-transducers/")
+    (synopsis "Data source processing for Common Lisp via transducers")
+    (description
+     "Transducers are an ergonomic and extremely memory-efficient way to
+process a data source.  Data source refers to simple collections like lists or
+vectors, but also potentially large files or generators of infinite data.")
+    (license license:mpl2.0)))
+
+(define-public cl-transducers
+  (sbcl-package->cl-source-package sbcl-cl-transducers))
+
+(define-public ecl-cl-transducers
+  (sbcl-package->ecl-package sbcl-cl-transducers))

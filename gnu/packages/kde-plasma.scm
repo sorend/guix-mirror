@@ -7,6 +7,7 @@
 ;;; Copyright © 2020, 2023, 2024 Zheng Junjie <873216071@qq.com>
 ;;; Copyright © 2022 Brendan Tildesley <mail@brendan.scot>
 ;;; Copyright © 2022 Petr Hodina <phodina@protonmail.com>
+;;; Copyright © 2024 Raven Hallsby <karl@hallsby.com>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -123,9 +124,10 @@
                   ki18n
                   kio
                   kdeclarative
-                  bluez-qt
                   shared-mime-info
                   qtdeclarative))
+    (propagated-inputs
+     (list bluez-qt))
     (synopsis "Manage the Bluetooth settings from Plasma")
     (description
      "This package provides Bluetooth manager for Plasma Shell.")
@@ -1755,6 +1757,7 @@ on top of Baloo.")
                              plasma-nm
                              plasma-pa
                              plasma-systemmonitor
+                             bluedevil
                              ;; plasma-thunderbolt ;; waiting for bolt
                              kglobalaccel
                              kglobalacceld
@@ -2440,7 +2443,7 @@ PulseAudio.")
                   libplasma
                   oath-toolkit
                   plasma5support
-                  qgpgme-qt6-1.23
+                  qgpgme-qt6
                   qtdeclarative))
     (arguments (list #:qtbase qtbase
                      #:configure-flags #~(list "-DQT_MAJOR_VERSION=6")))

@@ -49,6 +49,7 @@
 ;;; Copyright © 2024 hapster <o.rojon@posteo.net>
 ;;; Copyright © 2024 mio <stigma@disroot.org>
 ;;; Copyright © 2024 Nikita Domnitskii <nikita@domnitskii.me>
+;;; Copyright © 2024 Roman Scherer <roman@burningswell.com>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -80,6 +81,8 @@
   #:use-module (gnu packages cdrom)
   #:use-module (gnu packages compression)
   #:use-module (gnu packages cpp)
+  #:use-module (gnu packages crates-audio)
+  #:use-module (gnu packages crates-io)
   #:use-module (gnu packages curl)
   #:use-module (gnu packages dbm)
   #:use-module (gnu packages documentation)
@@ -153,6 +156,7 @@
   #:use-module (gnu packages xiph)
   #:use-module (gnu packages xml)
   #:use-module (gnu packages xorg)
+  #:use-module (guix build-system cargo)
   #:use-module (guix build-system cmake)
   #:use-module (guix build-system copy)
   #:use-module (guix build-system glib-or-gtk)
@@ -1044,7 +1048,7 @@ tools.")
 (define-public tenacity
   (package
     (name "tenacity")
-    (version "1.3.3")
+    (version "1.3.4")
     (source
      (origin
        (method git-fetch)
@@ -1055,7 +1059,7 @@ tools.")
              (recursive? #t)))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "0jqdza1alk524fkrssgkr7gabs44sk9a99914gwfkscvyqly4kai"))))
+        (base32 "1wphm494517zmnhgrmzlzld2j4bfl2c73qr61nrss90410xxs2fs"))))
     (build-system cmake-build-system)
     (arguments
      (list
@@ -1311,6 +1315,34 @@ sections, two polyphonic sections with nine drawbars each and one monophonic
 bass section with five drawbars.  A standalone JACK application and LV2
 plugins are provided.")
       (license license:gpl2))))
+
+(define-public bankstown-lv2
+  (package
+    (name "bankstown-lv2")
+    (version "1.1.0")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (crate-uri "bankstown-lv2" version))
+       (file-name (string-append name "-" version ".tar.gz"))
+       (sha256
+        (base32 "1bcrn0b4b9v1mksaldhrdb6ncqlwldfwqxjlfp4gcpvl661qdmcb"))))
+    (build-system cargo-build-system)
+    (arguments
+     (list
+      #:cargo-inputs `(("rust-biquad" ,rust-biquad-0.4)
+                       ("rust-lv2" ,rust-lv2-0.6))
+      #:phases
+      #~(modify-phases %standard-phases
+          (replace 'install
+            (lambda* (#:key outputs #:allow-other-keys)
+              (setenv "LIBDIR" (string-append (assoc-ref outputs "out") "/lib"))
+              (invoke "make" "install"))))))
+    (home-page "https://github.com/chadmed/bankstown")
+    (synopsis "Barebones, fast LV2 bass enhancement plugin.")
+    (description
+     "This package provides a barebones, fast LV2 bass enhancement plugin.")
+    (license license:expat)))
 
 (define-public calf
   (package
@@ -3799,7 +3831,7 @@ filters using the so-called @emph{window method}.")
 (define-public rubberband
   (package
     (name "rubberband")
-    (version "3.3.0")
+    (version "4.0.0")
     (source (origin
               (method url-fetch)
               (uri
@@ -3807,7 +3839,7 @@ filters using the so-called @emph{window method}.")
                               "rubberband-" version ".tar.bz2"))
               (sha256
                (base32
-                "0v2pbv4jnzv3rr2qr71skwncy2p263ngmhn37aqqb7zgp3i8kvyr"))))
+                "1s98h0pzxlffha52paniysm7dch5rrflw1ifbfriig33xq9h61dg"))))
     (build-system meson-build-system)
     (arguments
      (list
@@ -5489,7 +5521,7 @@ bluetooth profile.")
 (define-public libopenshot-audio
   (package
     (name "libopenshot-audio")
-    (version "0.3.3")
+    (version "0.4.0")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -5498,7 +5530,7 @@ bluetooth profile.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "1h7hb3nxladpm5mmh9njilz8wjipisd61mgkgcd39k9jr9adw8gn"))))
+                "0m6a0g6y464ypcza1wfaik77x26lfdmkb5k735f7v8463r7qhd0m"))))
     (build-system cmake-build-system)
     (inputs
      (list alsa-lib
@@ -5848,12 +5880,12 @@ default and preferred audio driver but also supports native drivers like ALSA.")
     (home-page "https://nosignal.fi/ecasound/index.php")
     (synopsis "Multitrack audio processing")
     (description "Ecasound is a software package designed for multitrack audio
-processing. It can be used for simple tasks like audio playback, recording and
+processing.  It can be used for simple tasks like audio playback, recording and
 format conversions, as well as for multitrack effect processing, mixing,
-recording and signal recycling. Ecasound supports a wide range of audio inputs,
-outputs and effect algorithms. Effects and audio objects can be combined in
+recording and signal recycling.  Ecasound supports a wide range of audio inputs,
+outputs and effect algorithms.  Effects and audio objects can be combined in
 various ways, and their parameters can be controlled by operator objects like
-oscillators and MIDI-CCs. A versatile console mode user-interface is included
+oscillators and MIDI-CCs.  A versatile console mode user-interface is included
 in the package.")
     ;; As an exception to the above, the C, C++ and python implementations
     ;; of the Ecasound Control Interface (ECI) are licensed under the LGPL

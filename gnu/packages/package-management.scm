@@ -178,8 +178,8 @@
   ;; Note: the 'update-guix-package.scm' script expects this definition to
   ;; start precisely like this.
   (let ((version "1.4.0")
-        (commit "790c9ffe596e3deabf175e030adee5fb706aa981")
-        (revision 30))
+        (commit "121e96dca273ab407df11725da0026ee34abdf79")
+        (revision 31))
     (package
       (name "guix")
 
@@ -195,7 +195,7 @@
                       (commit commit)))
                 (sha256
                  (base32
-                  "1lmmaiyriwx62w003bn8w415knhyg4gh8vdh4jr6ga78m4qclhq5"))
+                  "14r5s5kfxnawas41vj5dwya2hf4nq3g1dknspvf0hyc09wvl7g0x"))
                 (file-name (string-append "guix-" version "-checkout"))))
       (build-system gnu-build-system)
       (arguments
@@ -997,19 +997,19 @@ transactions from C or Python.")
     (license license:gpl2+)))
 
 (define-public bffe
-  (let ((commit "06bed4724d131c085b23c7a806170bf16d58c25f")
-        (revision "8"))
+  (let ((commit "d2ff7c36f379dc2c9b619b9941b4cd612df95857")
+        (revision "9"))
     (package
       (name "bffe")
       (version (git-version "0" revision commit))
       (source (origin
                 (method git-fetch)
                 (uri (git-reference
-                      (url "https://git.cbaines.net/guix/bffe")
+                      (url "https://git.cbaines.net/git/guix/bffe")
                       (commit commit)))
                 (sha256
                  (base32
-                  "0gwvcgsxmwnm90v3phq17m6x4iikz98cp6s82s3d6iw346l257w9"))
+                  "0q8hlcj2fqza0wlcd21f1q13hmj7vp2gsapkxkprxl7d72g5l3ma"))
                 (file-name (string-append name "-" version "-checkout"))))
       (build-system gnu-build-system)
       (native-inputs
@@ -1025,6 +1025,7 @@ transactions from C or Python.")
              guix-data-service
              guix-build-coordinator
              guile-fibers
+             guile-knots
              guile-prometheus
              guile-lib))
       (propagated-inputs
@@ -1034,6 +1035,7 @@ transactions from C or Python.")
              guix-data-service
              guix-build-coordinator
              guile-fibers
+             guile-knots
              guile-prometheus
              guile-lib))
       (home-page "https://git.cbaines.net/guix/bffe")
@@ -1541,8 +1543,8 @@ environments.")
                   "0k9zkdyyzir3fvlbcfcqy17k28b51i20rpbjwlx2i1mwd2pw9cxc")))))))
 
 (define-public guix-build-coordinator
-  (let ((commit "037eac0357baa448afe6aeeaf82d8f2e2665bbcb")
-        (revision "111"))
+  (let ((commit "44c81082c34c6d819743cf452db8d1769301805a")
+        (revision "112"))
     (package
       (name "guix-build-coordinator")
       (version (git-version "0" revision commit))
@@ -1553,7 +1555,7 @@ environments.")
                       (commit commit)))
                 (sha256
                  (base32
-                  "0gvpbjjzig610i2rsdb0d6vjhaq8z507m481462y6vpxa55ri4yb"))
+                  "0chry1y781qb0s8mvkmbrm0473bd0rdw4b96vqm97fbgsvgkb6x6"))
                 (file-name (string-append name "-" version "-checkout"))))
       (build-system gnu-build-system)
       (arguments
@@ -1592,7 +1594,8 @@ environments.")
                                           "guile-gnutls"
                                           #$@(if (target-hurd?)
                                                  '()
-                                                 '("guile-fibers")))))
+                                                 '("guile-fibers"
+                                                   "guile-knots")))))
                        (wrap-program file
                          `("PATH" ":" prefix
                            (,bin
@@ -1636,6 +1639,7 @@ environments.")
              guix
              guile-prometheus
              guile-fibers
+             guile-knots
              guile-lib
              guile-next))
       (inputs
@@ -1654,7 +1658,8 @@ environments.")
              guile-sqlite3
              guix
              guile-gnutls
-             guile-fibers))
+             guile-fibers
+             guile-knots))
       (home-page "https://git.cbaines.net/guix/build-coordinator/")
       (synopsis "Tool to help build derivations")
       (description
@@ -1790,8 +1795,8 @@ in an isolated environment, in separate namespaces.")
     (license license:gpl3+)))
 
 (define-public nar-herder
-  (let ((commit "59d2b8aa23d0119a3c95e9d3b90fd6b36d1bde6a")
-        (revision "38"))
+  (let ((commit "70df5af752ba9ed9dc414d011a1358babc5e40b1")
+        (revision "39"))
     (package
       (name "nar-herder")
       (version (git-version "0" revision commit))
@@ -1802,7 +1807,7 @@ in an isolated environment, in separate namespaces.")
                       (commit commit)))
                 (sha256
                  (base32
-                  "0rqa9ypdzp3j3ss1c5r0wyqhx61rmsb0s4hlqwnwga5iyimp91sy"))
+                  "1b2slw0963avh31xdb8g1zm6mcdvaya4js1ak53wvbzjwrrr2pv6"))
                 (file-name (string-append name "-" version "-checkout"))))
       (build-system gnu-build-system)
       (arguments
@@ -1839,7 +1844,8 @@ in an isolated environment, in separate namespaces.")
                                           "guile-prometheus"
                                           "guile-sqlite3"
                                           "guile-gnutls"
-                                          "guile-fibers")))
+                                          "guile-fibers"
+                                          "guile-knots")))
                        (wrap-program file
                          `("GUILE_LOAD_PATH" ":" prefix
                            (,scm ,(string-join
@@ -1872,6 +1878,7 @@ in an isolated environment, in separate namespaces.")
              guile-gcrypt
              guix
              guile-fibers
+             guile-knots
              guile-prometheus
              guile-lib
              guile-lzlib
@@ -1885,6 +1892,7 @@ in an isolated environment, in separate namespaces.")
              guile-gcrypt
              guix
              guile-fibers
+             guile-knots
              guile-prometheus
              guile-lib
              guile-lzlib
@@ -2030,6 +2038,7 @@ the boot loader configuration.")
        (patches
         (search-patches "flatpak-fix-fonts-icons.patch"
                         "flatpak-fix-path.patch"
+                        "flatpak-fix-icon-validation.patch"
                         "flatpak-unset-gdk-pixbuf-for-sandbox.patch"))))
 
     ;; Wrap 'flatpak' so that GIO_EXTRA_MODULES is set, thereby allowing GIO to
@@ -2076,6 +2085,12 @@ cp -r /tmp/locale/*/en_US.*")))
                   (("if \\(g_find_program_in_path \\(\"p11-kit\"\\)\\)")
                    (string-append "if (g_find_program_in_path (\""
                                   p11-path "\"))"))))))
+          (add-after 'unpack 'fix-icon-validation
+            (lambda* (#:key outputs #:allow-other-keys)
+              (let* ((out (assoc-ref outputs "out"))
+                     (store (dirname out)))
+                (substitute* "icon-validator/validate-icon.c"
+                  (("@storeDir@") store)))))
           ;; Many tests fail for unknown reasons, so we just run a few basic
           ;; tests.
           (replace 'check

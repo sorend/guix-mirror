@@ -7,7 +7,7 @@
 ;;; Copyright © 2014, 2015 Federico Beffa <beffa@fbengineering.ch>
 ;;; Copyright © 2015 Omar Radwan <toxemicsquire4@gmail.com>
 ;;; Copyright © 2015 Pierre-Antoine Rault <par@rigelk.eu>
-;;; Copyright © 2015-2024 Ricardo Wurmus <rekado@elephly.net>
+;;; Copyright © 2015-2025 Ricardo Wurmus <rekado@elephly.net>
 ;;; Copyright © 2015, 2016, 2020 Christine Lemmer-Webber <cwebber@dustycloud.org>
 ;;; Copyright © 2015 Eric Dvorsak <eric@dvorsak.fr>
 ;;; Copyright © 2015, 2016 David Thompson <davet@gnu.org>
@@ -121,7 +121,7 @@
 ;;; Copyright © 2022 Peter Polidoro <peter@polidoro.io>
 ;;; Copyright © 2022, 2023 Wamm K. D. <jaft.r@outlook.com>
 ;;; Copyright © 2022 Jai Vetrivelan <jaivetrivelan@gmail.com>
-;;; Copyright © 2022-2024 Artyom V. Poptsov <poptsov.artyom@gmail.com>
+;;; Copyright © 2022-2025 Artyom V. Poptsov <poptsov.artyom@gmail.com>
 ;;; Copyright © 2022 Paul A. Patience <paul@apatience.com>
 ;;; Copyright © 2022 Jean-Pierre De Jesus DIAZ <me@jeandudey.tech>
 ;;; Copyright © 2022 Philip McGrath <philip@philipmcgrath.com>
@@ -159,6 +159,7 @@
 ;;; Copyright © 2024 Aaron Covrig <aaron.covrig.us@ieee.org>
 ;;; Copyright © 2024 Evgeny Pisemsky <mail@pisemsky.site>
 ;;; Copyright © 2024 Markku Korkeala <markku.korkeala@iki.fi>
+;;; Copyright © 2025 Jordan Moore <lockbox@struct.foo>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -432,15 +433,26 @@ loop.")
 (define-public python-awkward-cpp
   (package
     (name "python-awkward-cpp")
-    (version "32")
+    (version "43")
     (source
      (origin
        (method url-fetch)
-       (uri (pypi-uri "awkward-cpp" version))
+       (uri (pypi-uri "awkward_cpp" version))
        (sha256
-        (base32 "1w11fjkwrian3vll7jhnisl1b6m6rk2rqx0n9d1hzyq6cbw5m35d"))))
+        (base32 "1bays82mjyg0clmms0rdaf1jrdyr0pw5njq8v9kgcan8drcpbvf1"))))
     (build-system pyproject-build-system)
-    (propagated-inputs (list python-importlib-resources python-numpy))
+    (arguments
+     (list
+      #:phases
+      '(modify-phases %standard-phases
+         ;; TODO: Remove this on python-team branch.
+         (add-after 'unpack 'relax-requirements
+           (lambda _
+             (substitute* "pyproject.toml"
+               (("scikit-build-core..0.10")
+                "scikit-build-core")
+               (("^minimum-version =.*") "")))))))
+    (propagated-inputs (list python-numpy))
     (native-inputs
      (list cmake pybind11 python-pytest python-scikit-build-core))
     (home-page "https://github.com/scikit-hep/awkward-1.0")
@@ -452,19 +464,26 @@ package.  It is not useful on its own, only as a dependency for awkward.")
 (define-public python-awkward
   (package
     (name "python-awkward")
-    (version "2.6.3")
+    (version "2.7.2")
     (source
      (origin
        (method url-fetch)
        (uri (pypi-uri "awkward" version))
        (sha256
-        (base32 "1s280ndr4r2q9qn9c0slan5zw37p41cx8q5z6k6p988afr01c6j8"))))
+        (base32 "1bfg4pggahnfvq4n71ydkb1pwzc89plfdgp9wcv7ky4dss37y1ay"))))
     (build-system pyproject-build-system)
     (arguments
      (list
       #:test-flags
       ;; CUDA is and requires proprietary software.
-      '(list "--ignore-glob=tests-cuda**")))
+      '(list "--ignore-glob=tests-cuda**"
+             "-k"
+             (string-append
+              ;; BrokenProcessPool
+              "not test_noop_pickler"
+              " and not test_non_packing_pickler"
+              ;; Regex pattern did not match.
+              " and not test_malformed_pickler"))))
     (propagated-inputs (list python-awkward-cpp
                              python-fsspec
                              python-importlib-metadata
@@ -1846,6 +1865,9 @@ Markdown.  All extensions are found under the module namespace of pymdownx.")
              "-k" (string-append
                    ;; This test tries to write to $HOME/.cache/pint.
                    "not test_auto"
+                   ;; Our pytest can't match RuntimeWarning for some reason.
+                   ;; Note: python-pint@0.24.4 would work around this, too.
+                   " and not test_nonnumeric_magnitudes"
                    ;; Fails with "Group USCSLengthInternational already
                    ;; present in registry"
                    " and not test_load_definitions_stage_2"))))
@@ -2197,7 +2219,7 @@ library.")
        (uri (pypi-uri "slicerator" version))
        (sha256
         (base32 "0ik0bmh18zgffd9kx53254jp3yyih6zcmd8kfb080xnqbizhl0a4"))))
-    (build-system pyproject-build-system)
+    (build-system python-build-system)
     (home-page "https://github.com/soft-matter/slicerator")
     (synopsis "Lazy-loading, fancy-sliceable iterable")
     (description
@@ -3303,49 +3325,47 @@ approximate nearest neighbor search with Python bindings.")
 Unicode-to-LaTeX conversion.")
     (license license:expat)))
 
-(define-public python-pyls-black
+(define-public python-lsp-black
   (package
-    (name "python-pyls-black")
-    (version "0.4.7")
+    (name "python-lsp-black")
+    (version "1.3.0")
     (source
      (origin
-       ;; There are no tests in the PyPI tarball.
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/rupert/pyls-black/")
+             (url "https://github.com/python-lsp/python-lsp-black")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "0bkhfnlik89j3yamr20br4wm8975f20v33wabi2nyxvj10whr5dj"))
-       (patches (search-patches "python-pyls-black-41.patch"))
-       ;; Patch to work with python-lsp-server.  Taken from
-       ;; <https://github.com/rupert/pyls-black/pull/37>.
-       (modules '((guix build utils)))
-       (snippet
-        '(begin
-           (substitute* "setup.cfg"
-             (("python-language-server")
-              "python-lsp-server"))
-           (substitute* '("pyls_black/plugin.py" "tests/test_plugin.py")
-             (("pyls_format_document")
-              "pylsp_format_document")
-             (("pyls_format_range")
-              "pylsp_format_range")
-             (("from pyls([ \\.])" _ char)
-              (string-append "from pylsp" char)))))))
+        (base32 "1gwf3vwb01a3l8b75jbn8kyfmn0lva8vpgjnr75vazhm3lsf78fp"))))
     (build-system pyproject-build-system)
-    (arguments
-     (list
-      #:test-flags
-      '(list "-k" "not test_load_config_target_version")))
     (propagated-inputs
-     (list python-black python-lsp-server python-toml python-tomli))
+     (list python-black python-lsp-server python-tomli))
     (native-inputs
-     (list python-flake8 python-isort python-mypy python-pytest
-           python-pytest-runner python-setuptools python-wheel))
-    (home-page "https://github.com/rupert/pyls-black")
-    (synopsis "Black plugin for the Python Language Server")
-    (description "Black plugin for the Python Language Server.")
+     (list python-pytest python-setuptools python-wheel))
+    (home-page "https://github.com/python-lsp/python-lsp-black")
+    (synopsis "Black plugin for the Python LSP Server")
+    (description "This package provides a plugin with support for the
+@code{python-black} formatter for the Python LSP Server.")
+    (license license:expat)))
+
+(define-public python-pylsp-mypy
+  (package
+    (name "python-pylsp-mypy")
+    (version "0.6.9")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (pypi-uri "pylsp_mypy" version))
+       (sha256
+        (base32 "1amvqzb5lhhw2011003mwm88chb8sz5aax1jrqc3jg0jpak992fj"))))
+    (build-system pyproject-build-system)
+    (native-inputs (list python-pytest python-setuptools python-wheel))
+    (propagated-inputs (list python-mypy python-lsp-server))
+    (home-page "https://github.com/python-lsp/pylsp-mypy")
+    (synopsis "Mypy linter for the Python LSP Server")
+    (description
+     "Mypy linter integration for use with @code{python-lsp-server}.")
     (license license:expat)))
 
 (define-public python-sh
@@ -6109,7 +6129,7 @@ and convert DDL to BigQuery JSON schema.")
            python-referencing-bootstrap
            python-rpds-py
            python-uri-template
-           python-webcolors))
+           python-webcolors-24))
     (home-page "https://github.com/Julian/jsonschema")
     (synopsis "Implementation of JSON Schema for Python")
     (description
@@ -14756,7 +14776,7 @@ falling into the Python interpreter.")
     (native-inputs (list python-setuptools python-wheel python-toml))
     (home-page "https://github.com/Maarten-vd-Sande/qnorm")
     (synopsis "Quantile normalization")
-    (description "This tool implements quantile normalization. It properly
+    (description "This tool implements quantile normalization.  It properly
 resolves rank ties, which is important when ties happen frequently, such as
 when working with discrete numbers (integers) in count tables.  This
 implementation should be relatively fast, and can use multiple cores to sort
@@ -16617,7 +16637,7 @@ similar to the Python standard library's @code{json} module.")
 (define-public python-resolvelib
   (package
     (name "python-resolvelib")
-    (version "0.7.1")
+    (version "1.0.1")
     (source
      (origin
        ;; Tests are missing from the PyPI release.
@@ -16628,7 +16648,7 @@ similar to the Python standard library's @code{json} module.")
        (file-name (git-file-name name version))
        (sha256
         (base32
-         "1fqz75riagizihvf4j7wc3zjw6kmg1dd8sf49aszyml105kb33n8"))))
+         "0cvgimmfickarm4ks5gb5iply6sf6r4fr3v6zyqyqg45fsgqy753"))))
     (build-system python-build-system)
     (arguments
      `(#:phases
@@ -17796,6 +17816,7 @@ libmagic.")))
      (list
       #:test-flags
       #~(list "-n" (number->string (parallel-job-count))
+              "-m" "not flaky"
               "-k"
               (string-append
                ;; The two "break_01" tests have been failing on
@@ -17809,7 +17830,8 @@ libmagic.")))
                ;; of the build file name present in the message.
                "and not test_evaluate_exception_trace "
                ;; This test fail with TimeoutError, no message on stderr.
-               "and not test_soft_terminate "))
+               "and not test_soft_terminate "
+               "and not test_debugger_case_deadlock_interrupt_thread"))
       #:phases
       #~(modify-phases %standard-phases
           (add-after 'unpack 'fix-tests
@@ -17851,6 +17873,9 @@ libmagic.")))
           (add-before 'check 'pre-check
             (lambda* (#:key tests? #:allow-other-keys)
               (when tests?
+                ;; Without this we get this error: type object 'GreenSocket'
+                ;; has no attribute 'sendmsg'.
+                (setenv "EVENTLET_NO_GREENDNS" "YES")
                 (setenv "PYDEVD_USE_CYTHON" "YES"))))
           (add-after 'install 'install-attach-binary
             (lambda _
@@ -18480,6 +18505,9 @@ convert an @code{.ipynb} notebook file into various static formats including:
                (("'HOME': .*," all)
                 (string-append "# " all "\n")))
              (setenv "HOME" (getcwd))))
+         ;; Because python-jsonschema has an old python-webcolor.  Remove this
+         ;; when python-team branch is merged.
+         (delete 'sanity-check)
          (add-before 'check 'pre-check
            (lambda _
              ;; Interferes with test expectations.
@@ -18700,7 +18728,14 @@ popular online obfuscators.")
         (base32
          "0pwf3pminkzyzgx5kcplvvbvwrrzd3baa7lmh96f647k30rlpp6r"))))
     (build-system python-build-system)
-    (arguments '(#:tests? #f)) ; there are none.
+    (arguments
+     (list
+      #:tests? #f                       ;there are none.
+      #:phases
+      ;; Because python-jsonschema has an old python-webcolor.  Remove this
+      ;; when python-team branch is merged.
+      '(modify-phases %standard-phases
+         (delete 'sanity-check))))
     (propagated-inputs
      (list python-ipykernel
            python-ipywidgets
@@ -19504,7 +19539,7 @@ with a new public API, and RPython support.")
       ;; This test expects the hy executable to be called 'hy', but in Guix
       ;; it's .hy-real.
       #:test-flags #~(list "-k" "not test_sys_executable")))
-    (native-inputs (list python-pytest python-wheel))
+    (native-inputs (list python-pytest python-setuptools python-wheel))
     (propagated-inputs (list python-funcparserlib))
     (home-page "https://docs.hylang.org/en/stable/")
     (synopsis "Lisp frontend to Python")
@@ -19914,7 +19949,7 @@ manipulation library.")
     (synopsis "Calculations with uncertainties")
     (description
      "The uncertainties package transparently handles calculations with
-numbers with uncertainties. It can also yield the derivatives of any
+numbers with uncertainties.  It can also yield the derivatives of any
 expression.")
     (license license:bsd-3)))
 
@@ -22499,8 +22534,13 @@ classes can also be supported by manually registering converters.")
      '(#:phases
        (modify-phases %standard-phases
          (replace 'check
-           (lambda _ (invoke "pifpaf" "run" "memcached" "--port" "11211" "--"
-                             "pytest"))))))
+           (lambda _
+             ;; Make it compatible with python-flexmock 0.12.
+             (substitute* (find-files "tests" "\\.py$")
+              (("from flexmock import flexmock, flexmock_teardown")
+               "from flexmock import flexmock; from flexmock._api import flexmock_teardown"))
+             (invoke "pifpaf" "run" "memcached" "--port" "11211" "--"
+                     "pytest"))))))
     (native-inputs
      (list memcached python-fakeredis python-flexmock python-pifpaf
            python-pytest))
@@ -29242,14 +29282,14 @@ codecs for use in data storage and communication applications.")
 (define-public python-zarr
   (package
     (name "python-zarr")
-    (version "2.17.2")
+    (version "2.18.4")
     (source
      (origin
        (method url-fetch)
        (uri (pypi-uri "zarr" version))
        (sha256
         (base32
-         "1kjj0pk0s6306ljrig77m39zqdy32ch4nyja5lalab9l9v5sdfic"))))
+         "1fr41j8mxhbj7psn00416qs3nm12djhhmybgpqdax0q6vpg0wy9p"))))
     (build-system pyproject-build-system)
     (arguments
      (list
@@ -29258,9 +29298,18 @@ codecs for use in data storage and communication applications.")
               ;; This tests are flaky.  The pass several times on my laptop
               ;; but occasionally fail.  They fail pretty reliably on the
               ;; build farm.
-              "-k not test_lazy_loader and not open_array")
+              "-k" (string-append "not test_lazy_loader and not open_array"
+                                  ;; TODO: remove this on python-team branch.
+                                  ;; This only fails on the master branch.
+                                  " and not test_encode_decode_array_dtype_shape_v3"))
       #:phases
       #~(modify-phases %standard-phases
+          (add-before 'build 'set-version
+            (lambda _
+              (substitute* "pyproject.toml"
+                (("^version_file.*") "")
+                (("dynamic = \\[\"version\"\\]")
+                 (string-append "version = \"" #$version "\"")))))
           (add-after 'unpack 'disable-service-tests
             (lambda _
               (setenv "ZARR_TEST_ABS" "0")
@@ -29269,16 +29318,21 @@ codecs for use in data storage and communication applications.")
     (propagated-inputs
      (list python-asciitree
            python-fasteners
+           python-ipywidgets
+           python-notebook
            python-numcodecs
-           python-numpy))
+           python-numpy
+           python-numpydoc
+           python-pydata-sphinx-theme))
     (native-inputs
-     (list python-fsspec
-           python-pytest
-           python-h5py
-           python-pytest-doctestplus
-           python-pytest-timeout
+     (list python-pytest
            python-pytest-xdist
-           python-setuptools-scm
+           python-pytest-doctestplus
+           python-sphinx
+           python-sphinx-copybutton
+           python-sphinx-design
+           python-sphinx-issues
+           python-setuptools
            python-wheel))
     (home-page "https://github.com/zarr-developers/zarr-python")
     (synopsis "Chunked, compressed, N-dimensional arrays for Python")
@@ -30387,7 +30441,7 @@ a mypy plugin that smooths over some limitations in the basic type hints.
 (define-public python-trio-websocket
   (package
     (name "python-trio-websocket")
-    (version "0.9.2")
+    (version "0.11.1")
     (source
      (origin
        (method git-fetch)               ;no tests in pypi archive
@@ -30396,9 +30450,27 @@ a mypy plugin that smooths over some limitations in the basic type hints.
              (commit version)))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "1yk2ak991kbl30xg8ldpggack1lwkizd7s5cpr28ir34z8iyjnpi"))))
+        (base32 "1sw85r8gikd86zc8jaqv0vmgcf2k62v6zjzxiv8xr6zm8ridplkm"))))
     (build-system pyproject-build-system)
-    (native-inputs (list python-pytest python-pytest-trio python-trustme))
+    (arguments
+     (list
+      #:test-flags
+      '(list "-k"
+             ;; FIXME: These raise nursery exceptions.  Perhaps pytest-trio is
+             ;; too old?
+             (string-append "not test_handshake_exception_before_accept"
+                            " and not test_reject_handshake"
+                            " and not test_reject_handshake_invalid_info_status"
+                            " and not test_client_open_timeout"
+                            " and not test_client_close_timeout"
+                            " and not test_client_connect_networking_error"
+                            " and not test_finalization_dropped_exception"))))
+    (native-inputs
+     (list python-pytest
+           python-pytest-trio
+           python-setuptools
+           python-trustme
+           python-wheel))
     (propagated-inputs (list python-async-generator python-trio python-wsproto))
     (home-page "https://github.com/HyperionGray/trio-websocket")
     (synopsis "WebSocket library for Trio")
@@ -31374,6 +31446,17 @@ on top of either asyncio or trio.  It implements trio-like structured
 concurrency on top of asyncio, and works in harmony with the native SC of trio
 itself.")
     (license license:expat)))
+
+;; TODO: This will become the default on the python-team branch.  Dataclasses
+;; is part of Python.
+(define-public python-anyio/without-dataclasses
+  (package
+    (inherit python-anyio)
+    (propagated-inputs
+     (list python-contextvars
+           python-idna
+           python-sniffio
+           python-typing-extensions))))
 
 (define-public python-argh
   ;; There are 21 commits since the latest release containing important
@@ -33008,7 +33091,7 @@ accessor layer.")
 (define-public pyzo
   (package
     (name "pyzo")
-    (version "4.16.0")
+    (version "4.18.0")
     (source
      (origin
        (method git-fetch)
@@ -33018,7 +33101,7 @@ accessor layer.")
        (file-name (git-file-name name version))
        (sha256
         (base32
-         "18775dhd5z7l505khrh1vsv5w1x1icshv34av8bbhfj8dz8nvgx5"))))
+         "0agq171cz7y10cknjypwrvsvikja3w9d28hlr3kw5k2sdvfqnpam"))))
     (build-system python-build-system)
     (arguments
      `(#:phases
@@ -36548,7 +36631,7 @@ into a human readable HTML table representation.")
        (uri (pypi-uri "face" version))
        (sha256
         (base32 "0gpd9f0rmbv3rd2szi2na37l29fabkwazikjrxc6wca1lddwlnbx"))))
-    (build-system python-build-system)
+    (build-system pyproject-build-system)
     (arguments
      '(#:phases
        (modify-phases %standard-phases
@@ -36559,7 +36642,9 @@ into a human readable HTML table representation.")
                (add-installed-pythonpath inputs outputs)
                (invoke "pytest" "-v")))))))
     (native-inputs
-     (list python-pytest))
+     (list python-pytest
+           python-setuptools
+           python-wheel))
     (propagated-inputs
      (list python-boltons))
     (home-page "https://github.com/mahmoud/face")
@@ -36693,24 +36778,15 @@ simple mock/record and a complete capture/replay framework.")
        (uri (pypi-uri "ijson" version))
        (sha256
         (base32 "1sp463ywj4jv5cp6hsv2qwiima30d09xsabxb2dyq5b17jp0640x"))))
-    (arguments
-     `(#:phases
-       (modify-phases %standard-phases
-         ;; the tests run by the default setup.py require yajl 1.x,
-         ;; but we have 2.x.  yajl 1.x support is going to be removed
-         ;; anyway, so use pytest to avoid running the yajl1-related
-         ;; tests. See: https://github.com/ICRAR/ijson/issues/55
-         (replace 'check
-           (lambda* (#:key tests? #:allow-other-keys)
-             (when tests?
-               (invoke "pytest" "-vv")))))))
     (inputs
      ;; yajl is optional, but compiling with it makes faster
      ;; backends available to ijson:
      (list yajl))
     (native-inputs
-     (list python-pytest))
-    (build-system python-build-system)
+     (list python-pytest
+           python-setuptools
+           python-wheel))
+    (build-system pyproject-build-system)
     (home-page "https://github.com/ICRAR/ijson")
     (synopsis "Iterative JSON parser with Python iterator interfaces")
     (description
@@ -37652,7 +37728,7 @@ a port of the chalk package for javascript.")
     (synopsis "Expands a regular expression to its possible matches")
     (description
      "The goal of sre_yield is to efficiently generate all values that can
-match a given regular expression, or count possible matches efficiently. It
+match a given regular expression, or count possible matches efficiently.  It
 uses the parsed regular expression, so you get a much more accurate result
 than trying to just split strings.")
     (license license:asl2.0)))
@@ -37961,6 +38037,24 @@ Python iterables (lists, tuples, dicts).")
     (description "This module provides Python utility functions for modifying
 and setting the color of terminal output, via HyDEV.")
     (license license:expat)))
+
+(define-public python-pathspec
+  (package
+    (name "python-pathspec")
+    (version "0.12.1")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (pypi-uri "pathspec" version))
+       (sha256
+        (base32 "04jpkzic8f58z6paq7f3f7fdnlv9l89khv3sqsqk7ax10caxb0m4"))))
+    (build-system pyproject-build-system)
+    (native-inputs (list python-flit-core python-setuptools))
+    (home-page "https://github.com/cpburnz/python-pathspec")
+    (synopsis "Gitignore style pattern matching of file paths")
+    (description
+     "Utility library for gitignore style pattern matching of file paths.")
+    (license license:mpl2.0)))
 
 (define-public python-mike
   (package
@@ -38671,7 +38765,7 @@ window managers.")
 (define-public i3-autotiling
   (package
     (name "i3-autotiling")
-    (version "1.9.1")
+    (version "1.9.3")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -38680,7 +38774,7 @@ window managers.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "010sw3b2nx5cl578drd3xj58wlza76zkzh1jhsp44chg1vvhacrx"))))
+                "0ag3zz4r3cwpj769m2aw3l8yj93phsydzfz02dig5z81cc025rck"))))
     (build-system python-build-system)
     (arguments (list #:tests? #f))      ;no tests
     (native-inputs (list python-wheel))

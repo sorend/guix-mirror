@@ -27,7 +27,7 @@
 ;;; Copyright © 2021 Ivan Gankevich <i.gankevich@spbu.ru>
 ;;; Copyright © 2021, 2022 Petr Hodina <phodina@protonmail.com>
 ;;; Copyright © 2021 Foo Chuan Wei <chuanwei.foo@hotmail.com>
-;;; Copyright © 2022 Evgeny Pisemsky <mail@pisemsky.site>
+;;; Copyright © 2022, 2025 Evgeny Pisemsky <mail@pisemsky.site>
 ;;; Copyright © 2022 Olivier Dion <olivier.dion@polymtl.ca>
 ;;; Copyright © 2022 Peter Polidoro <peter@polidoro.io>
 ;;; Copyright © 2022 Malte Frank Gerdes <malte.f.gerdes@gmail.com>
@@ -837,22 +837,32 @@ and others.")
   (package
     (name "gerbv")
     (version "2.10.0")
-    (source (origin
-              (method git-fetch)
-              (uri (git-reference
-                    (url "https://github.com/gerbv/gerbv")
-                    (commit (string-append "v" version))))
-              (file-name (git-file-name name version))
-              (sha256
-               (base32
-                "06bcm5zw7whsnnmfld3gl2j907lxc68gnsbzr2pc4w6qc923rgmj"))))
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/gerbv/gerbv")
+             (commit (string-append "v" version))))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "06bcm5zw7whsnnmfld3gl2j907lxc68gnsbzr2pc4w6qc923rgmj"))))
     (build-system gnu-build-system)
     (arguments
-     '(#:configure-flags '("CFLAGS=-fcommon")))
+     (list
+      #:configure-flags #~(list "CFLAGS=-O2 -g -fcommon")
+      #:phases #~(modify-phases %standard-phases
+                   (add-after 'unpack 'patch-version-generator
+                     (lambda _
+                       (substitute* "utils/git-version-gen.sh"
+                         (("/bin/bash")
+                          (which "bash"))))))))
     (native-inputs (list autoconf
                          automake
                          desktop-file-utils
                          gettext-minimal
+                         ;; Version generator needs git to work properly:
+                         ;; https://github.com/gerbv/gerbv/issues/244
+                         git-minimal/pinned
                          `(,glib "bin")
                          libtool
                          pkg-config))
@@ -4846,6 +4856,53 @@ server for Python and pypy3.")
 multiple co-processes in cadabra.")
     (home-page "https://cadabra.science/")
     (license license:gpl2+)))
+
+(define-public cadabra
+  (package
+    (name "cadabra")
+    (version "1.46")
+    (source (origin
+              (method git-fetch)
+              (uri (git-reference
+                     (url "https://github.com/kpeeters/cadabra.git")
+                     (commit version)))
+              (file-name (git-file-name name version))
+              (sha256
+               (base32
+                "0kks3qv1rka9ynw386kspjwq0g7xmwjycwlr3bbmxjmnk9zvnn9h"))))
+    (build-system gnu-build-system)
+    (arguments
+     `(#:configure-flags '("--disable-gui")
+       #:make-flags
+       (list (string-append "TIMESTAMP=-DRELEASE=\"\\\""
+                            ,version
+                            "\\\"\" -DDATETIME=\"\\\""
+                            "Thu Jan 1 01:02:00 AM CET 1970"
+                            "\\\"\" -DHOSTNAME=\"\\\""
+                            "dummy"
+                            "\\\"\""))
+       #:test-target "test"
+       #:phases
+       (modify-phases %standard-phases
+         (add-after 'unpack 'fix
+           (lambda _
+             (substitute* "tests/Makefile.in"
+              (("TIMER=/usr/bin/time ")
+               "TIMER=time "))
+             ;; Upstream bug. spino is a pointer.
+             (substitute* "src/exchange.cc"
+              (("ngr.spino==false")
+               "!ngr.spino")))))))
+    (native-inputs
+     (list pkg-config time))
+    (inputs
+     (list lie pcre gmp libsigc++-2 modglue))
+    (synopsis "Computer algebra system geared towards field theory")
+    (description "This package provides a computer algebra system geared
+towards field theory.  This package is mostly meant to be used by texmacs
+and mogan.")
+    (home-page "https://cadabra.science/")
+    (license license:gpl3+)))
 
 (define-public cadabra2
   (package

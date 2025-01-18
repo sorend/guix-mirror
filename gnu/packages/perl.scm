@@ -5385,7 +5385,7 @@ matching a regular expression.")
     (build-system perl-build-system)
     (home-page "https://metacpan.org/release/File-ReadBackwards")
     (synopsis "Read a file backwards by lines")
-    (description "This module reads a file backwards line by line. It is
+    (description "This module reads a file backwards line by line.  It is
 simple to use, memory efficient and fast.  It supports both an object and a
 tied handle interface.
 
@@ -12543,6 +12543,27 @@ Unicode data.")
     ;; The file Unicode/Collate/allkeys.txt is released under the Expat
     ;; license.
     (license (list (package-license perl) license:expat))))
+
+(define-public perl-unicode-eastasianwidth
+  (package
+    (name "perl-unicode-eastasianwidth")
+    (version "12.0")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (string-append
+             "mirror://cpan/authors/id/A/AU/AUDREYT/Unicode-EastAsianWidth-"
+             version ".tar.gz"))
+       (sha256
+        (base32 "1x0gm5akah6x1ypykipywlm2hi95mhqjrnipc5zggragdj9gsnra"))))
+    (build-system perl-build-system)
+    (home-page "https://metacpan.org/release/Unicode-EastAsianWidth")
+    (synopsis "East Asian Width properties")
+    (description
+     "This module provides user-defined Unicode properties that deal with width
+status of East Asian characters, as specified in
+@url{https://www.unicode.org/reports/tr11/,Unicode® Standard Annex #11}.")
+    (license license:cc0)))
 
 (define-public perl-unicode-linebreak
   (package

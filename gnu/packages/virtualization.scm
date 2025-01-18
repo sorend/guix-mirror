@@ -40,6 +40,7 @@
 ;;; Copyright © 2024 Jakob Kirsch <jakob.kirsch@web.de>
 ;;; Copyright © 2024 Giacomo Leidi <goodoldpaul@autistici.org>
 ;;; Copyright © 2024 Artyom V. Poptsov <poptsov.artyom@gmail.com>
+;;; Copyright © 2025 Karl Hallsby <karl@hallsby.com>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -79,6 +80,7 @@
   #:use-module (gnu packages compression)
   #:use-module (gnu packages containers)
   #:use-module (gnu packages cpio)
+  #:use-module (gnu packages crates-io)
   #:use-module (gnu packages cross-base)
   #:use-module (gnu packages crypto)
   #:use-module (gnu packages cryptsetup)
@@ -104,6 +106,7 @@
   #:use-module (gnu packages gnome)
   #:use-module (gnu packages gnupg)
   #:use-module (gnu packages golang)
+  #:use-module (gnu packages golang-build)
   #:use-module (gnu packages gperf)
   #:use-module (gnu packages graphviz)
   #:use-module (gnu packages gtk)
@@ -118,6 +121,7 @@
   #:use-module (gnu packages libbsd)
   #:use-module (gnu packages libusb)
   #:use-module (gnu packages linux)
+  #:use-module (gnu packages llvm)
   #:use-module (gnu packages lua)
   #:use-module (gnu packages m4)
   #:use-module (gnu packages man)
@@ -159,6 +163,7 @@
   #:use-module (gnu packages xml)
   #:use-module (gnu packages xorg)
   #:use-module ((guix licenses) #:prefix license:)
+  #:use-module (guix build-system cargo)
   #:use-module (guix build-system cmake)
   #:use-module (guix build-system gnu)
   #:use-module (guix build-system go)
@@ -2776,6 +2781,115 @@ which is a hypervisor.")
     ;; TODO: Some files are licensed differently.  List those.
     (license license:gpl2)
     (supported-systems '("i686-linux" "x86_64-linux" "armhf-linux"))))
+
+(define-public xen-guest-agent
+  (package
+    (name "xen-guest-agent")
+    (version "0.4.0")
+    (source (origin
+              (method git-fetch)
+              (uri (git-reference
+                    (url "https://gitlab.com/xen-project/xen-guest-agent")
+                    (commit version)))
+              (file-name (git-file-name name version))
+              (sha256
+               (base32 "1ab6mgrvnd49m0ay9fbfyd02xaf3qvkwhyyavra4a7wpz0brg54h"))))
+    (build-system cargo-build-system)
+    (arguments
+     (list
+       #:install-source? #f
+       #:cargo-inputs
+       (list rust-futures-0.3
+             rust-libc-0.2
+             rust-tokio-1
+             rust-netlink-packet-core-0.7
+             rust-netlink-packet-route-0.18
+             rust-netlink-proto-0.11
+             rust-rtnetlink-0.14
+             rust-async-stream-0.3
+             rust-os-info-3
+             rust-pnet-datalink-0.35    ; any version
+             rust-pnet-base-0.35        ; any version
+             rust-ipnetwork-0.20        ; any version
+             rust-log-0.4
+             rust-env-logger-0.10
+             rust-clap-4
+             rust-xenstore-rs-0.6
+             ;; Unix-specific dependencies
+             rust-uname-0.1
+             rust-syslog-6
+             rust-sysctl-0.5)))
+    (native-inputs
+     (list pkg-config
+           xen ; Pull in Xen for libxenstore
+           clang))
+    (home-page "https://gitlab.com/xen-project/xen-guest-agent")
+    (synopsis "Provides guest VM information to hosting Xen hypervisor")
+    (description "The agent gathers some guest information, and writes them to
+xenstore so tooling in dom0 can read it.  The default behavior is to be
+compatible with the XAPI toolstack as currently used in XCP-ng and Citrix
+Hypervisor/Xenserver, and thus roughly follow what @code{xe-guest-utilities}
+is doing.")
+    (license license:agpl3)))
+
+(define-public xe-guest-utilities
+  (package
+    (name "xe-guest-utilities")
+    (version "8.4.0")
+    (source (origin
+              (method git-fetch)
+              (uri (git-reference
+                    (url "https://github.com/xenserver/xe-guest-utilities")
+                    (commit (string-append "v" version))))
+              (file-name (git-file-name name version))
+              (sha256
+               (base32
+                "1yqspizhq3ii6cz2w75slaxy8838yyri9pmgc2q1radnm7w735if"))))
+    (build-system go-build-system)
+    (arguments
+     (list
+      #:import-path "github.com/xenserver/xe-guest-utilities"
+      #:install-source? #f
+      #:tests? #f ; There are no tests.
+      #:phases
+      #~(modify-phases %standard-phases
+          ;; Despite using go-build-system, this project does not use Go's build
+          ;; infrastructure to do anything, instead relying on a Makefile.
+          ;; NOTE: This target builds a tarball, but it is only filled with
+          ;; 2 binaries, 1 script, and a bunch of text files; it is tiny.
+          (add-after 'patch-source-shebangs 'fix-udev-rule
+            (lambda* (#:key inputs import-path #:allow-other-keys)
+              (substitute* (string-append "src/" import-path "/mk/xen-vcpu-hotplug.rules")
+                (("/bin/sh") (search-input-file inputs "/bin/sh")))))
+          (replace 'build
+            (lambda* (#:key import-path #:allow-other-keys)
+              (with-directory-excursion (string-append "src/" import-path)
+                ;; Explicitly state version, removes git as native-input.
+                ;; NOTE: The final step of the Makefile's build target is to "cd"
+                ;; to the final build directory.
+                (invoke "make" (string-append "RELEASE=" #$version) "build"))))
+          ;; The default "install" actions produce package-manager-specific
+          ;; outputs, .deb, .rpm, and .tgz. We just copy the final build
+          ;; products out.
+          (replace 'install
+            (lambda* (#:key outputs import-path #:allow-other-keys)
+              (let* ((stage (string-append "src/" import-path "/build/stage"))
+                     (out (assoc-ref outputs "out")))
+                ;; Put udev rules in #$output/lib/udev/rules.d/
+                (copy-recursively (string-append stage "/etc/udev")
+                                  (string-append out "/lib/udev"))
+                ;; Copy produced binaries and scripts
+                (copy-recursively (string-append stage "/usr") out)))))))
+    (native-inputs (list go-golang-org-x-sys))
+    (inputs (list bash-minimal))
+    (home-page "https://github.com/xenserver/xe-guest-utilities")
+    (synopsis "XenServer guest utilities for unix-like operating systems")
+    (description "The XenServer guest utilities enable a Xen-based hypervisor,
+(Citrix XenServer, XCP-NG, etc.) to work with a Xen-enabled Unix-like guest VMs.
+This allows the guest to share information about its state back to the host,
+such IP address, memory usage, etc. and allows the host to inform the guest VM
+about events that change the virtualized hardware, such as hotplugging.")
+    (license license:bsd-2)))
 
 (define-public osinfo-db-tools
   (package

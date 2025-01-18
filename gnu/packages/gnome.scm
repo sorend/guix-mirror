@@ -36,7 +36,7 @@
 ;;; Copyright © 2019 Danny Milosavljevic <dannym@scratchpost.org>
 ;;; Copyright © 2019, 2020, 2022 Marius Bakke <marius@gnu.org>
 ;;; Copyright © 2019 Florian Pelz <pelzflorian@pelzflorian.de>
-;;; Copyright © 2019 Giacomo Leidi <goodoldpaul@autistici.org>
+;;; Copyright © 2019, 2024, 2025 Giacomo Leidi <goodoldpaul@autistici.org>
 ;;; Copyright © 2019 Jelle Licht <jlicht@fsfe.org>
 ;;; Copyright © 2019 Jonathan Frederickson <jonathan@terracrypt.net>
 ;;; Copyright © 2019-2024 Maxim Cournoyer <maxim.cournoyer@gmail.com>
@@ -114,9 +114,13 @@
   #:use-module (gnu packages check)
   #:use-module (gnu packages cmake)
   #:use-module (gnu packages compression)
+  #:use-module (gnu packages crates-check)
+  #:use-module (gnu packages crates-crypto)
+  #:use-module (gnu packages crates-database)
   #:use-module (gnu packages crates-io)
   #:use-module (gnu packages crates-graphics)
   #:use-module (gnu packages crates-gtk)
+  #:use-module (gnu packages crates-web)
   #:use-module (gnu packages cups)
   #:use-module (gnu packages curl)
   #:use-module (gnu packages cyrus-sasl)
@@ -3632,7 +3636,7 @@ for dealing with different structured file formats.")
 (define-public librsvg
   (package
     (name "librsvg")
-    (version "2.56.4")
+    (version "2.58.5")
     (source (origin
               (method url-fetch)
               (uri (string-append "mirror://gnome/sources/librsvg/"
@@ -3640,7 +3644,7 @@ for dealing with different structured file formats.")
                                   "librsvg-" version ".tar.xz"))
               (sha256
                (base32
-                "1xa0cxdvc6vis5ssh1i0vi2rwgcx3bll6k5i135qyd2ra77zv1za"))))
+                "0ym2yg94sc7ralh1kwqqrhz3wcc51079z90mbx0qrls7wfh36hi2"))))
     (build-system cargo-build-system)
     (outputs '("out" "doc" "debug"))
     (arguments
@@ -3652,60 +3656,57 @@ for dealing with different structured file formats.")
         ((guix build gnu-build-system) #:prefix gnu:))
       #:cargo-inputs
       `(("rust-anyhow" ,rust-anyhow-1)
-        ("rust-byteorder" ,rust-byteorder-1)
-        ("rust-cairo-rs" ,rust-cairo-rs-0.17)
+        ("rust-cairo-rs" ,rust-cairo-rs-0.19)
         ("rust-cast" ,rust-cast-0.3)
         ("rust-chrono" ,rust-chrono-0.4)
         ("rust-clap" ,rust-clap-4)
         ("rust-clap-complete" ,rust-clap-complete-4)
-        ("rust-cssparser" ,rust-cssparser-0.29)
-        ("rust-data-url" ,rust-data-url-0.2)
+        ("rust-cssparser" ,rust-cssparser-0.31)
+        ("rust-cstr" ,rust-cstr-0.2)
+        ("rust-data-url" ,rust-data-url-0.3)
         ("rust-encoding-rs" ,rust-encoding-rs-0.8)
         ("rust-float-cmp" ,rust-float-cmp-0.9)
-        ("rust-gdk-pixbuf" ,rust-gdk-pixbuf-0.17)
-        ("rust-gio" ,rust-gio-0.17)
-        ("rust-glib" ,rust-glib-0.17)
-        ("rust-itertools" ,rust-itertools-0.10)
+        ("rust-gdk-pixbuf" ,rust-gdk-pixbuf-0.19)
+        ("rust-gio" ,rust-gio-0.19)
+        ("rust-glib" ,rust-glib-0.19)
+        ("rust-image" ,rust-image-0.24)
+        ("rust-itertools" ,rust-itertools-0.12)
         ("rust-language-tags" ,rust-language-tags-0.3)
         ("rust-libc" ,rust-libc-0.2)
         ("rust-locale-config" ,rust-locale-config-0.3)
         ("rust-markup5ever" ,rust-markup5ever-0.11)
         ("rust-nalgebra" ,rust-nalgebra-0.32)
         ("rust-num-traits" ,rust-num-traits-0.2)
-        ("rust-once-cell" ,rust-once-cell-1)
-        ("rust-pango" ,rust-pango-0.17)
-        ("rust-pangocairo" ,rust-pangocairo-0.17)
+        ("rust-pango" ,rust-pango-0.19)
+        ("rust-pangocairo" ,rust-pangocairo-0.19)
         ("rust-rayon" ,rust-rayon-1)
-        ("rust-rctree" ,rust-rctree-0.5)
+        ("rust-rctree" ,rust-rctree-0.6)
         ("rust-regex" ,rust-regex-1)
         ("rust-rgb" ,rust-rgb-0.8)
-        ("rust-selectors" ,rust-selectors-0.24)
+        ("rust-selectors" ,rust-selectors-0.25)
         ("rust-string-cache" ,rust-string-cache-0.8)
         ("rust-system-deps" ,rust-system-deps-6)
         ("rust-thiserror" ,rust-thiserror-1)
         ("rust-tinyvec" ,rust-tinyvec-1)
         ("rust-url" ,rust-url-2)
-        ("rust-xml5ever" ,rust-xml5ever-0.17))
+        ("rust-xml5ever" ,rust-xml5ever-0.17)
+        ("rust-yeslogic-fontconfig-sys" ,rust-yeslogic-fontconfig-sys-5))
       #:cargo-development-inputs
       `(("rust-anyhow" ,rust-anyhow-1)
         ("rust-assert-cmd" ,rust-assert-cmd-2)
-        ("rust-cairo-rs" ,rust-cairo-rs-0.17)
-        ("rust-cast" ,rust-cast-0.3)
         ("rust-chrono" ,rust-chrono-0.4)
-        ("rust-criterion" ,rust-criterion-0.4)
-        ("rust-glib" ,rust-glib-0.17)
-        ("rust-libc" ,rust-libc-0.2)
-        ("rust-lopdf" ,rust-lopdf-0.29)
+        ("rust-criterion" ,rust-criterion-0.5)
+        ("rust-float-cmp" ,rust-float-cmp-0.9)
+        ("rust-lopdf" ,rust-lopdf-0.32)
         ("rust-matches" ,rust-matches-0.1)
-        ("rust-pango" ,rust-pango-0.17)
-        ("rust-pangocairo" ,rust-pangocairo-0.17)
         ("rust-png" ,rust-png-0.17)
-        ("rust-predicates" ,rust-predicates-2)
+        ("rust-predicates" ,rust-predicates-3)
         ("rust-proptest" ,rust-proptest-1)
+        ("rust-quick-error" ,rust-quick-error-2)
         ("rust-serde" ,rust-serde-1)
         ("rust-serde-json" ,rust-serde-json-1)
         ("rust-tempfile" ,rust-tempfile-3)
-        ("rust-yeslogic-fontconfig-sys" ,rust-yeslogic-fontconfig-sys-4))
+        ("rust-url" ,rust-url-2))
       #:phases
       #~(modify-phases %standard-phases
           (add-after 'unpack 'patch-gdk-pixbuf-thumbnailer
@@ -3738,9 +3739,8 @@ for dealing with different structured file formats.")
               ;; harfbuzz, pango, etc.
               (setenv "RSVG_TEST_TOLERANCE" "20")
               ;; These tests fail even after loosening the tolerance.
-              (substitute* "tests/src/reference.rs"
-                ((".*svg1_1_text_align_03_b_svg.*") "")
-                ((".*rtl_tspan_svg.*") ""))))
+              (substitute* "rsvg/tests/reference.rs"
+                ((".*svg1_1_filters_conv_0[24]_f_svg.*") ""))))
           (add-before 'configure 'pre-configure
             (lambda* (#:key outputs #:allow-other-keys)
               (substitute* "gdk-pixbuf-loader/Makefile.in"
@@ -4545,7 +4545,7 @@ engineering.")
 (define-public seahorse
   (package
     (name "seahorse")
-    (version "43.0")
+    (version "47.0.1")
     (source
      (origin
        (method url-fetch)
@@ -4553,7 +4553,7 @@ engineering.")
                            (version-major version) "/" name "-"
                            version ".tar.xz"))
        (sha256
-        (base32 "0bc3xbjzwa4245m6nqzl3v6hzp9hyfbf50iwgwi5hdjglzxin7av"))))
+        (base32 "1k6avgd58v853nchp226qc3fgz0pwxnf7744hyvynzqzlvj1f6cw"))))
     (build-system meson-build-system)
     (arguments
      '(#:glib-or-gtk? #t
@@ -10620,80 +10620,151 @@ specified duration and save it as a GIF encoded animated image file.")
       (home-page "https://git.gnome.org/browse/byzanz")
       (license license:gpl2+))))
 
-(define-public authenticator
+(define-public gnome-authenticator
   (package
-    (name "authenticator")
-    (version "3.32.2")
+    (name "gnome-authenticator")
+    (version "4.4.0")
     (source
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://gitlab.gnome.org/World/Authenticator")
+             (url "https://gitlab.gnome.org/World/Authenticator.git/")
              (commit version)))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "1c4r9rnrz5gazrfg0z2rcwax4nscs7z391bcjcl74k6ln3blwzpr"))))
-    (build-system meson-build-system)
+        (base32 "0zavax35n048spx097ymiq31s8b879qwbg8xmcxcx73r6m823mic"))))
+    (build-system cargo-build-system)
     (arguments
      (list
-      #:glib-or-gtk? #t
+      #:install-source? #f
+      #:vendor-dir "vendor"
+      #:cargo-inputs
+      (list rust-aes-gcm-0.10
+            rust-anyhow-1
+            rust-async-std-1
+            rust-aperture-0.3
+            rust-ashpd-0.6
+            rust-data-encoding-2
+            rust-diesel-2
+            rust-diesel-migrations-2
+            rust-futures-channel-0.3
+            rust-futures-executor-0.3
+            rust-futures-util-0.3
+            rust-gettext-rs-0.7
+            rust-gtk4-0.7
+            rust-hex-0.4
+            rust-image-0.24
+            rust-libadwaita-0.5
+            rust-oo7-0.2
+            rust-percent-encoding-2
+            rust-prost-0.12
+            rust-qrencode-0.14
+            rust-quick-xml-0.30
+            rust-rand-0.8
+            rust-reqwest-0.11
+            rust-ring-0.17
+            rust-rust-argon2-2
+            rust-scrypt-0.11
+            rust-search-provider-0.6
+            rust-serde-1
+            rust-serde-json-1
+            rust-svg-metadata-0.4
+            rust-tokio-1
+            rust-tracing-0.1
+            rust-tracing-subscriber-0.3
+            rust-url-2
+            rust-uuid-1
+            rust-zbar-rust-0.0.23   ; any 0.0.*
+            rust-zeroize-1)
+      #:imported-modules `(,@%meson-build-system-modules
+                           ,@%glib-or-gtk-build-system-modules
+                           ,@%cargo-build-system-modules)
+      #:modules `((guix build cargo-build-system)
+                  ((guix build glib-or-gtk-build-system) #:prefix glib-or-gtk:)
+                  ((guix build meson-build-system) #:prefix meson:)
+                  (guix build utils))
       #:phases
       #~(modify-phases %standard-phases
-          (add-after 'unpack 'patch-meson.build
+          (add-after 'unpack 'generate-gdk-pixbuf-loaders-cache-file
+            (assoc-ref glib-or-gtk:%standard-phases
+                       'generate-gdk-pixbuf-loaders-cache-file))
+          (add-after 'unpack 'prepare-for-build
             (lambda _
-              (substitute* "data/meson.build"
-                (("^  'desktop',.*") "")
-                (("^  'appdata',.*") ""))))
-          (add-after 'glib-or-gtk-wrap 'python-and-gi-wrap
-            (lambda* (#:key inputs outputs #:allow-other-keys)
-              (let ((prog (search-input-file outputs "bin/authenticator"))
-                    (pylib (string-append #$output "/lib/python"
-                                          #$(version-major+minor
-                                             (package-version
-                                              (this-package-input "python")))
-                                          "/site-packages")))
-                (wrap-program prog
-                  `("GUIX_PYTHONPATH" = (,(getenv "GUIX_PYTHONPATH") ,pylib))
-                  `("GI_TYPELIB_PATH" = (,(getenv "GI_TYPELIB_PATH"))))))))))
-    (native-inputs
-     (list desktop-file-utils
-           gettext-minimal
-           `(,glib "bin")
-           gobject-introspection
-           `(,gtk+ "bin")
-           pkg-config))
-    (inputs
-     (list bash-minimal
-           gsettings-desktop-schemas
-           gtk+
-           libhandy-0.0
-           libsecret
-           python
-           python-beautifulsoup4
-           python-pillow
-           python-pyfavicon
-           python-pygobject
-           python-pyotp
-           python-pyzbar
-           yoyo-migrations
-           zbar))
-    (home-page "https://gitlab.gnome.org/World/Authenticator/")
-    (synopsis "Two-factor authentication application built for GNOME")
-    (description
-     "Authenticator is a two-factor authentication (2FA) application built for
-the GNOME desktop environment.
+              (substitute* "meson.build"
+                (("gtk_update_icon_cache: true")
+                 "gtk_update_icon_cache: false")
+                (("update_desktop_database: true")
+                 "update_desktop_database: false"))
+              ;; Help the tests find the Cargo.toml in the sources.
+              (substitute* "src/meson.build"
+                (("'test'") "'test', cargo_options"))
+              (delete-file "Cargo.lock")))
+          ;; Add meson-configure phase here and not before 'configure because
+          ;; the meson 'configure phase changes to a different directory and
+          ;; we need it created before unpacking the crates.
+          (add-before 'unpack-rust-crates 'meson-configure
+            (lambda args
+              (apply (assoc-ref meson:%standard-phases 'configure)
+                     #:build-type "debugoptimized"
+                     #:configure-flags '()
+                     args)))
+          (replace 'build
+            (assoc-ref meson:%standard-phases 'build))
+          (replace 'check
+            (lambda args
+              (apply (assoc-ref meson:%standard-phases 'check)
+                     #:test-options '()
+                     args)))
+          (replace 'install
+            (assoc-ref meson:%standard-phases 'install))
+          (add-after 'install 'glib-or-gtk-compile-schemas
+            (assoc-ref glib-or-gtk:%standard-phases 'glib-or-gtk-compile-schemas))
+          (add-after 'install 'glib-or-gtk-wrap
+            (assoc-ref glib-or-gtk:%standard-phases 'glib-or-gtk-wrap))
+          (add-after 'glib-or-gtk-wrap 'wrap-extra-paths
+            (lambda _
+              (let ((gst-plugins-path (getenv "GST_PLUGIN_SYSTEM_PATH")))
+                (wrap-program (string-append #$output "/bin/authenticator")
+                 `("GST_PLUGIN_SYSTEM_PATH" ":" suffix (,gst-plugins-path))))))
+          (add-after 'strip 'shrink-runpath
+            (assoc-ref meson:%standard-phases 'shrink-runpath)))))
+    (native-inputs (list gettext-minimal
+                         `(,glib "bin") ; for glib-compile-schemas
+                         meson
+                         ninja
+                         pkg-config))
+    (inputs (list bash-minimal
+                  glib
+                  gstreamer
+                  gst-plugins-base
+                  gst-plugins-bad
+                  gtk
+                  libadwaita
+                  openssl
+                  pipewire      ; Needed but not listed
+                  sqlite
+                  zbar))
+    (home-page "https://apps.gnome.org/Authenticator")
+    (synopsis "Generate two-factor codes")
+    (description "Simple application for generating Two-Factor Authentication
+Codes:
 
-Features:
+It features:
 
 @itemize
-@item QR code scanner
+@item Time-based/Counter-based/Steam methods support
+@item SHA-1/SHA-256/SHA-512 algorithms support
+@item QR code scanner using a camera or from a screenshot
+@item Lock the application with a password
 @item Beautiful UI
-@item Huge database of more than 560 supported services
-@item Keep your PIN tokens secure by locking the application with a password
-@item Automatically fetch an image for services using their favicon
-@item The possibility to add new services
+@item GNOME Shell search provider
+@item Backup/Restore from/into known applications like FreeOTP+,
+Aegis (encrypted / plain-text), andOTP, Google Authenticator
 @end itemize")
     (license license:gpl3+)))
+
+(define-public authenticator
+  (deprecated-package "authenticator" gnome-authenticator))
 
 (define-public gsound
   (package
@@ -14406,7 +14477,7 @@ or @acronym{RDP, Remote Desktop Protocol}.")
               (substitute* "meson.build"
                 (("(gtk_update_icon_cache|update_desktop_database): true" _ key)
                  (string-append key ": false"))))))))
-    (inputs (list gpgme-1.23
+    (inputs (list gpgme
                   glib
                   libadwaita))
     (native-inputs (list blueprint-compiler

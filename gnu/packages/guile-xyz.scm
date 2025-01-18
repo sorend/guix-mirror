@@ -38,7 +38,7 @@
 ;;; Copyright © 2021 Leo Le Bouter <lle-bout@zaclys.net>
 ;;; Copyright © 2021 Zelphir Kaltstahl <zelphirkaltstahl@posteo.de>
 ;;; Copyright © 2021 Oleg Pykhalov <go.wigust@gmail.com>
-;;; Copyright © 2021, 2022, 2024 Artyom V. Poptsov <poptsov.artyom@gmail.com>
+;;; Copyright © 2021, 2022, 2024, 2025 Artyom V. Poptsov <poptsov.artyom@gmail.com>
 ;;; Copyright © 2022 Maxime Devos <maximedevos@telenet.be>
 ;;; Copyright © 2022 Zhu Zihao <all_but_last@163.com>
 ;;; Copyright © 2022 Antero Mejr <antero@mailbox.org>
@@ -149,24 +149,22 @@
 (define-public artanis
   (package
     (name "artanis")
-    (version "0.6")
+    (version "1.1.0")
     (source (origin
               (method url-fetch)
               (uri (string-append "mirror://gnu/artanis/artanis-"
                                   version ".tar.gz"))
               (sha256
                (base32
-                "1y4mf8vv2fwjg4z8c4d7an5rxi96sh7krk0djnafm2l66i97cj3m"))
+                "1b7mab8izvli4152hzv4n2z67kw0kwm7pvh0m960whr77rdxwid4"))
               (modules '((guix build utils)))
               (snippet
                '(begin
-                  ;; Unbundle guile-redis and guile-json
                   (delete-file-recursively "artanis/third-party/json.scm")
-                  (delete-file-recursively "artanis/third-party/json")
                   (delete-file-recursively "artanis/third-party/redis.scm")
-                  (delete-file-recursively "artanis/third-party/redis")
                   (substitute* '("artanis/artanis.scm"
                                  "artanis/lpc.scm"
+                                 "artanis/i18n/json.scm"
                                  "artanis/oht.scm"
                                  "artanis/tpl/parser.scm")
                     (("(#:use-module \\()artanis third-party (json\\))" _
@@ -195,7 +193,7 @@
     ;; projects.
     ;; TODO: Add guile-dbi and guile-dbd optional dependencies.
     (propagated-inputs
-     (list guile-json-3 guile-curl guile-readline guile-redis))
+     (list guile-json-4 guile-curl guile-readline guile-redis))
     (native-inputs
      (list bash-minimal                           ;for the `source' builtin
            pkg-config
@@ -2523,7 +2521,7 @@ capabilities.")
 (define-public guile-g-golf
   (package
     (name "guile-g-golf")
-    (version "0.8.0-a.1")
+    (version "0.8.0-rc9")
     (source
      (origin
        (method git-fetch)
@@ -2532,7 +2530,7 @@ capabilities.")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "1lszlssa6k8dhhya5px271gfzas7fyy1iwjqmlxibz5vdirzi565"))))
+        (base32 "1x340xr2ki1y3w1cg37fhjsfw27268vlsyc8hby9lmv13l349l8b"))))
     (build-system gnu-build-system)
     (arguments
      (list
@@ -5187,7 +5185,7 @@ according to Bitorrent BEP003.")
 (define-public guile-ts
   (package
     (name "guile-ts")
-    (version "0.2.0")
+    (version "0.3.0")
     (source (origin (method git-fetch)
                     (uri (git-reference
                           (url
@@ -5196,7 +5194,7 @@ according to Bitorrent BEP003.")
                     (file-name (git-file-name name version))
                     (sha256
                      (base32
-                      "1iqbr9rcpmq2f1zxxvl36ajwm81rkp38rrp42ixr4q59154r5513"))))
+                      "1p98mq7ik3kw7h7ki60253qxdw5qs13f1xldjp37c3s7zvhn0nac"))))
     (build-system gnu-build-system)
     (arguments
      (list #:make-flags #~(list "GUILE_AUTO_COMPILE=0")
@@ -6201,7 +6199,7 @@ with a FSM is being built (for example, from a Makefile.)")
 (define-public guile-ini
   (package
     (name "guile-ini")
-    (version "0.5.4")
+    (version "0.5.5")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -6210,7 +6208,7 @@ with a FSM is being built (for example, from a Makefile.)")
               (file-name (string-append name "-" version))
               (sha256
                (base32
-                "10glfdhyv8h58cmf0xl1g7jk05pd5hzdncc2c709b8pyncrdiakh"))))
+                "191kz6xlci16b93m0s6vzvk5jbc89rx61aljnqmd81ha33nhk0yg"))))
     (build-system gnu-build-system)
     (arguments
      `(#:make-flags '("GUILE_AUTO_COMPILE=0") ;to prevent guild warnings
@@ -6265,8 +6263,8 @@ is an attempt to combine both into something useful.")
       (license license:asl2.0))))
 
 (define-public guile-knots
-  (let ((commit "2f39c58d6ca72cd869ba69e03d639f36d497e9a8")
-        (revision "1"))
+  (let ((commit "d572f591a3c136bfc7b23160e16381c92588f8d9")
+        (revision "4"))
     (package
     (name "guile-knots")
     (version (git-version "0" revision commit))
@@ -6277,7 +6275,7 @@ is an attempt to combine both into something useful.")
                     (commit commit)))
               (sha256
                (base32
-                "1kv2sw4pif2hjcfghjlzdv0plkdqkv4mpq2a18mj38jhwsjxr1q2"))
+                "0g85frfniblxb2cl81fg558ic3cxvla7fvml08scjgbbxn8151gv"))
               (file-name (string-append name "-" version "-checkout"))))
     (build-system gnu-build-system)
     (native-inputs
@@ -6285,6 +6283,7 @@ is an attempt to combine both into something useful.")
            autoconf
            automake
            guile-3.0
+           guile-lib
            guile-fibers))
     (inputs
      (list guile-3.0))

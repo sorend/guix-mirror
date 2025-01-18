@@ -5,7 +5,8 @@
 ;;; Copyright © 2020, 2021, 2022 Michael Rohleder <mike@rohleder.de>
 ;;; Copyright © 2022 Maxime Devos <maximedevos@telenet.be>
 ;;; Copyright © 2023, 2024 Artyom V. Poptsov <poptsov.artyom@gmail.com>
-;;; Copyright © 2024 Sharlatan Hellseher <sharlatanus@gmail.com>
+;;; Copyright © 2024-2025 Sharlatan Hellseher <sharlatanus@gmail.com>
+;;; Copyright © 2024 Giacomo Leidi <goodoldpaul@autistici.org>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -117,8 +118,8 @@ JSONMarshal/JSONUnmarshal to store/reload the Bloom filter.")
     (synopsis "Set of interfaces for CID addressable blocks of data")
     (description
      "Package @code{blocks} contains the lowest level of @acronym{IPLD,
-InterPlanetary Linked Data} data structures. A block is raw data accompanied
-by a @acronym{Content Identifiers,CID}. The CID contains the multihash
+InterPlanetary Linked Data} data structures.  A block is raw data accompanied
+by a @acronym{Content Identifiers,CID}.  The CID contains the multihash
 corresponding to the block.")
     (license license:expat)))
 
@@ -1218,3 +1219,36 @@ also mount the world at @code{/ipfs}.")
 
 (define-public go-ipfs
   (deprecated-package "go-ipfs" kubo))
+
+(define-public spritely-libp2p-daemon
+  (let ((version "0.1")
+        (commit "f10d8c4bad2a50d6e481c0b57231741d079ffedb")
+        (revision "0"))
+    (package
+      (name "spritely-libp2p-daemon")
+      (version (git-version version revision commit))
+      (source
+       (origin
+         (method git-fetch)
+         (uri (git-reference
+               (url "https://gitlab.com/spritely/go-libp2p-daemon.git")
+               (commit commit)))
+         (file-name (git-file-name name version))
+         (sha256
+          (base32 "0bk2610rlg8d4lla7h7sic9drv1syabfbr7kbg2yqqbhiwg0v2br"))))
+      (build-system go-build-system)
+      (arguments
+       (list
+        #:embed-files #~(list "sorted-network-list.bin")
+        #:install-source? #f
+        #:import-path "gitlab.com/spritely/spritely-libp2p-daemon"))
+      (native-inputs
+       (list go-github-com-libp2p-go-libp2p
+             go-github-com-multiformats-go-multiaddr
+             go-github-com-stretchr-testify))
+      (home-page "https://gitlab.com/spritely/go-libp2p-daemon")
+      (synopsis "Simple daemon to connect over libp2p")
+      (description "This package provides a very simple daemon to interface to
+from other programming languages.  It's designed to fulfill the needs of
+Spritely's Goblins library to support libp2p as a netlayer.")
+      (license license:asl2.0))))

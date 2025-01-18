@@ -703,7 +703,8 @@ runs Word\".")
     (synopsis "MS-Word to TeX or plain text converter")
     (description "@command{catdoc} extracts text from MS-Word files, trying to
 preserve as many special printable characters as possible.  It supports
-everything up to Word-97. Also supported are MS Write documents and RTF files.
+everything up to Word-97.  Also supported are MS Write documents and RTF
+files.
 
 @command{catdoc} does not preserve complex word formatting, but it can
 translate some non-ASCII characters into TeX escape codes.  It's goal is to
@@ -1264,7 +1265,7 @@ OpenDocument presentations (*.odp).")
     (home-page "https://bibutils.sourceforge.io/")
     (synopsis "Convert between various bibliography formats")
     (description "This package provides converters for various bibliography
-formats (e.g. Bibtex, RIS, ...) using a common XML intermediate.")
+formats (e.g. Bibtex, RIS, etc.) using a common XML intermediate.")
     (license license:gpl2)))
 
 (define-public goawk
@@ -1658,7 +1659,7 @@ JSON for post-processing
 (define-public miller
   (package
     (name "miller")
-    (version "6.12.0")
+    (version "6.13.0")
     (source
      (origin
        (method git-fetch)
@@ -1667,7 +1668,7 @@ JSON for post-processing
              (commit (go-version->git-ref version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "195lgayq5z7ndag3w495fs618pkrhz426kg0kp3s5sa68vr1madp"))))
+        (base32 "1w8ibmywsr9jsmmqrcvc0j7fx5vkdbwamizn4vim9xys807kmjsj"))))
     (build-system go-build-system)
     (arguments
      (list

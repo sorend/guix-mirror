@@ -119,7 +119,6 @@
            #:tests? #f
            #:configure-flags
            #~'("-DCMAKE_C_FLAGS=-Wno-error=implicit-function-declaration"
-               "-DCMAKE_SYSTEM_NAME=Generic"      ;override default value
                "-DTARGET_MAGPIE=ON")
            #:phases
            #~(modify-phases %standard-phases
@@ -148,8 +147,7 @@
      (substitute-keyword-arguments
        (package-arguments ath9k-htc-ar7010-firmware)
        ((#:configure-flags flags)
-        #~'("-DCMAKE_SYSTEM_NAME=Generic"         ;override default value
-            "-DCMAKE_C_FLAGS=-Wno-error=implicit-function-declaration"
+        #~'("-DCMAKE_C_FLAGS=-Wno-error=implicit-function-declaration"
             "-DTARGET_K2=ON"))))
     (synopsis "Firmware for the Atheros AR9271 USB 802.11n NICs")
     (description
@@ -1108,7 +1106,7 @@ Virtual Machines.  OVMF contains a sample UEFI firmware for QEMU and KVM.")
         ;;%current-system is a *triplet*, unlike its name would suggest.
         (string=? (%current-system) (gnu-triplet->nix-system triplet))))
   (package
-    (name (string-append "arm-trusted-firmware-" platform))
+    (name (downstream-package-name "arm-trusted-firmware-" platform))
     (version "2.12")
     (source
      (origin
@@ -1131,7 +1129,7 @@ Virtual Machines.  OVMF contains a sample UEFI firmware for QEMU and KVM.")
       #:target (and (not (native-build?)) triplet)
       #:phases
       #~(modify-phases %standard-phases
-          (replace 'configure          ;no configure script
+          (add-after 'unpack 'fix-cross-build
             ;; Fix ATF commit ffb7742125def3e0acca4c7e4d3215af5ce25a31
             (lambda _
               (unless #$(native-build?)
@@ -1140,6 +1138,7 @@ Virtual Machines.  OVMF contains a sample UEFI firmware for QEMU and KVM.")
                 (substitute* "make_helpers/build_macros.mk"
                   (("-oc") "-oc-default")
                   (("-od") "-od-default")))))
+          (delete 'configure)          ;no configure script
           (replace 'install
             (lambda _
               (for-each (lambda (file)
@@ -1171,10 +1170,7 @@ interface standards, such as:
                    license:bsd-2)))) ; libfdt
 
 (define-public arm-trusted-firmware-sun50i-a64
-  (let ((base (make-arm-trusted-firmware "sun50i_a64")))
-    (package
-      (inherit base)
-      (name "arm-trusted-firmware-sun50i-a64"))))
+  (make-arm-trusted-firmware "sun50i_a64"))
 
 (define-public arm-trusted-firmware-rk3328
   (make-arm-trusted-firmware "rk3328"))

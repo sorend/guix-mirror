@@ -1,6 +1,6 @@
 ;;; GNU Guix --- Functional package management for GNU
 ;;; Copyright © 2019, 2022 Ludovic Courtès <ludo@gnu.org>
-;;; Copyright © 2021-2024 Ricardo Wurmus <rekado@elephly.net>
+;;; Copyright © 2021-2025 Ricardo Wurmus <rekado@elephly.net>
 ;;; Copyright © 2021 Hugo Lecomte <hugo.lecomte@inria.fr>
 ;;; Copyright © 2022 Marius Bakke <marius@gnu.org>
 ;;; Copyright © 2022 Maxim Cournoyer <maxim.cournoyer@gmail.com>
@@ -64,6 +64,13 @@
        (sha256
         (base32 "1qrhzazq10dz64y9mawr3ns595fsdhrj1wvbb42xhmcl66r1xq8a"))))
     (build-system pyproject-build-system)
+    (arguments
+     (list
+      #:phases
+      ;; Because python-jsonschema has an old python-webcolor.  Remove this
+      ;; when python-team branch is merged.
+      '(modify-phases %standard-phases
+         (delete 'sanity-check))))
     (propagated-inputs (list python-argon2-cffi
                              python-ipykernel
                              python-ipython-genutils
@@ -126,6 +133,38 @@ the namespace @code{/nbclassic/}.")
     (description
      "This project provides a way for JupyterLab and other frontends to switch
 to Jupyter Server for their Python Web application backend.")
+    (license license:bsd-3)))
+
+(define-public python-jupyter-lsp
+  (package
+    (name "python-jupyter-lsp")
+    (version "2.2.5")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (pypi-uri "jupyter-lsp" version))
+       (sha256
+        (base32 "00ahai7wp0m98glpqsrd1bymcllzkb8irvskzl4zhinlbah4fcbr"))))
+    (build-system pyproject-build-system)
+    (arguments
+     (list
+      #:test-flags
+      ;; No R language server is present.
+      '(list "-k" "not test_r_package_detection")
+      #:phases
+      '(modify-phases %standard-phases
+         ;; Some tests require a writable HOME
+         (add-before 'check 'set-HOME
+           (lambda _ (setenv "HOME" "/tmp"))))))
+    (propagated-inputs (list python-jupyter-server))
+    (native-inputs (list python-pytest python-setuptools python-wheel))
+    (home-page "https://pypi.org/project/jupyter-lsp/")
+    (synopsis "Multi-Language Server WebSocket proxy for Jupyter Notebook/Lab server")
+    (description
+     "This package provides a multi-language server WebSocket proxy for
+Jupyter Notebook/Lab server.  It provides coding assistance for
+JupyterLab (code navigation, hover suggestions, linters, autocompletion, and
+rename) using the Language Server Protocol.")
     (license license:bsd-3)))
 
 (define-public python-jupyter-protocol
@@ -562,7 +601,7 @@ JavaScript build steps.")
               (setenv "PATH"
                       (string-append #$output "/bin:" (getenv "PATH"))))))))
     (propagated-inputs
-     (list python-anyio
+     (list python-anyio/without-dataclasses
            python-argon2-cffi
            python-jinja2
            python-jupyter-client

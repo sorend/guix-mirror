@@ -7167,6 +7167,28 @@ the end user.")
 supports interactive trees, to enable rich, editable trees in Shiny.")
     (license license:expat)))
 
+(define-public r-shinyvalidate
+  (package
+    (name "r-shinyvalidate")
+    (version "0.1.3")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (cran-uri "shinyvalidate" version))
+       (sha256
+        (base32 "01qlqzp0g6782maj73yygmwlchhv4xcnlc7j0w3lp6dcj7qkzz68"))))
+    (properties `((upstream-name . "shinyvalidate")))
+    (build-system r-build-system)
+    (propagated-inputs (list r-glue r-htmltools r-rlang r-shiny))
+    (native-inputs (list r-testthat))
+    (home-page "https://rstudio.github.io/shinyvalidate/")
+    (synopsis "Input validation for Shiny apps")
+    (description
+     "This package improves the user experience of Shiny apps by helping to
+provide feedback when required inputs are missing, or input values are not
+valid.")
+    (license license:expat)))
+
 (define-public r-shinydashboard
   (package
     (name "r-shinydashboard")
@@ -11081,6 +11103,27 @@ package contains an old implementation based on legacy code from S-PLUS which
 is being phased out.  A modern MySQL client based on Rcpp is available from
 the RMariaDB package.")
     (license license:gpl2)))
+
+(define-public r-rpanglaodb
+  (package
+    (name "r-rpanglaodb")
+    (version "0.2.1")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (cran-uri "rPanglaoDB" version))
+       (sha256
+        (base32 "1ykzih3idgp2yhbw4039hhhzv0nmrmn3wx2c4dxmgp5qzhrg42nf"))))
+    (properties `((upstream-name . "rPanglaoDB")))
+    (build-system r-build-system)
+    (propagated-inputs (list r-matrix r-pbapply r-seurat r-xml r-xml2))
+    (home-page "https://github.com/dosorio/rPanglaoDB/")
+    (synopsis
+     "Download and merge Single-Cell RNA-Seq data from the PanglaoDB database")
+    (description
+     "This R package downloads labeled single-cell RNA-seq data from PanglaoDB.
+It merges the data into a Seurat object for streamlined analysis.")
+    (license license:gpl3)))
 
 (define-public r-rpmm
   (package
@@ -27804,8 +27847,8 @@ variance components, using the likelihood-ratio statistics G.")
     (synopsis "Inference of trait associations with SNP haplotypes")
     (description
      "Hapassoc performs likelihood inference of trait associations with
-haplotypes and other covariates in @dfn{generalized linear models} (GLMs). The
-functions are developed primarily for data collected in cohort or
+haplotypes and other covariates in @dfn{generalized linear models} (GLMs).
+The functions are developed primarily for data collected in cohort or
 cross-sectional studies.  They can accommodate uncertain haplotype phase and
 handle missing genotypes at some SNPs.")
     (license license:gpl2)))
@@ -37862,17 +37905,18 @@ inference diagnostics.
      "Bayesian Regression Models using 'Stan'")
     (description
      "Fit Bayesian generalized (non-)linear multivariate multilevel models
-using 'Stan' for full Bayesian inference. A wide range of distributions and
-link functions are supported, allowing users to fit -- among others -- linear,
-robust linear, count data, survival, response times, ordinal, zero-inflated,
-hurdle, and even self-defined mixture models all in a multilevel context.
-Further modeling options include non-linear and smooth terms, auto-correlation
-structures, censored data, meta-analytic standard errors, and quite a few
-more. In addition, all parameters of the response distribution can be
-predicted in order to perform distributional regression. Prior specifications
-are flexible and explicitly encourage users to apply prior distributions that
-actually reflect their beliefs. Model fit can easily be assessed and compared
-with posterior predictive checks and leave-one-out cross-validation.")
+using @emph{Stan} for full Bayesian inference.  A wide range of distributions
+and link functions are supported, allowing users to fit -- among others --
+linear, robust linear, count data, survival, response times, ordinal,
+zero-inflated, hurdle, and even self-defined mixture models all in a
+multilevel context.  Further modeling options include non-linear and smooth
+terms, auto-correlation structures, censored data, meta-analytic standard
+errors, and quite a few more. In addition, all parameters of the response
+distribution can be predicted in order to perform distributional
+regression. Prior specifications are flexible and explicitly encourage users
+to apply prior distributions that actually reflect their beliefs. Model fit
+can easily be assessed and compared with posterior predictive checks and
+leave-one-out cross-validation.")
     (license license:gpl2)))
 
 (define-public r-mstate
@@ -41440,10 +41484,9 @@ kernel estimators.")
       "https://cran.r-project.org/web/packages/lpme/")
     (synopsis "Nonparametric Estimation of Measurement Error Models")
     (description
-      "Provide nonparametric methods for mean regression model,
-modal regression and conditional density estimation in the
-presence/absence of measurement error. Bandwidth selection is
-also provided for each method.")
+      "Provide nonparametric methods for mean regression model, modal
+regression and conditional density estimation in the presence/absence of
+measurement error.  Bandwidth selection is also provided for each method.")
     (license license:gpl2+)))
 
 (define-public r-aws-signature

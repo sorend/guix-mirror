@@ -4,6 +4,7 @@
 ;;; Copyright © 2018 Chris Marusich <cmmarusich@gmail.com>
 ;;; Copyright © 2021 Maxim Cournoyer <maxim.cournoyer@gmail.com>
 ;;; Copyright © 2023 Oleg Pykhalov <go.wigust@gmail.com>
+;;; Copyright © 2024 Zheng Junjie <873216071@qq.com>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -135,6 +136,11 @@ Return a version of TAG that follows these rules."
                        `((entrypoint . ,(list->vector entry-point)))
                        '())))
     (container_config . #nil)
+    ;; Some container engines such as <https://github.com/cea-hpc/pcocc> require
+    ;; these fields.
+    (history . ,(list->vector `(((created . ,time)
+                                 (created_by . "guix pack -f docker")
+                                 (comment . "guix pack")))))
     (os . "linux")
     (rootfs . ((type . "layers")
                (diff_ids . ,(list->vector layers-diff-ids))))))
@@ -312,7 +318,8 @@ added to image as a layer."
                         ("i686"    "386")
                         ("arm"     "arm")
                         ("aarch64" "arm64")
-                        ("mips64"  "mips64le")))))
+                        ("mips64"  "mips64le")
+                        ("riscv64" "riscv64")))))
     ;; Make sure we start with a fresh, empty working directory.
     (mkdir directory)
     (with-directory-excursion directory

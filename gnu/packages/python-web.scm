@@ -1259,15 +1259,13 @@ Interchange Format (SARIF)} file format.")
     (arguments
      (list
       #:test-flags
-      '(list "--ignore-glob=examples/*" "--ignore-glob=bench/*" "tests")
+      '(list "--ignore=tests/test_utils.py"
+             "--ignore-glob=examples/*"
+             "--ignore-glob=bench/*" "tests")
       #:phases
       '(modify-phases %standard-phases
          (add-before 'check 'set-HOME
-           (lambda _ (setenv "HOME" "/tmp")))
-         (replace 'check
-           (lambda* (#:key tests? test-flags #:allow-other-keys)
-             (when tests?
-               (apply invoke "pytest" "-vv" test-flags)))))))
+           (lambda _ (setenv "HOME" "/tmp"))))))
     (propagated-inputs
      (list python-mimeparse))
     (native-inputs
@@ -1287,9 +1285,11 @@ Interchange Format (SARIF)} file format.")
            python-pyyaml
            python-rapidjson
            python-requests
+           python-setuptools
            python-testtools
            python-ujson
-           python-websockets))
+           python-websockets
+           python-wheel))
     (home-page "https://falconframework.org")
     (synopsis "Web framework for building APIs and application backends")
     (description "Falcon is a web API framework for building microservices,
@@ -1402,14 +1402,14 @@ other HTTP libraries.")
 (define-public python-cheroot
   (package
     (name "python-cheroot")
-    (version "10.0.0")
+    (version "10.0.1")
     (source
      (origin
        (method url-fetch)
        (uri (pypi-uri "cheroot" version))
        (sha256
         (base32
-         "1w0ind0dza9j1py56y23344piqkpyfmcm060qfrnk6gggy3s3i2r"))))
+         "0h0p3fnpa4dxi589s7ljlzb6p3mhqdivb3pc2f36pljqfrwjzf70"))))
     (build-system pyproject-build-system)
     (arguments
      (list
@@ -1419,8 +1419,13 @@ other HTTP libraries.")
               ;; "--numprocesses=auto"
               "--doctest-modules"
               "--showlocals"
-              ;; Disable test requiring networking.
-              "-k" "not test_tls_client_auth")
+              "-k" (string-append
+                    ;; Disable test requiring networking.
+                    "not test_tls_client_auth"
+                    ;; TypeError: HTTPConnection.request() got an unexpected keyword
+                    ;; argument 'chunked'
+                    " and not test_peercreds_unix_sock"
+                    " and not test_peercreds_unix_sock_with_lookup"))
       #:phases
       #~(modify-phases %standard-phases
           (replace 'check
@@ -1430,25 +1435,21 @@ other HTTP libraries.")
                   (apply invoke "pytest" "-v"
                          (append test-flags (list #$output))))))))))
     (propagated-inputs
-     (list python-jaraco-functools
-           python-more-itertools
-           python-six))
+     (list python-jaraco-functools python-more-itertools))
     (native-inputs
-     (list python-cryptography
-           python-jaraco-text
+     (list python-jaraco-text
            python-portend
            python-pyopenssl
            python-pypytools
-           python-pytest
            python-pytest-cov
            python-pytest-mock
-           python-pytest-xdist
            python-requests
            python-requests-toolbelt
            python-requests-unixsocket
+           python-setuptools
            python-setuptools-scm
-           python-setuptools-scm-git-archive
-           python-trustme))
+           python-trustme
+           python-wheel))
     (home-page "https://cheroot.cherrypy.dev")
     (synopsis "Highly-optimized, pure-python HTTP server")
     (description
@@ -3586,13 +3587,13 @@ verification of the SSL peer.")
 (define-public python-nh3
   (package
     (name "python-nh3")
-    (version "0.2.17")
+    (version "0.2.20")
     (source
      (origin
        (method url-fetch)
        (uri (pypi-uri "nh3" version))
        (sha256
-        (base32 "0a7hrca5bbbrz20cbqy16n8vaxf4v2q1r9zv9vjlbmn334d79l20"))))
+        (base32 "1mcf3y5294glji9lhzh57wymw4srbvzdg0kcakm0p2pqgwnw81cp"))))
     (build-system cargo-build-system)
     (arguments
      (list
@@ -3614,7 +3615,7 @@ verification of the SSL peer.")
                 (invoke "pytest" "-vv" "tests")))))
       #:cargo-inputs
       `(("rust-ammonia" ,rust-ammonia-4)
-        ("rust-pyo3" ,rust-pyo3-0.21))
+        ("rust-pyo3" ,rust-pyo3-0.23))
       #:install-source? #false))
     (native-inputs (list maturin python-pytest python-wrapper))
     (home-page "https://nh3.readthedocs.io")
@@ -4044,7 +4045,7 @@ protocol, both client and server for Python asyncio module.
 (define-public python-msal
   (package
     (name "python-msal")
-    (version "1.22.0")
+    (version "1.31.1")
     (home-page
      "https://github.com/AzureAD/microsoft-authentication-library-for-python")
     (source (origin
@@ -4054,7 +4055,7 @@ protocol, both client and server for Python asyncio module.
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "1pgpf8fa0mdga69hr6i66mq2a2vyn8dlcf4fdzqmbgw2il9b37q6"))))
+                "18dg1j2az5ywk6klfd3kp36fxa4cmmf9yvma4li0a2nz2jgc1gdd"))))
     (build-system python-build-system)
     (arguments
      ;; Tests (all?) rely on network access and only some can be disabled by

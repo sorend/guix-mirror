@@ -514,41 +514,41 @@ corresponding UPSTREAM-SOURCE (an origin), using the given DEBLOB-SCRIPTS."
 ;; The current "stable" kernels. That is, the most recently released major
 ;; versions that are still supported upstream.
 
-(define-public linux-libre-6.11-version "6.11.11")
-(define-public linux-libre-6.11-gnu-revision "gnu")
-(define deblob-scripts-6.11
+(define-public linux-libre-6.12-version "6.12.9")
+(define-public linux-libre-6.12-gnu-revision "gnu")
+(define deblob-scripts-6.12
   (linux-libre-deblob-scripts
-   linux-libre-6.11-version
-   linux-libre-6.11-gnu-revision
-   (base32 "0igjsnlnvzl9q2cb5ypavbfirldqw86v7krmxljivshh765xzykd")
-   (base32 "0y5s6yr50vilmi095argqikq1inng9rsaf5r8b3j2zz3brk8d17j")))
-(define-public linux-libre-6.11-pristine-source
-  (let ((version linux-libre-6.11-version)
-        (hash (base32 "1z2913y38clnlmhvwj49h7p4pic24s4d8np7nmd4lk7m2xz8w532")))
+   linux-libre-6.12-version
+   linux-libre-6.12-gnu-revision
+   (base32 "0i24k4zc6x5lvif12ba53c6cd5ydiah9j32ly2wpl88424ld389h")
+   (base32 "0jwnb1pd8ayfkck3sw3jjlsg7gayig0ymiay53mg7qchhycih8xs")))
+(define-public linux-libre-6.12-pristine-source
+  (let ((version linux-libre-6.12-version)
+        (hash (base32 "1d5f4rn6d5hyw94jqdcc7ay0y1s8lmhm3hxss90b6c89vxh07gl7")))
    (make-linux-libre-source version
                             (%upstream-linux-source version hash)
-                            deblob-scripts-6.11)))
+                            deblob-scripts-6.12)))
 
 ;; The "longterm" kernels — the older releases with long-term upstream support.
 ;; Here are the support timelines:
 ;; <https://www.kernel.org/category/releases.html>
 
-(define-public linux-libre-6.6-version "6.6.66")
+(define-public linux-libre-6.6-version "6.6.70")
 (define-public linux-libre-6.6-gnu-revision "gnu")
 (define deblob-scripts-6.6
   (linux-libre-deblob-scripts
    linux-libre-6.6-version
    linux-libre-6.6-gnu-revision
    (base32 "1a28pdl645bj4d8gac71dmwmll6a2kgd3k7gkpfvi94yqkzd9r2z")
-   (base32 "1x3455v7sfzakq99ydifh65yzvjzrw06p2lchwb6902yzqbnh786")))
+   (base32 "1gqha26cxijizyhg6k5397bc9pn54wxz01d4gb7j2xx22rkxjwhb")))
 (define-public linux-libre-6.6-pristine-source
   (let ((version linux-libre-6.6-version)
-        (hash (base32 "0lhy5waj330hmaxbqpfw2fxzkvvlxxs1nr325i8jy736qhvpjxcx")))
+        (hash (base32 "15rgzl86q52ki0n7n4xlhb1pmipxbshmnafinsyfnvxjgzh3xll4")))
    (make-linux-libre-source version
                             (%upstream-linux-source version hash)
                             deblob-scripts-6.6)))
 
-(define-public linux-libre-6.1-version "6.1.120")
+(define-public linux-libre-6.1-version "6.1.124")
 (define-public linux-libre-6.1-gnu-revision "gnu")
 (define deblob-scripts-6.1
   (linux-libre-deblob-scripts
@@ -558,12 +558,12 @@ corresponding UPSTREAM-SOURCE (an origin), using the given DEBLOB-SCRIPTS."
    (base32 "060pbbvk3c1r9v6fz1qm5f0hjb29wi67lg7an0nwl6bpjsk5ci52")))
 (define-public linux-libre-6.1-pristine-source
   (let ((version linux-libre-6.1-version)
-        (hash (base32 "06gp5fdq0bc39hd8mf9mrdrygdybdr3nzsb58lcapf5vmjw9gjb1")))
+        (hash (base32 "09wqb2wqrbg62kqn1r4vj5694r701lkvb9vdzj0slvv2rkazckpz")))
    (make-linux-libre-source version
                             (%upstream-linux-source version hash)
                             deblob-scripts-6.1)))
 
-(define-public linux-libre-5.15-version "5.15.174")
+(define-public linux-libre-5.15-version "5.15.176")
 (define-public linux-libre-5.15-gnu-revision "gnu")
 (define deblob-scripts-5.15
   (linux-libre-deblob-scripts
@@ -573,12 +573,12 @@ corresponding UPSTREAM-SOURCE (an origin), using the given DEBLOB-SCRIPTS."
    (base32 "1pbl08jzqh944z34bz25k2v7igsm3r89jbcg0hba3cvyybkkfc2g")))
 (define-public linux-libre-5.15-pristine-source
   (let ((version linux-libre-5.15-version)
-        (hash (base32 "02kn9nvaa36s070k235lk9x6n40l2zlwj4v6i2y6nnx0cjw3rrn3")))
+        (hash (base32 "1cfk55469swywnf4r6pl7b3njxws8w3np81r99f0wnlaihrbajm8")))
    (make-linux-libre-source version
                             (%upstream-linux-source version hash)
                             deblob-scripts-5.15)))
 
-(define-public linux-libre-5.10-version "5.10.231")
+(define-public linux-libre-5.10-version "5.10.233")
 (define-public linux-libre-5.10-gnu-revision "gnu1")
 (define deblob-scripts-5.10
   (linux-libre-deblob-scripts
@@ -588,12 +588,12 @@ corresponding UPSTREAM-SOURCE (an origin), using the given DEBLOB-SCRIPTS."
    (base32 "14jdl5rk3w7h97svl6j6ngbywj5qixmpv6ifhqkzjxpp07xngvs4")))
 (define-public linux-libre-5.10-pristine-source
   (let ((version linux-libre-5.10-version)
-        (hash (base32 "0xcnlz5ib4b368z5cyp4qwys3jsbm18wlvwn73rzj2j6rj1lhnjn")))
+        (hash (base32 "0lkz2g8r032f027j3gih3f7crx991mrpng9qgqc5k4cc1wl5g7i3")))
    (make-linux-libre-source version
                             (%upstream-linux-source version hash)
                             deblob-scripts-5.10)))
 
-(define-public linux-libre-5.4-version "5.4.287")
+(define-public linux-libre-5.4-version "5.4.289")
 (define-public linux-libre-5.4-gnu-revision "gnu1")
 (define deblob-scripts-5.4
   (linux-libre-deblob-scripts
@@ -603,25 +603,10 @@ corresponding UPSTREAM-SOURCE (an origin), using the given DEBLOB-SCRIPTS."
    (base32 "1q1wcslpwpwsnwzbddjdc0qv2h89492skyw2zsjyb4rpz41s66mg")))
 (define-public linux-libre-5.4-pristine-source
   (let ((version linux-libre-5.4-version)
-        (hash (base32 "082bq26bwi8jxfbk840wf9awm5l65aya4bg43im9qvqfpzjzl3qd")))
+        (hash (base32 "043dl195h06hs3zdjd6j1m1zgvmky3s0plrpma75zqf8ab05yghy")))
    (make-linux-libre-source version
                             (%upstream-linux-source version hash)
                             deblob-scripts-5.4)))
-
-(define-public linux-libre-4.19-version "4.19.325")
-(define-public linux-libre-4.19-gnu-revision "gnu1")
-(define deblob-scripts-4.19
-  (linux-libre-deblob-scripts
-   linux-libre-4.19-version
-   linux-libre-4.19-gnu-revision
-   (base32 "0pjal2cc2f99cvw8r4icb4l24j41k48jkj6bqk7pcahzcgx33ycb")
-   (base32 "048isws4h3lya8dwpwyhqglsjg9sckxk0gfsxdbqg336n5vi0gb1")))
-(define-public linux-libre-4.19-pristine-source
-  (let ((version linux-libre-4.19-version)
-        (hash (base32 "1qcd1rrv96p9iz9a9qpx3b9rm2jyps6sgj7l7m21m8ydwmyysyv0")))
-    (make-linux-libre-source version
-                             (%upstream-linux-source version hash)
-                             deblob-scripts-4.19)))
 
 (define %boot-logo-patch
   ;; Linux-Libre boot logo featuring Freedo and a gnu.
@@ -651,8 +636,8 @@ corresponding UPSTREAM-SOURCE (an origin), using the given DEBLOB-SCRIPTS."
     (patches (append (origin-patches source)
                      patches))))
 
-(define-public linux-libre-6.11-source
-  (source-with-patches linux-libre-6.11-pristine-source
+(define-public linux-libre-6.12-source
+  (source-with-patches linux-libre-6.12-pristine-source
                        (list %boot-logo-patch
                              %linux-libre-arm-export-__sync_icache_dcache-patch)))
 
@@ -687,11 +672,6 @@ corresponding UPSTREAM-SOURCE (an origin), using the given DEBLOB-SCRIPTS."
                              ;; can be dropped for linux-libre 5.7
                              (search-patch
                               "linux-libre-support-for-Pinebook-Pro.patch"))))
-
-(define-public linux-libre-4.19-source
-  (source-with-patches linux-libre-4.19-pristine-source
-                       (list %boot-logo-patch
-                             %linux-libre-arm-export-__sync_icache_dcache-patch)))
 
 
 ;;;
@@ -777,10 +757,10 @@ corresponding UPSTREAM-SOURCE (an origin), using the given DEBLOB-SCRIPTS."
     (description "Headers of the Linux-Libre kernel.")
     (license license:gpl2)))
 
-(define-public linux-libre-headers-6.11
-  (make-linux-libre-headers* linux-libre-6.11-version
-                             linux-libre-6.11-gnu-revision
-                             linux-libre-6.11-source))
+(define-public linux-libre-headers-6.12
+  (make-linux-libre-headers* linux-libre-6.12-version
+                             linux-libre-6.12-gnu-revision
+                             linux-libre-6.12-source))
 
 (define-public linux-libre-headers-6.6
   (make-linux-libre-headers* linux-libre-6.6-version
@@ -807,11 +787,6 @@ corresponding UPSTREAM-SOURCE (an origin), using the given DEBLOB-SCRIPTS."
                              linux-libre-5.4-gnu-revision
                              linux-libre-5.4-source))
 
-(define-public linux-libre-headers-4.19
-  (make-linux-libre-headers* linux-libre-4.19-version
-                             linux-libre-4.19-gnu-revision
-                             linux-libre-4.19-source))
-
 ;; The following package is used in the early bootstrap, and thus must be kept
 ;; stable and with minimal build requirements.
 (define-public linux-libre-headers-5.15.49
@@ -822,7 +797,7 @@ corresponding UPSTREAM-SOURCE (an origin), using the given DEBLOB-SCRIPTS."
 ;; linux-libre-headers-latest points to the latest headers package
 ;; and should be used as a dependency for packages that depend on
 ;; the headers.
-(define-public linux-libre-headers-latest linux-libre-headers-6.11)
+(define-public linux-libre-headers-latest linux-libre-headers-6.12)
 
 
 ;;;
@@ -1143,19 +1118,19 @@ Linux kernel.  It has been modified to remove all non-free binary blobs.")
 ;;; Generic kernel packages.
 ;;;
 
-(define-public linux-libre-6.11
-  (make-linux-libre* linux-libre-6.11-version
-                     linux-libre-6.11-gnu-revision
-                     linux-libre-6.11-source
+(define-public linux-libre-6.12
+  (make-linux-libre* linux-libre-6.12-version
+                     linux-libre-6.12-gnu-revision
+                     linux-libre-6.12-source
                      '("x86_64-linux" "i686-linux" "armhf-linux"
                        "aarch64-linux" "powerpc64le-linux" "riscv64-linux")
                      #:configuration-file kernel-config))
 
-(define-public linux-libre-version         linux-libre-6.11-version)
-(define-public linux-libre-gnu-revision    linux-libre-6.11-gnu-revision)
-(define-public linux-libre-pristine-source linux-libre-6.11-pristine-source)
-(define-public linux-libre-source          linux-libre-6.11-source)
-(define-public linux-libre                 linux-libre-6.11)
+(define-public linux-libre-version         linux-libre-6.12-version)
+(define-public linux-libre-gnu-revision    linux-libre-6.12-gnu-revision)
+(define-public linux-libre-pristine-source linux-libre-6.12-pristine-source)
+(define-public linux-libre-source          linux-libre-6.12-source)
+(define-public linux-libre                 linux-libre-6.12)
 
 (define-public linux-libre-6.6
   (make-linux-libre* linux-libre-6.6-version
@@ -1197,23 +1172,15 @@ Linux kernel.  It has been modified to remove all non-free binary blobs.")
                        "aarch64-linux" "powerpc64le-linux" "riscv64-linux")
                      #:configuration-file kernel-config))
 
-(define-public linux-libre-4.19
-  (make-linux-libre* linux-libre-4.19-version
-                     linux-libre-4.19-gnu-revision
-                     linux-libre-4.19-source
-                     '("x86_64-linux" "i686-linux" "armhf-linux"
-                       "aarch64-linux" "powerpc64le-linux")
-                     #:configuration-file kernel-config))
-
 ;; Linux-Libre-LTS points to the *newest* released long-term support version of
 ;; Linux-Libre.
 ;; Reference: <https://www.kernel.org/category/releases.html>
 
-(define-public linux-libre-lts-version         linux-libre-6.6-version)
-(define-public linux-libre-lts-gnu-revision    linux-libre-6.6-gnu-revision)
-(define-public linux-libre-lts-pristine-source linux-libre-6.6-pristine-source)
-(define-public linux-libre-lts-source          linux-libre-6.6-source)
-(define-public linux-libre-lts                 linux-libre-6.6)
+(define-public linux-libre-lts-version         linux-libre-6.12-version)
+(define-public linux-libre-lts-gnu-revision    linux-libre-6.12-gnu-revision)
+(define-public linux-libre-lts-pristine-source linux-libre-6.12-pristine-source)
+(define-public linux-libre-lts-source          linux-libre-6.12-source)
+(define-public linux-libre-lts                 linux-libre-6.12)
 
 
 ;;;
@@ -1259,26 +1226,10 @@ Linux kernel.  It has been modified to remove all non-free binary blobs.")
                         ("CONFIG_RTC_DRV_RK808" . #t))
                       (default-extra-linux-options linux-libre-5.4-version))))
 
-(define-public linux-libre-arm-generic-4.19
-  (make-linux-libre* linux-libre-4.19-version
-                     linux-libre-4.19-gnu-revision
-                     linux-libre-4.19-source
-                     '("armhf-linux")
-                     #:defconfig "multi_v7_defconfig"
-                     #:extra-version "arm-generic"))
-
 (define-public linux-libre-arm-omap2plus
   (make-linux-libre* linux-libre-version
                      linux-libre-gnu-revision
                      linux-libre-source
-                     '("armhf-linux")
-                     #:defconfig "omap2plus_defconfig"
-                     #:extra-version "arm-omap2plus"))
-
-(define-public linux-libre-arm-omap2plus-4.19
-  (make-linux-libre* linux-libre-4.19-version
-                     linux-libre-4.19-gnu-revision
-                     linux-libre-4.19-source
                      '("armhf-linux")
                      #:defconfig "omap2plus_defconfig"
                      #:extra-version "arm-omap2plus"))
@@ -1665,9 +1616,10 @@ and the notification, WiFi, and Bluetooth LED.")
      "This package provides the @code{tuxedo_keyboard}, @code{tuxedo_io},
 @code{clevo_wmi} @acronym{WMI, Windows Management Engine} and the
 @code{clevo_acpi} @acronym{ACPI, Advanced Configuration and Power Interface}
-kernel modules to control the keyboard on most Tuxedo computers. Only white
-backlight only models are currently not supported. The @code{tuxedo_io} module
-is also needed for the @code{tuxedo-control-center} (short tcc) package.")
+kernel modules to control the keyboard on most Tuxedo computers.  Only white
+backlight only models are currently not supported.  The @code{tuxedo_io}
+module is also needed for the @code{tuxedo-control-center} (short tcc)
+package.")
     (license license:gpl3+)))
 
 (define-public evdi
@@ -1731,7 +1683,7 @@ display settings applets in graphical environments")
     (description
      "Libevdi is a library that gives applications easy access to
 @acronym{EVDI, Extensible Virtual Display Interface} devices provided by the
-@code{evdi} driver package.  ")
+@code{evdi} driver package.")
     (license license:lgpl2.1)))
 
 (define-public ec
@@ -1952,7 +1904,7 @@ application by hooking GStreamer into the loopback device.")
 (define-public xpadneo
   (package
     (name "xpadneo")
-    (version "0.9.5")
+    (version "0.9.7")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -1961,7 +1913,7 @@ application by hooking GStreamer into the loopback device.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "1pq7p9sxlw1v9rnny9070b39rpwfq6rip0z92mwlw4qzinmqqgdd"))))
+                "1v5akvz14izxk3fav6x4l50gi8xzsjwxjddczc2yy78gni1a7ybs"))))
     (build-system linux-module-build-system)
     (arguments
      (list #:tests? #f                  ; no `check' target
@@ -2551,7 +2503,7 @@ Headers can have its data format described from debugging info and offsets from
 it can be used to further format a number of records.
 
 Finally, the @command{btfdiff} command can be used to compare the output of
-pahole from BTF and DWARF, to make sure they produce the same results. ")
+pahole from BTF and DWARF, to make sure they produce the same results.")
     (license license:gpl2+)))
 
 (define-public fbset
@@ -6691,7 +6643,7 @@ disks and SD cards.  This package provides the userland utilities.")
     (home-page (package-home-page f2fs-tools/static))
     (synopsis "Statically-linked fsck.f2fs command from f2fs-tools")
     (description "This package provides statically-linked fsck.f2fs command taken
-from the f2fs-tools package. It is meant to be used in initrds.")
+from the f2fs-tools package.  It is meant to be used in initrds.")
     (license (package-license f2fs-tools/static))))
 
 (define-public freefall
@@ -7154,9 +7106,9 @@ The following service daemons are also provided:
      (list autoconf automake libtool))
     (inputs (list pciutils rdma-core))
     (synopsis "Open Fabrics Enterprise Distribution (OFED) Performance Tests")
-    (description "This is a collection of tests written over uverbs intended for
-use as a performance micro-benchmark. The tests may be used for hardware or
-software tuning as well as for functional testing.
+    (description "This is a collection of tests written over uverbs intended
+for use as a performance micro-benchmark.  The tests may be used for hardware
+or software tuning as well as for functional testing.
 
 The collection contains a set of bandwidth and latency benchmark such as:
 @enumerate
@@ -10165,7 +10117,7 @@ tools for managing PipeWire.")
 (define-public ell
   (package
     (name "ell")
-    (version "0.69")
+    (version "0.71")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -10174,7 +10126,7 @@ tools for managing PipeWire.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "06gsij5fsf3jgwjx1ijn9l5lyvd09007mfn8dygqnv6xk6g1bq8l"))))
+                "09s674lh2fafw7cpwldbi8cd89arbajgvhy9j5vgqg1kbn6xddwx"))))
     (build-system gnu-build-system)
     (arguments
      ;; Tests launch dbus-daemon instances that all try to bind to
@@ -11005,7 +10957,7 @@ access to the embedded controller.")
 (define-public modprobed-db
   (package
     (name "modprobed-db")
-    (version "2.46")
+    (version "2.48")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -11014,7 +10966,7 @@ access to the embedded controller.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "017w9czm31f5c7wjyrl5fy6cw7ji681jjc7s913nbc0r43j080qr"))))
+                "0jscinga32jjvy3vwl4s1pyd5fjgqhmmk010k665nhil302hzjdc"))))
     (build-system gnu-build-system)
     (arguments
      (list #:tests? #f                  ;no tests

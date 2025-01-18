@@ -5,7 +5,7 @@
 ;;; Copyright © 2021 Vinicius Monego <monego@posteo.net>
 ;;; Copyright © 2021 jgart <jgart@dismail.de>
 ;;; Copyright © 2023 Sharlatan Hellseher <sharlatanus@gmail.com>
-;;; Copyright © 2024 Spencer King <spencer.king@geneoscopy.com>
+;;; Copyright © 2024, 2025 Spencer King <spencer.king@geneoscopy.com>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -698,6 +698,31 @@ sequences.")
 and amino acids that are used ny otherBioJulia packages.")
     (license license:expat)))
 
+(define-public julia-bittwiddlingconveniencefunctions
+  (package
+    (name "julia-bittwiddlingconveniencefunctions")
+    (version "0.1.6")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url
+              "https://github.com/JuliaSIMD/BitTwiddlingConvenienceFunctions.jl")
+             (commit (string-append "v" version))))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "0qn36wpj7bk4ysizhx0a13ajajjzlc6cxsqhhx9w99d5wciplx4a"))))
+    (build-system julia-build-system)
+    (propagated-inputs (list julia-static))
+    (home-page
+     "https://github.com/JuliaSIMD/BitTwiddlingConvenienceFunctions.jl")
+    (synopsis "Bit twiddling convenience functions")
+    (description
+     "This package provides bit twiddling convenience functions in Julia.
+These are useful for going to the next or previous mask size or for
+calculating corresponding shifts.")
+    (license license:expat)))
+
 (define-public julia-blockarrays
   (package
     (name "julia-blockarrays")
@@ -1240,6 +1265,29 @@ they are points in a normed vector space.")
 focusing mostly (as of now) on enumerative combinatorics and permutations.")
     (license license:expat)))
 
+(define-public julia-commonsolve
+  (package
+    (name "julia-commonsolve")
+    (version "0.2.4")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/SciML/CommonSolve.jl")
+             (commit (string-append "v" version))))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "1w05fp02g5cmqzqp96hcpriwjpqx61sl481rj92gf4y4xpinmdf5"))))
+    (build-system julia-build-system)
+    (home-page "https://docs.sciml.ai/CommonSolve/stable")
+    (synopsis "Common solve function for scientific machine learning")
+    (description
+     "CommonSolve.jl provides @code{solve}, @code{init}, @code{solve!}, and
+@code{step!} commands.  By using the same definition, solver libraries from
+other completely different ecosystems can extend the functions and thus not
+clash with SciML if both ecosystems export the solve command.")
+    (license license:expat)))
+
 (define-public julia-commonsubexpressions
   (package
     (name "julia-commonsubexpressions")
@@ -1290,6 +1338,28 @@ common subexpression elimination.")
 between older and newer versions of the Julia language.  The Compat package
 provides a macro that lets you use the latest syntax in a backwards-compatible
 way.")
+    (license license:expat)))
+
+(define-public julia-compositionsbases
+  (package
+    (name "julia-compositionsbase")
+    (version "0.1.0")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/JuliaFunctional/CompositionsBase.jl")
+             (commit (string-append "v" version))))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "11cfmc0rv0i8j6l7v59k4b367xx006nsxy9lkmqlzikc679zzzwa"))))
+    (build-system julia-build-system)
+    (native-inputs (list julia-documenter))
+    (propagated-inputs (list julia-inversefunctions))
+    (home-page "https://github.com/JuliaFunctional/CompositionsBase.jl")
+    (synopsis "Defines an operator for composition of morphisms")
+    (description "This package defines a new operator for composition
+of morphisms.")
     (license license:expat)))
 
 (define-public julia-configurations
@@ -1396,6 +1466,50 @@ perform optimization and therefore ideal for computer vision applications such
 as SLAM (simultaneous localization and mapping).")
       (license license:expat))))
 
+(define-public julia-cpuid
+  (package
+    (name "julia-cpuid")
+    (version "0.3.2")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/m-j-w/CpuId.jl")
+             (commit (string-append "v" version))))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "0x2csy8cvd1rm49qpqpkb3zs7swj4r91zdsyjafqr7hvjp9h3hjz"))))
+    (build-system julia-build-system)
+    (propagated-inputs (list julia-precompiletools))
+    (home-page "https://github.com/m-j-w/CpuId.jl")
+    (synopsis "Ask the CPU for its features and specifications")
+    (description
+     "This package allows you to query the availability of specific
+CPU features with low run-time cost.")
+    (license license:expat)))
+
+(define-public julia-cpusummary
+  (package
+    (name "julia-cpusummary")
+    (version "0.2.6")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/JuliaSIMD/CPUSummary.jl")
+             (commit (string-append "v" version))))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "06kmmnhhcdgm538ax6lblklrih91p2ligg328kljq144j8s6cixm"))))
+    (build-system julia-build-system)
+    (propagated-inputs (list julia-cpuid julia-ifelse julia-precompiletools
+                             julia-static))
+    (home-page "https://github.com/JuliaSIMD/CPUSummary.jl")
+    (synopsis "Provides a summary of CPU features")
+    (description
+     "This package provides a summary of available CPU features in Julia.")
+    (license license:expat)))
+
 (define-public julia-crayons
   (package
     (name "julia-crayons")
@@ -1498,7 +1612,7 @@ as comma-delimited (csv), tab-delimited (tsv), or otherwise.")
 (define-public julia-dataapi
   (package
     (name "julia-dataapi")
-    (version "1.13.0")
+    (version "1.16.0")
     (source
       (origin
         (method git-fetch)
@@ -1507,7 +1621,7 @@ as comma-delimited (csv), tab-delimited (tsv), or otherwise.")
                (commit (string-append "v" version))))
         (file-name (git-file-name name version))
         (sha256
-         (base32 "1x5pdpjlbk29766ark7rmzjbl0rhxmsb1cp04lc891aknh30rn3i"))))
+         (base32 "1n3i5ajm7a955nggba8k15m9i0ybiq42v6drn5dqb57lj6sylbbz"))))
     (build-system julia-build-system)
     (home-page "https://github.com/JuliaData/DataAPI.jl")
     (synopsis "Data-focused namespace for packages to share functions")
@@ -2031,6 +2145,37 @@ them.  Conversions and promotions are defined to allow performing operations on
 combinations of dual numbers with predefined Julia numeric types.")
     (license license:expat)))
 
+(define-public julia-dynamicpolynomials
+  (package
+    (name "julia-dynamicpolynomials")
+    (version "0.6.1")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/JuliaAlgebra/DynamicPolynomials.jl")
+             (commit (string-append "v" version))))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "07fis5d7paz9s0zf5riw63wmqy8xb95h501p7plajd3w15zar5gh"))))
+    (build-system julia-build-system)
+    (arguments
+     (list
+      #:julia-package-name "DynamicPolynomials"
+      #:julia-package-uuid "7c1d4256-1411-5781-91ec-d7bc3513ac07"
+      #:julia-package-dependencies #~(list '("Future" . "9fa8497b-333b-5362-9e8d-4d0656e87820")
+                                           '("LinearAlgebra" . "37e2e46d-f89d-539d-b4ee-838fcccc9c8e")
+                                           '("Test" . "8dfed614-e22c-5e08-85e1-65c5234f0b40"))))
+    (native-inputs (list julia-chainrulescore julia-combinatorics))
+    (propagated-inputs (list julia-multivariatepolynomials
+                             julia-mutablearithmetics julia-reexport))
+    (home-page "https://github.com/JuliaAlgebra/DynamicPolynomials.jl")
+    (synopsis "Multivariate polynomials implementation in Julia")
+    (description
+     "This package provides a multivariate polynomials implementation of commutative and
+ non-commutative variables.")
+    (license license:expat)))
+
 (define-public julia-earthorientation
   (package
     (name "julia-earthorientation")
@@ -2174,6 +2319,29 @@ metaprogramming on Julia Expr, the meta programming standard library for
     (description "@code{ExprTools} provides tooling for working with Julia
 expressions during metaprogramming.  This package aims to provide light-weight
 performant tooling without requiring additional package dependencies.")
+    (license license:expat)))
+
+(define-public julia-extents
+  (package
+    (name "julia-extents")
+    (version "0.1.4")
+    (source
+      (origin
+        (method git-fetch)
+        (uri (git-reference
+               (url "https://github.com/rafaqz/Extents.jl")
+               (commit (string-append "v" version))))
+        (file-name (git-file-name name version))
+        (sha256
+         (base32 "0l3f7fv13npd71rhjwb49j2f2aq3az6lyls85bbxxfh3pw51yr78"))))
+    (build-system julia-build-system)
+    (home-page "https://github.com/rafaqz/Extents.jl")
+    (synopsis "Shared Extent object for Julia spatial data")
+    (description
+     "Extents.jl is a small package that defines an @code{Extent} object that
+can be used by the different Julia spatial data packages.  @code{Extent} is a
+wrapper for a NamedTuple of tuples holding the lower and upper bounds for each
+dimension of a object.")
     (license license:expat)))
 
 (define-public julia-ffmpeg
@@ -2797,6 +2965,28 @@ operations in Julia.")
 library for parsing HTML.")
     (license license:expat)))
 
+(define-public julia-hostcpufeatures
+  (package
+    (name "julia-hostcpufeatures")
+    (version "0.1.17")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/JuliaSIMD/HostCPUFeatures.jl")
+             (commit (string-append "v" version))))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "1p0phms2zbmlv8bn20lnwn1jh0xjvz7vq266zf296adha534q9pq"))))
+    (build-system julia-build-system)
+    (propagated-inputs (list julia-bittwiddlingconveniencefunctions
+                             julia-ifelse julia-static))
+    (home-page "https://github.com/JuliaSIMD/HostCPUFeatures.jl")
+    (synopsis "Provides information about the CPU's features")
+    (description "This package provides information about the features of
+the host CPU in Julia.")
+    (license license:expat)))
+
 (define-public julia-http
   (package
     (name "julia-http")
@@ -3410,6 +3600,31 @@ benefit from being stack friendly by avoiding allocations/heap tracking in the
 GC.  When used in an array, the elements are able to be stored inline since
 each one has a fixed size.  Currently support inline strings from 1 byte up to
 255 bytes.")
+    (license license:expat)))
+
+(define-public julia-interfaces
+  (package
+    (name "julia-interfaces")
+    (version "0.3.2")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/rafaqz/Interfaces.jl")
+             (commit (string-append "v" version))))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "1g765wzqc16pxrr3kqcbq0b2n1w51mwaxffrv4yjn1mvr607y6xf"))))
+    (build-system julia-build-system)
+    (native-inputs
+     (list julia-aqua))
+    (propagated-inputs
+     (list julia-documenter))
+    (home-page "https://github.com/rafaqz/Interfaces.jl")
+    (synopsis "Macros to define and implement interfaces")
+    (description
+     "This package provides macros for defining the required behaviours of
+Julia interfaces, and stating that an object implements them.")
     (license license:expat)))
 
 (define-public julia-interpolations
@@ -4073,6 +4288,31 @@ expressions.  This includes a template-matching system and code-walking tools
 that let you do deep transformations of code.")
     (license license:expat)))
 
+(define-public julia-manualmemory
+  (package
+    (name "julia-manualmemory")
+    (version "0.1.8")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/JuliaSIMD/ManualMemory.jl")
+             (commit (string-append "v" version))))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "0ajd92q65cffyb9x6mb1x1aprr2afn8p52bfkbmf303dy5ac63lj"))))
+    (build-system julia-build-system)
+    ;; Tests have a dependency cycle with VectorizationBase
+    ;; VectorizationBase -> LayoutPointers -> ManualMemory -> VectorizationBase
+    (arguments
+     (list
+      #:tests? #f))
+    (home-page "https://github.com/JuliaSIMD/ManualMemory.jl")
+    (synopsis "Manual memory management utilities in Julia")
+    (description "This package provides manually managed memory buffers backed
+by @code{NTuples} in Julia.")
+    (license license:expat)))
+
 (define-public julia-mappedarrays
   (package
     (name "julia-mappedarrays")
@@ -4483,7 +4723,7 @@ and evaluation and substitution.")
 (define-public julia-mutablearithmetics
   (package
     (name "julia-mutablearithmetics")
-    (version "1.4.6")
+    (version "1.6.0")
     (source
       (origin
         (method git-fetch)
@@ -4492,7 +4732,7 @@ and evaluation and substitution.")
                (commit (string-append "v" version))))
         (file-name (git-file-name name version))
         (sha256
-         (base32 "0wh4pvvzzs0l1q5h01004kq9k45n411330pw84gj8akcn7njn2z4"))))
+         (base32 "1mwa20f09iw9kaacj34fqa1z4gyg7afnxdv6w0rw35cck33i485k"))))
     (build-system julia-build-system)
     (arguments
      (list
@@ -4895,6 +5135,31 @@ algorithms, while ensuring that the most efficient implementation is used in
 actual computation.")
     (license license:expat)))
 
+(define-public julia-performancetesttools
+  (package
+    (name "julia-performancetesttools")
+    (version "0.1.3")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/JuliaTesting/PerformanceTestTools.jl")
+             (commit (string-append "v" version))))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "0v5b8vnnhavra18h0136gahiyl7nc6r3rm3hm359ic3da8yzrnhn"))))
+    (build-system julia-build-system)
+    (home-page "https://github.com/JuliaTesting/PerformanceTestTools.jl")
+    (synopsis "Enables efficient code generation in test cases")
+    (description
+     "This package enables the Julia compiler to generate
+efficient code when running test cases.  Test cases are typically run with
+flags that prevent efficient code generation.  This package detects those flags
+and instead spawns a separate Julia process without the flags in which to run
+the test cases.")
+    (license license:expat)))
+
+
 (define-public julia-plotthemes
   (package
     (name "julia-plotthemes")
@@ -5004,10 +5269,38 @@ Hessian and g the gradient) may not be a descent direction if H is not positive
 definite.")
     (license license:expat)))
 
+(define-public julia-precompiletools
+  (package
+    (name "julia-precompiletools")
+    (version "1.2.1")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/JuliaLang/PrecompileTools.jl")
+             (commit (string-append "v" version))))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "07b69gmgs3zxs86l9g9dymv3sfgncm8sl86sp0ck6xf5ly10phiy"))))
+    (build-system julia-build-system)
+    ;; Tests try to download other repositories
+    ;; Tests try to install "fake" packages
+    (arguments
+     (list
+      #:tests? #f))
+    (propagated-inputs (list julia-preferences))
+    (home-page "https://github.com/JuliaLang/PrecompileTools.jl")
+    (synopsis "Reduce time-to-first-execution of Julia code")
+    (description
+     "This package allows you to reduce the latency of the first
+execution of Julia code.  It is applicable to both package developers and
+end users in their personal workflows.")
+    (license license:expat)))
+
 (define-public julia-preferences
   (package
     (name "julia-preferences")
-    (version "1.2.2")
+    (version "1.4.3")
     (source
       (origin
         (method git-fetch)
@@ -5016,7 +5309,7 @@ definite.")
                (commit (string-append "v" version))))
         (file-name (git-file-name name version))
         (sha256
-         (base32 "1cail43iqzbi6m9v6981rhz47zf2lcvhs5ds5gdqvc9nx5frghxq"))))
+         (base32 "09q5d223ad37qp6vqjm46la9vf8skj30z1ri3qmadq6vdycav7xm"))))
     (build-system julia-build-system)
     (arguments
      (list #:tests? #f))        ; Tests try to mkdir /.julia
@@ -5498,6 +5791,27 @@ recursive arrays like arrays of arrays.")
     (description
      "This package provides a functionality of files download with cURL, wget or
 @code{HTTP.jl} backends.")
+    (license license:expat)))
+
+(define-public julia-referenceables
+  (package
+    (name "julia-referenceables")
+    (version "0.1.3")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/JuliaFolds2/Referenceables.jl")
+             (commit (string-append "v" version))))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "1qjssgqrpyc726zm31r4fpllsyvgc21lw9kqz96whgg779y0yr80"))))
+    (build-system julia-build-system)
+    (propagated-inputs (list julia-adapt))
+    (home-page "https://github.com/JuliaFolds2/Referenceables.jl")
+    (synopsis "Provides an interface for referencing elements")
+    (description "This package provides an interface for readable and writable
+references to an element of an array or dictionary in Julia.")
     (license license:expat)))
 
 (define-public julia-referencetests
@@ -6192,6 +6506,28 @@ downstream packages to implement new methods on these types without
 depending on the entirety of @code{StaticArrays.jl}.")
     (license license:expat)))
 
+(define-public julia-staticnumbers
+  (package
+    (name "julia-staticnumbers")
+    (version "0.4.0")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/perrutquist/StaticNumbers.jl")
+             (commit (string-append "v" version))))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "1m6drdyxgizc6d5qak9l6c2dv8nb6x5kj7sgfxkgwnfxf6ran257"))))
+    (build-system julia-build-system)
+    (native-inputs (list julia-simd julia-staticarrays))
+    (home-page "https://github.com/perrutquist/StaticNumbers.jl")
+    (synopsis "Static numbers in Julia")
+    (description
+     "This package provides number datatypes which store their values in
+ type parameters, making them runtime constants.")
+    (license license:expat)))
+
 (define-public julia-statisticaltraits
   (package
     (name "julia-statisticaltraits")
@@ -6620,6 +6956,27 @@ and @code{Metatheory.jl}.")
 standard named test images and example images for the internal usage in
 @code{JuliaImages}.  This can be used in conjunction with the @code{Images}
 package.")
+    (license license:expat)))
+
+(define-public julia-timeroutputs
+  (package
+    (name "julia-timeroutputs")
+    (version "0.5.26")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/KristofferC/TimerOutputs.jl")
+             (commit (string-append "v" version))))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "0mz5kpjz2mcmaywxjp1y87wx02lmvi2b0z012rnz70p1y39s5y0v"))))
+    (build-system julia-build-system)
+    (propagated-inputs (list julia-exprtools))
+    (home-page "https://github.com/KristofferC/TimerOutputs.jl")
+    (synopsis "Formatted output of timed sections in Julia")
+    (description "This package generates formatted output from timings made
+in different sections of a program.")
     (license license:expat)))
 
 (define-public julia-tokenize

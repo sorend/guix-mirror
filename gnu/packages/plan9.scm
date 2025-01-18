@@ -117,17 +117,36 @@ reconstruct a Plan 9 terminal-like experience from a non-Plan 9 system.")
                  (add-after 'unpack 'setup
                    (lambda _
                      (let ((dest (string-append #$output "/plan9")))
+                       (substitute* "INSTALL"
+                         ;; Install fontsrv, which is enabled in LOCAL.config.
+                         (("rm -f bin/fontsrv") ""))
                        (delete-file "src/cmd/mk/mk.pdf")
+                       ;; TODO: substitute font in src/cmd/venti/srv/graph.c
                        (substitute* "src/cmd/acme/acme.c"
-                         (("/lib/font/bit/lucsans/euro.8.font")
-                          (string-append dest
-                                         "/font/fixed/unicode.5x8.font"))
-                         (("/lib/font/bit/lucm/unicode.9.font")
-                          (string-append dest
-                                         "/font/fixed/unicode.6x9.font")))
-                       (substitute* (find-files "src")
-                         (("/lib/font/bit")
-                          (string-append dest "/font")))
+                         (("lucsans/euro.8.font")
+                           "fixed/unicode.8x13.font")
+                         (("lucm/unicode.9.font")
+                           "fixed/unicode.9x15B.font"))
+                       (substitute* "src/cmd/mnihongo/mnihongo.c"
+                         (("pelm/unicode.9x24.font")
+                           "fixed/unicode.10x20.font"))
+                       (substitute* "src/cmd/rio/winwatch.c"
+                         (("lucsans/unicode.8.font")
+                           "fixed/unicode.8x13.font"))
+                       (substitute* "src/cmd/draw/stats.c"
+                         (("pelm/latin1.8.font")
+                           "fixed/unicode.8x13.font"))
+                       (substitute* "src/cmd/faces/main.c"
+                         (("pelm/latin1.8.font")
+                           "fixed/unicode.8x13.font"))
+                       (substitute* "src/cmd/fossil/view.c"
+                         (("lucsans/unicode.8.font")
+                           "fixed/unicode.8x13.font")
+                         (("lucidasans/unicode.8.font")
+                           "fixed/unicode.8x13.font"))
+                       (substitute* "src/cmd/scat/plot.c"
+                         (("luc/unicode.6.font")
+                           "fixed/unicode.6x9.font"))
                        (substitute* "bin/9c"
                          (("which")
                           (which "which")))
@@ -188,6 +207,5 @@ reconstruct a Plan 9 terminal-like experience from a non-Plan 9 system.")
        "Plan 9 from User Space (aka plan9port) is a port of many Plan 9
 programs from their native Plan 9 environment to Unix-like operating
 systems.")
-      (license (list license:expat ;modifications
-                     license:lpl1.02 ;original Plan9 code
+      (license (list license:expat
                      license:zlib))))) ;src/cmd/bzip2

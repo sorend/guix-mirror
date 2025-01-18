@@ -124,7 +124,7 @@
 (define-public capypdf
   (package
     (name "capypdf")
-    (version "0.8.0")
+    (version "0.14.0")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -132,28 +132,19 @@
                     (commit version)))
               (file-name (git-file-name name version))
               (sha256
-               (base32 "0kp1dcww5zl04wnbqbi8vjzpc5qgr8gr8rcx0s6s4xbjnzvqqw8d"))))
+               (base32 "05rpicxw76z4q48ax0dx5rm1k4lhp4lbdr2aw58kly402w8kjdwb"))))
     (build-system meson-build-system)
     (arguments
      (list #:configure-flags #~(list "-Dcpp_std=c++23")
-           #:test-options '(list "plainc")
-           #:phases
-           #~(modify-phases %standard-phases
-               (add-after 'unpack 'fix-glib-application-flags
-                 (lambda _
-                   ;; XXX: remove when bumping glib
-                   (substitute* "src/pdfviewer.cpp"
-                     (("G_APPLICATION_DEFAULT_FLAGS")
-                      "G_APPLICATION_FLAGS_NONE")))))))
-    (inputs (list fmt
-                  freetype
+           #:test-options '(list "plainc")))
+    (inputs (list freetype
                   gtk
                   lcms
                   libjpeg-turbo
                   libpng
                   zlib))
     (native-inputs (list font-google-noto
-                         gcc-12
+                         gcc-14         ; for std::format
                          ghostscript
                          pkg-config
                          python
@@ -831,14 +822,14 @@ and based on PDF specification 1.7.")
 (define-public mupdf
   (package
     (name "mupdf")
-    (version "1.24.7")
+    (version "1.25.2")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "https://mupdf.com/downloads/archive/"
                            "mupdf-" version "-source.tar.lz"))
        (sha256
-        (base32 "0hydmp8sdnkrkpqyysa6klkxbwv9awf1xc753r27gcj7ds7375fj"))
+        (base32 "0lg45wp3ici2g2i49fmwa1k32bgkqqgl51nxnqqk0i8ilmdh8hnx"))
        (modules '((guix build utils)
                   (ice-9 ftw)
                   (srfi srfi-1)))
@@ -913,6 +904,31 @@ line tools for batch rendering @command{pdfdraw}, rewriting files
                    license:x11          ;thirdparty/lcms2
                    license:silofl1.1    ;resources/fonts/{han,noto,sil,urw}
                    license:asl2.0)))) ; resources/fonts/droid
+
+(define-public mupdf-1.24 ; Needed for sioyek
+  (package
+    (inherit mupdf)
+    (name "mupdf")
+    (version "1.24.7")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (string-append "https://mupdf.com/downloads/archive/"
+                           "mupdf-" version "-source.tar.lz"))
+       (sha256
+        (base32 "0hydmp8sdnkrkpqyysa6klkxbwv9awf1xc753r27gcj7ds7375fj"))
+       (modules '((guix build utils)
+                  (ice-9 ftw)
+                  (srfi srfi-1)))
+       (snippet
+        ;; Remove bundled software.  Keep patched variants.
+        #~(with-directory-excursion "thirdparty"
+            (let ((keep '("README" "extract" "freeglut" "lcms2")))
+              (for-each delete-file-recursively
+                        (lset-difference string=?
+                                         (scandir ".")
+                                         (cons* "." ".." keep))))))))))
+
 
 (define-public qpdf
   (package
@@ -1039,7 +1055,7 @@ using a stylus.")
 (define-public xournalpp
   (package
     (name "xournalpp")
-    (version "1.2.3")
+    (version "1.2.5")
     (source
      (origin
        (method git-fetch)
@@ -1048,7 +1064,7 @@ using a stylus.")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "1rj9kz21r59cswfpczp5dcmvchbbmybv661iyycaiii2z5gh0h7i"))))
+        (base32 "1clh9hqdzmdlcjah60j7r7kgbpvf86amfqm3hcipqfhba46wsv8y"))))
     (build-system cmake-build-system)
     (arguments
      (list
@@ -1761,7 +1777,7 @@ Keywords: html2pdf, htmltopdf")
            jbig2dec
            libjpeg-turbo
            mujs
-           mupdf
+           mupdf-1.24
            openjpeg
            qt3d-5
            qtbase-5

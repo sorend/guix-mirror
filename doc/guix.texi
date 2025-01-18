@@ -22,7 +22,7 @@
 @set SUBSTITUTE-URLS https://@value{SUBSTITUTE-SERVER-1} https://@value{SUBSTITUTE-SERVER-2}
 
 @copying
-Copyright @copyright{} 2012-2024 Ludovic Courtès@*
+Copyright @copyright{} 2012--2025 Ludovic Courtès@*
 Copyright @copyright{} 2013, 2014, 2016, 2024 Andreas Enge@*
 Copyright @copyright{} 2013 Nikita Karetnikov@*
 Copyright @copyright{} 2014, 2015, 2016 Alex Kost@*
@@ -53,7 +53,7 @@ Copyright @copyright{} 2017, 2019, 2020, 2021, 2022, 2023, 2024 Maxim Cournoyer@
 Copyright @copyright{} 2017–2022 Tobias Geerinckx-Rice@*
 Copyright @copyright{} 2017 George Clemmer@*
 Copyright @copyright{} 2017 Andy Wingo@*
-Copyright @copyright{} 2017, 2018, 2019, 2020, 2023, 2024 Arun Isaac@*
+Copyright @copyright{} 2017, 2018, 2019, 2020, 2023, 2024, 2025 Arun Isaac@*
 Copyright @copyright{} 2017 nee@*
 Copyright @copyright{} 2018 Rutger Helling@*
 Copyright @copyright{} 2018, 2021, 2023 Oleg Pykhalov@*
@@ -134,6 +134,8 @@ Copyright @copyright{} 2024 Arnaud Daby-Seesaram@*
 Copyright @copyright{} 2024 Nigko Yerden@*
 Copyright @copyright{} 2024 Troy Figiel@*
 Copyright @copyright{} 2024 Sharlatan Hellseher@*
+Copyright @copyright{} 2024 45mg@*
+Copyright @copyright{} 2025 Sören Tempel@*
 
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3 or
@@ -393,7 +395,7 @@ Services
 
 * Base Services::               Essential system services.
 * Scheduled Job Execution::     The mcron service.
-* Log Rotation::                The rottlog service.
+* Log Rotation::                Archiving and deleting old logs.
 * Networking Setup::            Setting up network interfaces.
 * Networking Services::         Firewall, SSH daemon, etc.
 * Unattended Upgrades::         Automated system upgrades.
@@ -4642,6 +4644,14 @@ instructs it to not perform any such verification.
 Make sure you understand its security implications before using
 @option{--disable-authentication}.
 @end quotation
+
+@item --no-check-certificate
+Do not validate the X.509 certificates of HTTPS servers.
+
+When using this option, you have @emph{absolutely no guarantee} that you
+are communicating with the authentic server responsible for the given
+URL.  Unless the channel is authenticated, this makes you vulnerable to
+``man-in-the-middle'' attacks.
 
 @item --system=@var{system}
 @itemx -s @var{system}
@@ -10181,17 +10191,30 @@ build system (@command{zig build} command).
 Selecting this build system adds @code{zig} to the package inputs, in
 addition to the packages of @code{gnu-build-system}.
 
-There is no @code{configure} phase because Zig packages typically do not
-need to be configured.  The @code{#:zig-build-flags} parameter is a list of
-flags that are passed to the @code{zig} command during the build.  The
-@code{#:zig-test-flags} parameter is a list of flags that are passed to the
-@code{zig test} command during the @code{check} phase.  The default compiler
-package can be overridden with the @code{#:zig} argument.
+This build system by default installs package source to output.  This
+behavior can be disabled by setting @code{#:install-source?} parameter
+to @code{#f}.
 
-The optional @code{zig-release-type} parameter declares the type of release.
-Possible values are: @code{safe}, @code{fast}, or @code{small}. The default
-value is @code{#f}, which causes the release flag to be omitted from the
-@code{zig} command.  That results in a @code{debug} build.
+For packages that don't install anything and don't come with a test
+suite (likely library packages to be used by other Zig packages), you
+can set @code{#:skip-build?} parameter to @code{#t}, which skips
+@code{build} and @code{check} phases.
+
+The @code{configure} phase sets up environment for @command{zig build}.
+You need to add custom phases after it if you want to invoke
+@command{zig}.
+
+The @code{#:zig-build-flags} parameter is a list of flags that are
+passed to @command{zig build} in @code{build} phase.  The
+@code{#:zig-test-flags} parameter is a list of flags that are passed to
+@command{zig build test} in @code{check} phase.  The default compiler
+package can be overridden with the @code{#:zig} parameter.
+
+The optional @code{#:zig-release-type} parameter declares the type of
+release.  Possible values are: @code{"safe"}, @code{"fast"}, or
+@code{"small"}.  The default value is @code{#f}, which causes the
+release flag to be omitted from the @code{zig} command and results in a
+@code{"debug"} build.
 @end defvar
 
 @defvar scons-build-system
@@ -19207,7 +19230,7 @@ declaration.
 @menu
 * Base Services::               Essential system services.
 * Scheduled Job Execution::     The mcron service.
-* Log Rotation::                The rottlog service.
+* Log Rotation::                Archiving and deleting old logs.
 * Networking Setup::            Setting up network interfaces.
 * Networking Services::         Firewall, SSH daemon, etc.
 * Unattended Upgrades::         Automated system upgrades.
@@ -20850,11 +20873,94 @@ is also prefixed by a timestamp by GNU Shepherd.
 Log files such as those found in @file{/var/log} tend to grow endlessly,
 so it's a good idea to @dfn{rotate} them once in a while---i.e., archive
 their contents in separate files, possibly compressed.  The @code{(gnu
-services admin)} module provides an interface to GNU@tie{}Rot[t]log, a
-log rotation tool (@pxref{Top,,, rottlog, GNU Rot[t]log Manual}).
+services admin)} module provides an interface to the log rotation
+service provided by the Shepherd (@pxref{Log Rotation,,, shepherd, The
+GNU Shepherd Manual}).
+
+This log rotation service is made available through
+@code{log-rotation-service-type}, which takes a
+@code{log-rotation-configuration} record has its value.  By default,
+this provides @code{log-rotation}, a Shepherd ``timed service'' that
+runs periodically---once a week by default.  It automatically knows
+about the log files produced by Shepherd services and can be taught
+about external log files.  You can inspect the service and see when it's
+going to run the usual way:
+
+@example
+$ sudo herd status log-rotation
+Status of log-rotation:
+  It is running since Mon 09 Dec 2024 03:27:47 PM CET (2 days ago).
+  @dots{}
+
+Upcoming timer alarms:
+  Sun 15 Dec 2024 10:00:00 PM CET (in 4 days)
+  Sun 22 Dec 2024 10:00:00 PM CET (in 11 days)
+  Sun 29 Dec 2024 10:00:00 PM CET (in 18 days)
+@end example
+
+You can also list files subject to rotation with @command{herd files
+log-rotation} and trigger rotation manually with @command{herd trigger
+log-rotation}.
 
 This service is part of @code{%base-services}, and thus enabled by
-default, with the default settings, for commonly encountered log files.
+default, with the default settings.
+
+@defvar log-rotation-service-type
+This is the type of the log rotation service.  Its associated value must
+be a @code{log-rotation-configuration} record, as discussed below.
+@end defvar
+
+@anchor{log-rotation-configuration}
+@c %start of fragment
+
+@deftp {Data Type} log-rotation-configuration
+Available @code{log-rotation-configuration} fields are:
+
+@table @asis
+@item @code{provision} (default: @code{(log-rotation)}) (type: list-of-symbols)
+The name(s) of the log rotation Shepherd service.
+
+@item @code{requirement} (default: @code{(user-processes)}) (type: list-of-symbols)
+Dependencies of the log rotation Shepherd service.
+
+@item @code{calendar-event} (type: gexp)
+Gexp containing the @dfn{calendar event} when log rotation occurs.
+@xref{Timers,,,shepherd,The GNU Shepherd Manual}, for more information
+on calendar events.
+
+@item @code{external-log-files} (default: @code{()}) (type: list-of-strings)
+List of file names, external log files that should also be rotated.
+
+@item @code{compression} (default: @code{zstd}) (type: symbol)
+The compression method used for rotated log files, one of @code{'none},
+@code{'gzip}, and @code{'zstd}.
+
+@item @code{expiry} (type: gexp-or-integer)
+Age in seconds after which a log file is deleted.
+
+@item @code{size-threshold} (type: gexp-or-integer)
+Size in bytes below which a log file is @emph{not} rotated.
+
+@end table
+
+@end deftp
+
+
+@c %end of fragment
+
+@subheading Rottlog
+
+An alternative log rotation service relying on GNU@tie{}Rot[t]log, a log
+rotation tool (@pxref{Top,,, rottlog, GNU Rot[t]log Manual}), is also
+provided.
+
+@quotation Warning
+The Rottlog service presented here is deprecated in favor of
+@code{log-rotation-service-type} (see above).  The
+@code{rottlog-service-type} variable and related tools will be removed
+after 2025-06-15.
+@end quotation
+
 The example below shows how to extend it with an additional
 @dfn{rotation}, should you need to do that (usually, services that
 produce log files already take care of that):
@@ -20988,8 +21094,9 @@ Age in seconds after which a file is subject to deletion (six months by
 default).
 
 @item @code{schedule} (default: @code{"30 12 01,08,15,22 * *"})
-String or gexp denoting the corresponding mcron job schedule
-(@pxref{Scheduled Job Execution}).
+Schedule of the log cleanup job written either as a string in
+traditional cron syntax or as a gexp representing a Shepherd calendar
+event (@pxref{Timers,,, shepherd, The GNU Shepherd Manual}).
 @end table
 @end deftp
 
@@ -23314,10 +23421,10 @@ vrrp_instance my-group @{
 
 @cindex unattended upgrades
 @cindex upgrades, unattended
-Guix provides a service to perform @emph{unattended upgrades}:
-periodically, the system automatically reconfigures itself from the
-latest Guix.  Guix System has several properties that make unattended
-upgrades safe:
+The @code{(gnu services admin)} module provides a service to perform
+@emph{unattended upgrades}: periodically, the system automatically
+reconfigures itself from the latest Guix.  Guix System has several
+properties that make unattended upgrades safe:
 
 @itemize
 @item
@@ -23374,9 +23481,9 @@ service.  The following fields are available:
 
 @table @asis
 @item @code{schedule} (default: @code{"30 01 * * 0"})
-This is the schedule of upgrades, expressed as a gexp containing an
-mcron job schedule (@pxref{Guile Syntax, mcron job specifications,,
-mcron, GNU@tie{}mcron}).
+This is the schedule of upgrades, expressed as a string in traditional
+cron syntax or as a gexp evaluating to a Shepherd calendar event
+(@pxref{Timers,,, shepherd, The GNU Shepherd Manual}).
 
 @item @code{channels} (default: @code{#~%default-channels})
 This gexp specifies the channels to use for the upgrade
@@ -23425,7 +23532,7 @@ When @code{reboot?} is @code{#t}, services are not restarted before
 rebooting.  This means that the value for @code{services-to-restart} is
 ignored.  The updated services will be started after the system reboots.
 
-@item @code{services-to-restart} (default: @code{'(mcron)})
+@item @code{services-to-restart} (default: @code{'(unattended-upgrade)})
 This field specifies the Shepherd services to restart when the upgrade
 completes.
 
@@ -23440,8 +23547,9 @@ Use @command{herd status} to find out candidates for restarting.
 @xref{Services}, for general information about services.  Common
 services to restart would include @code{ntpd} and @code{ssh-daemon}.
 
-By default, the @code{mcron} service is restarted.  This ensures that
-the latest version of the unattended upgrade job will be used next time.
+By default, the @code{unattended-upgrade} service is restarted.  This
+ensures that the latest version of the unattended upgrade job will be
+used next time.
 
 @item @code{system-expiration} (default: @code{(* 3 30 24 3600)})
 This is the expiration time in seconds for system generations.  System
@@ -25365,6 +25473,32 @@ Data type representing the configuration of @command{elogind}.
 
 @item @code{suspend-estimation-seconds} (default: @code{*unspecified*}) (type: integer)
 ...
+
+@item @code{system-sleep-hook-files} (default: @code{'()}) (type: list)
+A list of executables (file-like objects) that will be installed into
+the @file{/etc/elogind/system-sleep/} hook directory. For example:
+
+@lisp
+(elogind-configuration
+ (system-sleep-hook-files
+  (list (local-file "sleep-script"))))
+@end lisp
+
+See `Hook directories' in the @code{loginctl(1)} man page for more information.
+
+@item @code{system-shutdown-hook-files} (default: @code{'()}) (type: list)
+A list of executables (file-like objects) that will be installed into
+the @file{/etc/elogind/system-shutdown/} hook directory.
+
+@item @code{allow-power-off-interrupts?} (default: @code{#f}) (type: boolean)
+@itemx @code{allow-suspend-interrupts?} (default: @code{#f}) (type: boolean)
+Whether the executables in elogind's hook directories (see above) can
+cause a power-off or suspend action to be cancelled (interrupted) by
+printing an appropriate error message to stdout.
+
+@item @code{broadcast-power-off-interrupts?} (default: @code{#t}) (type: boolean)
+@itemx @code{broadcast-suspend-interrupts?} (default: @code{#t}) (type: boolean)
+Whether an interrupt of a power-off or suspend action is broadcasted.
 
 @end table
 @end deftp
@@ -28855,7 +28989,7 @@ The package that provides rspamd.
 
 @item @code{config-file} (default: @code{%default-rspamd-config-file}) (type: file-like)
 File-like object of the configuration file to use.  By default all
-workers are enabled except fuzzy and they are binded to their usual
+workers are enabled except fuzzy and they are bound to their usual
 ports, e.g localhost:11334, localhost:11333 and so on
 
 @item @code{local.d-files} (default: @code{()}) (type: directory-tree)
@@ -32354,10 +32488,19 @@ started.
 @item @code{log-directory} (default: @code{"/var/log/nginx"})
 The directory to which NGinx will write log files.
 
+@item @code{log-format} (default: @code{'combined}) (type: symbol)
+Logging format for the access log. Nginx defaults to the httpd-like
+format named @code{'combined}.  Other formats can be defined using
+@code{log-formats}.
+
+@item @code{log-formats} (default: @code{'()})
+A list of additional @dfn{log formats} to define, the elements should be
+of type @code{<nginx-log-format-configuration>}.
+
 @item @code{log-level} (default: @code{'error}) (type: symbol)
-Logging level, which can be any of the following values: @code{'debug},
-@code{'info}, @code{'notice}, @code{'warn}, @code{'error}, @code{'crit},
-@code{'alert}, or @code{'emerg}.
+Logging level for the error log, which can be any of the following
+values: @code{'debug}, @code{'info}, @code{'notice}, @code{'warn},
+@code{'error}, @code{'crit}, @code{'alert}, or @code{'emerg}.
 
 @item @code{run-directory} (default: @code{"/var/run/nginx"})
 The directory in which NGinx will create a pid file, and write temporary
@@ -32486,6 +32629,31 @@ flattened into one line.
 (extra-content `("include /etc/nginx/custom-config.conf;"
                  ("include " ,%custom-config.conf ";")))
 @end lisp
+
+@end table
+@end deftp
+
+@deftp {Data Type} nginx-log-format-configuration
+Data type representing the configuration of a custom Nginx log format.
+This type has the following parameters:
+
+@table @asis
+@item @code{name} (type: symbol)
+The name of the log format as a symbol.
+
+@item @code{escape} (default: @code{'default}) (type: symbol)
+The mode used to escape values of variables in the format.  The
+supported values are:
+
+@itemize
+@item @code{'default}, to escape all characters outside of the ASCII
+      printable range.
+@item @code{'json}, to escape all characters invalid in JSON strings.
+@item @code{'none}, to disable escaping.
+@end itemize
+
+@item @code{format} (type: string)
+The format as accepted by the @code{log_format} directive.
 
 @end table
 @end deftp
@@ -34121,6 +34289,10 @@ Data type representing the configuration of dnsmasq.
 @item @code{package} (default: @var{dnsmasq})
 Package object of the dnsmasq server.
 
+@item @code{provision} (default: @code{'(dnsmasq)})
+A list of symbols for the Shepherd service corresponding to this dnsmasq
+configuration.
+
 @item @code{no-hosts?} (default: @code{#f})
 When true, don't read the hostnames in /etc/hosts.
 
@@ -34244,6 +34416,102 @@ network or obtained a DHCP lease from dnsmasq.
 @item @code{extra-options} (default: @code{'()})
 This option provides an ``escape hatch'' for the user to provide arbitrary
 command-line arguments to @command{dnsmasq} as a list of strings.
+
+@end table
+@end deftp
+
+@subsubheading Unbound Service
+
+@defvar unbound-service-type
+This is the type of the service to run @uref{https://www.unbound.net,
+Unbound}, a validating, recursive, and caching DNS resolver.  Its value
+must be a @code{unbound-configuration} object as in this example:
+
+@lisp
+(service unbound-service-type
+         (unbound-configuration
+          (forward-zone
+           (list
+            (unbound-zone
+             (name ".")
+             (forward-addr '("149.112.112.112#dns.quad9.net"
+                             "2620:fe::9#dns.quad9.net"))
+             (forward-tls-upstream #t))))))
+@end lisp
+@end defvar
+
+@deftp {Data Type} unbound-configuration
+Available @code{unbound-configuration} fields are:
+
+@table @asis
+@item @code{server} (type: unbound-server)
+General options for the Unbound server.
+
+@item @code{remote-control} (type: unbound-remote)
+Remote control options for the daemon.
+
+@item @code{forward-zone} (default: @code{()}) (type: list-of-unbound-zone)
+A zone for which queries should be forwarded to another resolver.
+
+@item @code{extra-content} (type: maybe-string)
+Raw content to add to the configuration file.
+
+@end table
+@end deftp
+
+@deftp {Data Type} unbound-server
+Available @code{unbound-server} fields are:
+
+@table @asis
+@item @code{interface} (type: maybe-list-of-strings)
+Interfaces listened on for queries from clients.
+
+@item @code{hide-version} (type: maybe-boolean)
+Refuse the version.server and version.bind queries.
+
+@item @code{hide-identity} (type: maybe-boolean)
+Refuse the id.server and hostname.bind queries.
+
+@item @code{tls-cert-bundle} (type: maybe-string)
+Certificate bundle file, used for DNS over TLS.
+
+@item @code{extra-options} (default: @code{()}) (type: alist)
+An association list of options to append.
+
+@end table
+@end deftp
+
+@deftp {Data Type} unbound-remote
+Available @code{unbound-remote} fields are:
+
+@table @asis
+@item @code{control-enable} (type: maybe-boolean)
+Enable remote control.
+
+@item @code{control-interface} (type: maybe-string)
+IP address or local socket path to listen on for remote control.
+
+@item @code{extra-options} (default: @code{()}) (type: alist)
+An association list of options to append.
+
+@end table
+@end deftp
+
+@deftp {Data Type} unbound-zone
+Available @code{unbound-zone} fields are:
+
+@table @asis
+@item @code{name} (type: string)
+Zone name.
+
+@item @code{forward-addr} (type: maybe-list-of-strings)
+IP address of server to forward to.
+
+@item @code{forward-tls-upstream} (type: maybe-boolean)
+Whether the queries to this forwarder use TLS for transport.
+
+@item @code{extra-options} (default: @code{()}) (type: alist)
+An association list of options to append.
 
 @end table
 @end deftp
@@ -35232,6 +35500,10 @@ Cuirass jobs.
 
 @item @code{ttl} (default: @code{2592000})
 Duration to keep build results' GC roots alive, in seconds.
+
+@item @code{build-expiry} (default: 4 months)
+Duration in seconds after which pending builds are canceled.  This helps
+ensure that the backlog does not grow indefinitely.
 
 @item @code{threads} (default: @code{#f})
 Number of kernel threads to use for Cuirass. The default value should be appropriate for most cases.
@@ -37328,6 +37600,77 @@ The QEMU package to use.
 @item @code{device} (default: @code{""})
 File name of the device or socket the agent uses to communicate with the
 host.  If empty, QEMU uses a default file name.
+@end table
+@end deftp
+
+@subsubheading Xen Guest Agent
+
+@cindex Xen
+@cindex Xen guest agent
+
+The Xen guest agent allows a Xen host to control the emulated system.
+The @code{xe-guest-utilities} service runs the agent on Guix guests.
+
+@url{https://github.com/xenserver/xe-guest-utilities, xe-guest-utilities} collects information about the running virtualized guest. This includes:
+@itemize
+@item
+static information
+@itemize
+@item
+The operating system running
+@item
+The Linux kernel version
+@end itemize
+
+@item
+dynamic information
+@itemize
+@item
+Network interfaces (devices) being added/removed
+@item
+Network connections being unplugged/plugged-in
+@item
+CPUs being added or removed
+@item
+The guest migrating, being paused/resumed, etc.
+@end itemize
+
+@item
+ephemeral information
+@itemize
+@item
+The amount of memory currently in-use and free
+@item
+The amount of disk-space used
+@end itemize
+@end itemize
+
+@quotation Note
+The default Linux-libre kernel that Guix ships already enables the
+necessary paravirtualization features for a guest.  There is nothing you
+need to do for the guest to support Xen's paravirtualization features.
+
+The guest utilities are used to have the guest report information
+@emph{back} to the virtualizing host and support tasks that require
+cooperation between host and guest, like CPU hotplugging.
+@end quotation
+
+@defvar xe-guest-utilities-service-type
+Service type for the Xen guest utilities service.
+@end defvar
+
+@deftp {Data Type} xe-guest-utilities-configuration
+Configuration for the @code{xe-guest-utilities} service.
+
+@table @asis
+@item @code{package} (default: @code{xe-guest-utilities})
+The Xen guest utilities package to use.
+
+@item @code{pid-file} (default: @code{"/var/run/xe-daemon.pid"})
+Name of the file holding the PID of @code{xe-deamon}.
+
+@item @code{log-file} (default: @code{"/var/log/xe-guest-utilities.log"})
+Name of the @code{xe-guest-utilities} log file.
 @end table
 @end deftp
 
@@ -40326,7 +40669,7 @@ environments, as in this example:
 
 @lisp
 (simple-service 'my-extra-home guix-home-service-type
-                `(("bob" ,my-extra-home))))
+                `(("bob" ,my-extra-home)))
 @end lisp
 @end defvar
 
@@ -41372,8 +41715,9 @@ BUG_REPORT_URL="https://gitlab.alpinelinux.org/alpine/aports/-/issues"
 Available @code{rootless-podman-configuration} fields are:
 
 @table @asis
-@item @code{podman} (default: @code{podman}) (type: package)
+@item @code{podman} (default: @code{podman}) (type: package-or-#f)
 The Podman package that will be installed in the system profile.
+Pass @code{#f} to not install Podman.
 
 @item @code{group-name} (default: @code{"cgroup"}) (type: string)
 The name of the group that will own /sys/fs/cgroup resources.  Users that
@@ -42306,7 +42650,7 @@ systems.
 
 @table @asis
 
-@item @code{file-system} (default: @code{#f}) (type: file-system)
+@item @code{file-system} (type: file-system)
 The file-system object to resize (@pxref{File Systems}).  This object
 must have the @code{device} and @code{type} fields set.  Other fields
 are ignored.
@@ -42592,7 +42936,7 @@ previous example to your operating system declaration by appending it to
   (privileged-programs
     (append (list (privileged-program
                     (program (file-append nfs-utils "/sbin/mount.nfs"))
-                    (setuid? #t))
+                    (setuid? #t)))
             %default-privileged-programs)))
 @end lisp
 
@@ -43591,10 +43935,19 @@ list-generations}).  If that generation already exists, it will be
 overwritten.  This behavior mirrors that of @command{guix package}
 (@pxref{Invoking guix package}).
 
-It also adds a bootloader menu entry for the new OS configuration,
+It adds a bootloader menu entry for the new OS configuration,
 ---unless @option{--no-bootloader} is passed.  For GRUB, it moves
 entries for older configurations to a submenu, allowing you to choose
 an older system generation at boot time should you need it.
+
+@cindex kexec, for fast reboots
+@cindex rebooting @i{via} Linux kexec
+On Linux, @command{guix system reconfigure} also loads the new system
+for fast reboot @i{via} kexec: running @command{reboot --kexec} will
+boot the new system by directly executing its kernel, thus bypassing the
+BIOS initialization phase and bootloader (@pxref{Invoking reboot,,,
+shepherd, The GNU Shepherd Manual}).  You can avoid this behavior by
+passing the @option{--no-kexec} option.
 
 @cindex provenance tracking, of the operating system
 Upon completion, the new system is deployed under
@@ -45919,6 +46272,7 @@ it manually. (@pxref{Configuring the Shell}).
 @end quotation
 
 @findex home-environment
+@vindex %base-home-services
 @lisp
 @include he-config-bare-bones.scm
 @end lisp
@@ -46943,6 +47297,22 @@ You should probably use the service extension
 mechanism instead (@pxref{Shepherd Services}).
 @end table
 @end deftp
+
+@cindex log rotation, for user services
+The Shepherd also comes with a @dfn{log rotation service}, which
+compresses and then deletes old log files produced by services and
+daemons that it runs.  This service is made available through
+@code{home-log-rotation-service-type} as described below.
+
+@defvar home-log-rotation-service-type
+This is the service type for the user Shepherd log rotation service
+(@pxref{Log Rotation Service,,, shepherd, The GNU Shepherd Manual}).
+Its value must be a @code{log-rotation-configuration} record, exactly as
+for its system-wide counterpart.  @xref{log-rotation-configuration}, for
+its reference.
+
+This service is part of @code{%base-home-services}.
+@end defvar
 
 @node Secure Shell
 @subsection Secure Shell
@@ -49746,9 +50116,9 @@ will not have the desired effect.  @xref{Package Transformation Options,
 @cindex @LaTeX{} packages
 Guix provides packages for the @TeX{}, @LaTeX{}, ConTeXt, LuaTeX, and
 related typesetting systems, taken from the
-@uref{https://www.tug.org/texlive/, @TeX{} Live distribution}.  However,
-because @TeX{} Live is so huge and because finding one's way in this
-maze is tricky, so this section provides some guidance on how to deploy
+@uref{https://www.tug.org/texlive/, @TeX{} Live distribution}.
+Because @TeX{} Live is so huge and because finding one's way in this
+maze is tricky, this section provides some guidance on how to deploy
 the relevant packages to compile @TeX{} and @LaTeX{} documents.
 
 @TeX{} Live currently comes in two mutually exclusive flavors in Guix:
@@ -49761,10 +50131,10 @@ single @TeX{} Live package} (roughly 4,200), but it is huge---more than
 
 @item
 A ``modular'' @TeX{} Live distribution, in which you only install the
-packages, always prefixed with @samp{texlive-}, you need.
+packages you need, whose name is always prefixed with @samp{texlive-}.
 @end itemize
 
-So to insist, these two flavors cannot be combined@footnote{No rule
+To insist, these two flavors cannot be combined@footnote{No rule
 without exception! As the monolithic @TeX{} Live does not contain the
 @command{biber} executable, it is okay to combine it with
 @code{texlive-biber}, which does.}.  If in the modular setting your

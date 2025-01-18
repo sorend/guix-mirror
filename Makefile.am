@@ -284,6 +284,7 @@ MODULES =					\
   guix/build/bournish.scm			\
   guix/build/qt-utils.scm			\
   guix/build/zig-build-system.scm		\
+  guix/build/zig-utils.scm			\
   guix/build/make-bootstrap.scm			\
   guix/build/toml.scm			\
   guix/search-paths.scm				\
@@ -440,11 +441,11 @@ AUX_FILES =						\
   gnu/packages/aux-files/emacs/guix-emacs.el		\
   gnu/packages/aux-files/findclass.php			\
   gnu/packages/aux-files/guix.vim			\
-  gnu/packages/aux-files/linux-libre/6.11-arm.conf	\
-  gnu/packages/aux-files/linux-libre/6.11-arm64.conf	\
-  gnu/packages/aux-files/linux-libre/6.11-i686.conf	\
-  gnu/packages/aux-files/linux-libre/6.11-x86_64.conf	\
-  gnu/packages/aux-files/linux-libre/6.11-riscv.conf	\
+  gnu/packages/aux-files/linux-libre/6.12-arm.conf	\
+  gnu/packages/aux-files/linux-libre/6.12-arm64.conf	\
+  gnu/packages/aux-files/linux-libre/6.12-i686.conf	\
+  gnu/packages/aux-files/linux-libre/6.12-x86_64.conf	\
+  gnu/packages/aux-files/linux-libre/6.12-riscv.conf	\
   gnu/packages/aux-files/linux-libre/6.6-arm.conf	\
   gnu/packages/aux-files/linux-libre/6.6-arm64.conf	\
   gnu/packages/aux-files/linux-libre/6.6-i686.conf	\
@@ -465,10 +466,6 @@ AUX_FILES =						\
   gnu/packages/aux-files/linux-libre/5.4-arm64.conf	\
   gnu/packages/aux-files/linux-libre/5.4-i686.conf	\
   gnu/packages/aux-files/linux-libre/5.4-x86_64.conf	\
-  gnu/packages/aux-files/linux-libre/4.19-arm.conf	\
-  gnu/packages/aux-files/linux-libre/4.19-arm64.conf	\
-  gnu/packages/aux-files/linux-libre/4.19-i686.conf	\
-  gnu/packages/aux-files/linux-libre/4.19-x86_64.conf	\
   gnu/packages/aux-files/pack-audit.c			\
   gnu/packages/aux-files/python/sanity-check.py		\
   gnu/packages/aux-files/python/sitecustomize.py	\
@@ -597,6 +594,7 @@ SCM_TESTS =					\
   tests/size.scm				\
   tests/status.scm				\
   tests/store-database.scm			\
+  tests/store-deadlock.scm			\
   tests/store-deduplication.scm		\
   tests/store-roots.scm			\
   tests/store.scm				\

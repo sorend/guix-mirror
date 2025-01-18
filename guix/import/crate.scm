@@ -214,7 +214,10 @@ and LICENSE."
                    (source (origin
                              (method url-fetch)
                              (uri (crate-uri ,name version))
-                             (file-name (string-append name "-" version ".tar.gz"))
+                             (file-name
+                               ,@(if yanked?
+                                     `((string-append name "-" version "-yanked.tar.gz"))
+                                     `((string-append name "-" version ".tar.gz"))))
                              (sha256
                               (base32
                                ,(bytevector->nix-base32-string (port-sha256 port))))))
@@ -467,7 +470,7 @@ look up the development dependencs for the given crate."
       ((name _ ...) name))))
 
 (define (crate-name->package-name name)
-  (guix-name "rust-" name))
+  (downstream-package-name "rust-" name))
 
 
 

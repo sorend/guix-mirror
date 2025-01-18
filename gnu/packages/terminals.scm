@@ -851,7 +851,7 @@ eye-candy, customizable, and reasonably lightweight.")
 (define-public foot
   (package
     (name "foot")
-    (version "1.19.0")
+    (version "1.20.1")
     (home-page "https://codeberg.org/dnkl/foot")
     (source
      (origin
@@ -861,7 +861,7 @@ eye-candy, customizable, and reasonably lightweight.")
              (commit version)))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "02y7vdvs09vdsmich59v85y4y4kp3gmpxskj8js0va1in0v9b3hi"))))
+        (base32 "18xqvkfy35c5n03x4j4nqwy1g497wmswb3vq8cjl04cry3lw3nfj"))))
     (build-system meson-build-system)
     (arguments
      (list
@@ -1558,6 +1558,10 @@ basic input/output.")
     (build-system cargo-build-system)
     (arguments
      `(#:install-source? #f
+       #:cargo-test-flags
+       '("--release" "--"
+         ;; Changes in clap regularly break this test.
+         "--skip=cli::tests::completions")
        #:cargo-inputs
        (("rust-ahash" ,rust-ahash-0.8)
         ("rust-base64" ,rust-base64-0.22)
