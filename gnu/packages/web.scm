@@ -118,6 +118,7 @@
   #:use-module (gnu packages bittorrent)
   #:use-module (gnu packages boost)
   #:use-module (gnu packages build-tools)
+  #:use-module (gnu packages certs)
   #:use-module (gnu packages check)
   #:use-module (gnu packages compression)
   #:use-module (gnu packages cpp)
@@ -538,14 +539,14 @@ the same, being completely separated from the Internet.")
     ;; Track the ‘mainline’ branch.  Upstream considers it more reliable than
     ;; ’stable’ and recommends that “in general you deploy the NGINX mainline
     ;; branch at all times” (https://www.nginx.com/blog/nginx-1-6-1-7-released/)
-    (version "1.27.2")
+    (version "1.27.3")
     (source (origin
               (method url-fetch)
               (uri (string-append "https://nginx.org/download/nginx-"
                                   version ".tar.gz"))
               (sha256
                (base32
-                "1yi53dd6babjg3xx1jl19d0y0xkdi2yjg9pw790w38mkl31wy7m9"))))
+                "00vrkdx0a6fpy8n0n7m9xws0dfa7dbb9pqnh3jv3c824ixbaj8xs"))))
     (build-system gnu-build-system)
     (inputs (list libxcrypt libxml2 libxslt openssl pcre zlib))
     (arguments
@@ -636,9 +637,9 @@ and as a proxy to reduce the load on back-end HTTP or mail servers.")
 
 (define-public nginx-documentation
   ;; This documentation should be relevant for the current nginx package.
-  (let ((version "1.27.2")
-        (revision 3130)
-        (changeset "cee30b2e0ae2"))
+  (let ((version "1.27.3")
+        (revision 3156)
+        (changeset "5c6ef6def8bc"))
     (package
       (name "nginx-documentation")
       (version (simple-format #f "~A-~A-~A" version revision changeset))
@@ -650,7 +651,7 @@ and as a proxy to reduce the load on back-end HTTP or mail servers.")
                (file-name (string-append name "-" version))
                (sha256
                 (base32
-                 "1d8rkhry7y2mm6gfq8xzqwyivy2zyl1d96wcx4q5r58mhj8pk2c6"))))
+                 "09wdvgvsr7ayjz3ypq8qsm12idb9z626j5ibmknc8phm10gh8cgk"))))
       (build-system gnu-build-system)
       (arguments
        '(#:tests? #f                    ; no test suite
@@ -3555,14 +3556,14 @@ which can be used to parse directory listings.")
 (define-public perl-finance-quote
   (package
    (name "perl-finance-quote")
-   (version "1.59")
+   (version "1.64")
    (source
     (origin
       (method url-fetch)
       (uri (string-append "https://cpan.metacpan.org/authors/id/B/BP/BPSCHUCK/"
                           "Finance-Quote-" version ".tar.gz"))
       (sha256
-       (base32 "0a19y5bj2pvdlfi747ihgz5khjlfkhjakv712r0gz0n6miwjiscs"))))
+       (base32 "06swiq3c8cdv73nq53wshdvcxzwf2cbiay12dvjjr4as86a7r005"))))
    (build-system perl-build-system)
    (native-inputs
      (list perl-test-harness
@@ -7131,17 +7132,22 @@ efficient where possible.")
         (base32 "0s1vjdaf3pk2xd0hvi5f7p3jm2rgwpbc734jdp9r50m1smfhxpi0"))))
     (build-system python-build-system)
     (arguments
-     `(#:tests? #f  ; Tests require network access.
-       #:phases
-       (modify-phases %standard-phases
+     (list
+      #:phases
+      '(modify-phases %standard-phases
          (replace 'check
            (lambda* (#:key tests? #:allow-other-keys)
              (when tests?
-               (invoke "nosetests")))))))
+               (setenv "EVENTLET_NO_GREENDNS" "YES")
+               (invoke "nosetests" "--exclude=(passthrough|streaming|httpretty_should_handle)")))))))
     (native-inputs
-     (list python-coverage
+     (list nss-certs-for-test
+           python-coverage
            python-eventlet
+           python-freezegun
+           python-httplib2
            python-nose
+           python-pyparsing
            python-rednose
            python-requests
            python-sure
@@ -7175,7 +7181,7 @@ command-line arguments or read from stdin.")
 (define-public python-internetarchive
   (package
     (name "python-internetarchive")
-    (version "1.8.5")
+    (version "5.1.0")
     (source
      (origin
        (method git-fetch)
@@ -7185,47 +7191,34 @@ command-line arguments or read from stdin.")
        (file-name (git-file-name name version))
        (sha256
         (base32
-         "0ih7hplv92wbv6cmgc1gs0v35qkajwicalwcq8vcljw30plr24fp"))
-       (modules '((guix build utils)))
-       (snippet
-        '(begin
-           ;; Python 3.7 removed `_pattern_type'.
-           (for-each (lambda (file)
-                       (chmod file #o644)
-                       (substitute* file
-                         (("^import re\n" line)
-                          (string-append line "re._pattern_type = re.Pattern\n"))))
-                     (find-files "." "\\.py$"))
-           ;; Mapping got moved to collections.abc
-           (substitute* "internetarchive/utils.py"
-             (("from collections import Mapping")
-              "from collections.abc import Mapping"))))))
-    (build-system python-build-system)
+         "186nx0dj0lgqrqkg9kzng5h0scbz3m6bk44vj83wzckr8yh3q08z"))))
+    (build-system pyproject-build-system)
     (arguments
-     `(#:phases
-       (modify-phases %standard-phases
-         (delete 'check)
-         (add-after 'install 'check
-           (lambda* (#:key inputs outputs #:allow-other-keys)
-             (add-installed-pythonpath inputs outputs)
-             (setenv "PATH" (string-append (assoc-ref outputs "out") "/bin"
-                                           ":" (getenv "PATH")))
-             (invoke "py.test" "-v" "-k"
-                     (string-append
-                      ;; These tests attempt to make a connection to
-                      ;; an external web service.
-                      "not test_get_item_with_kwargs"
-                      " and not test_ia")))))))
+     (list
+      #:test-flags
+      '(list "-k"
+             (string-append
+              ;; These tests need Internet access.
+              "not test_get_item_with_kwargs"
+              " and not test_upload"
+              " and not test_ia"))))
     (propagated-inputs
-     (list python-requests
-           python-jsonpatch-0.4
-           python-docopt
+     (list python-backports-csv
            python-clint
+           python-docopt
+           python-importlib-metadata
+           python-jsonpatch
+           python-requests
            python-six
-           python-schema-0.5
-           python-backports-csv))
+           python-schema
+           python-tqdm))
     (native-inputs
-     (list python-pytest python-pytest-capturelog python-responses))
+     (list nss-certs-for-test
+           python-pytest
+           python-pytest-capturelog
+           python-responses
+           python-setuptools
+           python-wheel))
     (home-page "https://github.com/jjjake/internetarchive")
     (synopsis "Command-line interface to archive.org")
     (description "@code{ia} is a command-line tool for using
@@ -7349,7 +7342,7 @@ Instagram and YouTube.")
 (define-public linkchecker
   (package
     (name "linkchecker")
-    (version "10.0.1")
+    (version "10.5.0")
     (source
      (origin
        (method git-fetch)
@@ -7358,24 +7351,31 @@ Instagram and YouTube.")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32
-         "1j97dc9a4yhpscwadhv5dxp7036pnrxiaky18l8ddr3pvxdjvkxs"))))
-    (build-system python-build-system)
-    (inputs
-     (list python-beautifulsoup4 python-dnspython python-pyxdg
-           python-requests))
-    (native-inputs
-     `(("gettext" ,gettext-minimal)
-       ("python-pytest" ,python-pytest)
-       ("python-miniboa" ,python-miniboa)
-       ("python-parameterized" ,python-parameterized)))
+        (base32 "19giahk5bs2r2ay54cc6b2ba5hr3lszn5a89m7zmwb0bk9655z56"))))
+    (build-system pyproject-build-system)
     (arguments
-     `(#:phases
-       (modify-phases %standard-phases
-         (replace 'check
-           (lambda* (#:key tests? #:allow-other-keys)
-             (when tests?
-               (invoke "py.test" "tests")))))))
+     (list
+      #:test-flags
+      #~(list
+        ;; OSError: Command ... '-m', 'linkcheck', '-V']' returned non-zero
+        ;; exit status 2.
+         "--deselect=tests/test_linkchecker.py::TestLinkchecker::test_linkchecker"
+         ;; FileNotFoundError: [Errno 2] No such file or directory: 'msgfmt'
+         "--deselect=tests/test_po.py::TestPo::test_pos")
+      #:phases
+      #~(modify-phases %standard-phases
+          (add-after 'unpack 'set-version
+            (lambda _
+              (setenv "SETUPTOOLS_SCM_PRETEND_VERSION" #$version))))))
+    (native-inputs
+     (list python-hatch-vcs
+           python-hatchling
+           python-pytest
+           python-setuptools-scm))
+    (inputs
+     (list python-beautifulsoup4
+           python-dnspython
+           python-requests))
     (home-page "https://linkchecker.github.io/linkchecker/")
     (synopsis "Check websites for broken links")
     (description "LinkChecker is a website validator.  It checks for broken

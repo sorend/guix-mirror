@@ -238,6 +238,7 @@
   #:use-module (gnu artwork)
   #:use-module (guix build-system cargo)
   #:use-module (guix build-system cmake)
+  #:use-module (guix build-system copy)
   #:use-module (guix build-system glib-or-gtk)
   #:use-module (guix build-system gnu)
   #:use-module (guix build-system meson)
@@ -2735,7 +2736,8 @@ forgotten when the session ends.")
     (arguments
      `(#:glib-or-gtk? #t
        #:build-type "release"
-       #:configure-flags '("-Dnautilus=false")
+       #:configure-flags '("-Dnautilus=false"
+                           "-Dps=enabled")
        #:phases
        (modify-phases %standard-phases
          (add-after 'unpack 'skip-gtk-update-icon-cache
@@ -13820,7 +13822,7 @@ profiler via Sysprof, debugging support, and more.")
 (define-public komikku
   (package
     (name "komikku")
-    (version "1.46.0")
+    (version "1.57.0")
     (source
      (origin
        (method git-fetch)
@@ -13830,7 +13832,7 @@ profiler via Sysprof, debugging support, and more.")
        (file-name (git-file-name name version))
        (sha256
         (base32
-         "1ggg4hgd1kyc69b06kcgvvjwmz72xgjakva19gs3nrszr4cinank"))))
+         "0z8sigv1a8a96y0hgm21j4qmpy06ziqw8yhlgbp8kbg70g5yhrbg"))))
     (build-system meson-build-system)
     (arguments
      (list
@@ -13878,6 +13880,7 @@ profiler via Sysprof, debugging support, and more.")
            python-natsort
            python-piexif
            python-pillow
+           python-pillow-heif
            python-pure-protobuf
            python-pycairo
            python-pygobject
@@ -13897,6 +13900,51 @@ profiler via Sysprof, debugging support, and more.")
     (synopsis "Manga reader for GNOME")
     (description "Komikku is an online/offline manga reader for GNOME,
 developed with the aim of being used with the Librem 5 phone.")
+    (license license:gpl3+)
+    (native-search-paths (list (search-path-specification
+                                (variable "KOMIKKU_SERVERS_PATH")
+                                (files '("lib/komikku/servers")))))))
+
+(define-public komikku-servers
+  (package
+    (name "komikku-servers")
+    (version "1.59.0")                  ; latest version that works with 1.57
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://codeberg.org/valos/Komikku/")
+             (commit (string-append "v" version))))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32
+         "0sfqmqcpdl3bsbs0wxl4jwvd7wpgigkvvasy1niz6qm2vnp35gzq"))))
+    (build-system copy-build-system)
+    (arguments
+     (list
+      #:install-plan
+      #~'(("komikku/servers" "lib/komikku/servers"))
+      #:modules '((guix build copy-build-system)
+                  (guix build utils)
+                  (ice-9 ftw))
+      #:phases
+      #~(modify-phases %standard-phases
+          (add-after 'unpack 'delete-conflicting-files
+            (lambda _
+              (with-directory-excursion "komikku/servers"
+                (for-each delete-file
+                          (scandir "."
+                                   (lambda (f) (string-suffix? ".py" f)))))))
+          (add-after 'install 'compile
+            (lambda* (#:key outputs #:allow-other-keys)
+              (let ((site-dir (string-append (assoc-ref outputs "out")
+                                             "/lib/komikku/servers")))
+                (invoke "python" "-m" "compileall"
+                        "--invalidation-mode=unchecked-hash" site-dir)))))))
+    (native-inputs (list python-wrapper))
+    (home-page "https://apps.gnome.org/Komikku")
+    (synopsis "Servers for Komikku")
+    (description "This package provides more recent servers for Komikku.")
     (license license:gpl3+)))
 
 (define-public libgda
@@ -14358,6 +14406,63 @@ receive calls.")
     (description "Calls can make and answer phone calls using different
 backends, such as ModemManager for phones and @acronym{SIP, Session Initiation
 Protocol} for @acronym{VoIP, Voice over @acronym{IP, Internet Protocol}}.")
+    (license license:gpl3+)))
+
+(define-public confy
+  (package
+    (name "confy")
+    (version "0.8.0")
+    (source (origin
+              (method git-fetch)
+              (uri (git-reference
+                    (url "https://git.sr.ht/~fabrixxm/confy")
+                    (commit version)))
+              (file-name (git-file-name name version))
+              (sha256
+               (base32 "0hjj1klndhjmy02lxn15cnid0ydnxi0ki59h4an0zsyaha77s1lm"))))
+    (build-system meson-build-system)
+    (arguments
+     (list #:glib-or-gtk? #t
+           #:imported-modules `(,@%meson-build-system-modules
+                                (guix build python-build-system))
+           #:modules '((guix build meson-build-system)
+                       ((guix build python-build-system) #:prefix python:)
+                       (guix build utils))
+           #:phases
+           #~(modify-phases %standard-phases
+               (add-after 'unpack 'disable-post-install
+                 (lambda _
+                   (substitute* "meson.build"
+                     (("gtk_update_icon_cache: true")
+                      "gtk_update_icon_cache: false")
+                     (("update_desktop_database: true")
+                      "update_desktop_database: false"))))
+               (add-after 'unpack 'patch-for-compatibility
+                 (lambda _
+                   ;; TODO: Remove when Python is updated to >= 3.11.
+                   (substitute* (find-files "." "\\.py$")
+                     (("import Self") "import Any as Self"))))
+               (add-after 'glib-or-gtk-wrap 'python-and-gi-wrap
+                 (lambda* (#:key inputs outputs #:allow-other-keys)
+                   (wrap-program (search-input-file outputs "bin/confy")
+                     `("GUIX_PYTHONPATH" =
+                       (,(getenv "GUIX_PYTHONPATH")
+                        ,(python:site-packages inputs outputs)))
+                     `("GI_TYPELIB_PATH" = (,(getenv "GI_TYPELIB_PATH")))))))))
+    (inputs (list gtk
+                  libadwaita
+                  libnotify
+                  python
+                  python-icalendar
+                  python-pygobject))
+    (native-inputs (list blueprint-compiler
+                         gettext-minimal
+                         `(,glib "bin")
+                         pkg-config))
+    (home-page "https://confy.kirgroup.net")
+    (synopsis "Conference Schedule Viewer")
+    (description "Confy is a conference schedule viewer for GNOME.  It allows
+you to mark favorite talks and highlights conflicts between favorited talks.")
     (license license:gpl3+)))
 
 (define-public gtk-frdp

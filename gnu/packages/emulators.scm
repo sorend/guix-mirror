@@ -15,13 +15,14 @@
 ;;; Copyright © 2020 Christopher Howard <christopher@librehacker.com>
 ;;; Copyright © 2021 Felipe Balbi <balbi@kernel.org>
 ;;; Copyright © 2021, 2024 Felix Gruber <felgru@posteo.net>
-;;; Copyright © 2021, 2024 Maxim Cournoyer <maxim.cournoyer@gmail.com>
+;;; Copyright © 2021, 2025 Maxim Cournoyer <maxim.cournoyer@gmail.com>
 ;;; Copyright © 2021 Guillaume Le Vaillant <glv@posteo.net>
 ;;; Copyright © 2023 c4droid <c4droid@foxmail.com>
 ;;; Copyright © 2023 Yovan Naumovski <yovan@gorski.stream>
 ;;; Copyright © 2023 Hendursaga <hendursaga@aol.com>
 ;;; Copyright © 2023 Zheng Junjie <873216071@qq.com>
 ;;; Copyright © 2024 Artyom V. Poptsov <poptsov.artyom@gmail.com>
+;;; Copyright © 2025 Ricardo Wurmus <rekado@elephly.net>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -3242,6 +3243,61 @@ from various forks of Gens, and improved platform portability.")
 performance, features, and ease of use.")
     (license license:gpl3)))
 
+(define-public bsnes-hd
+  (package
+    (inherit bsnes)
+    (name "bsnes-hd")
+    ;; As of 10.6, there only ever was beta releases -- treat these as the
+    ;; stable releases for now.
+    (version "10.6")
+    (source (origin
+              (method git-fetch)
+              (uri (git-reference
+                    (url "https://github.com/DerKoun/bsnes-hd")
+                    (commit (string-append
+                             "beta_"
+                             (string-replace-substring version "." "_")))))
+              (file-name (git-file-name name version))
+              (sha256
+               (base32
+                "0f3cd89fd0lqskzj98cc1pzmdbscq0psdjckp86w94rbchx7iw4h"))))
+    (build-system gnu-build-system)
+    (home-page "https://github.com/DerKoun/bsnes-hd/")
+    (synopsis "Fork of bsnes with added HD video features")
+    (description "bsnes-hd (called ``HD Mode 7 mod, for bsnes'' in early
+betas) is a fork of bsnes (the great SNES emulator by Near) that adds HD video
+features, such as:
+@table @asis
+@item HD Mode 7
+Renders the rotated, scaled or pseudo perspective backgrounds at
+higher resolutions.  This does not involve new custom imagery or upscaling
+algorithms.  It is a higher resolution version of the process the SNES uses.
+@item Widescreen
+Extends the scenes to the left and right, without distorting them.  It works
+for most Mode 7 scenes, but also for some other scenes/games, after some
+settings tweaking.
+@item True color
+Color calculation are done at true color instead of the SNES color depth (3x8
+instead of 3x5 bit).  With the optional line color smoothing color ``steps''
+turn into actual gradients (without influencing the sharpness of the artwork).
+@end table")
+    (license license:gpl3+)))
+
+(define-public libretro-bsnes-hd
+  (package/inherit bsnes-hd
+    (name "libretro-bsnes-hd")
+    (arguments
+     (substitute-keyword-arguments (package-arguments bsnes-hd)
+       ((#:make-flags flags ''())
+        #~(cons "target=libretro" #$flags))
+       ((#:phases phases '%standard-phases)
+        #~(modify-phases #$phases
+            (replace 'install           ;no install target
+              (lambda _
+                (install-file "bsnes/out/bsnes_hd_beta_libretro.so"
+                              (string-append #$output "/lib/libretro/"))))))))
+    (synopsis "Libretro port of bsnes-hd")))
+
 (define-public jg-api
   (package
     (name "jg-api")
@@ -3606,7 +3662,7 @@ graphic filters.  Some of its features include:
                     (("include\\(cmake/")
                      "include(")))))
     (build-system pyproject-build-system)
-    (native-inputs (list cmake pkg-config))
+    (native-inputs (list cmake pkg-config python-setuptools python-wheel))
     (home-page "https://www.unicorn-engine.org")
     (synopsis "Generic CPU emulator framework")
     (description
@@ -4023,11 +4079,6 @@ Python 3.11 for Python >=3.8.6.")
        (sha256
         (base32 "011n9vrrsbqbnw2i38ls7f0xkd85kxcnn14fm4lhxjpi91p7hshb"))))
     (build-system pyproject-build-system)
-    (propagated-inputs
-      (list
-        python-backports-strenum
-        python-capstone
-        python-keystone-engine))
     (arguments
      `(#:phases (modify-phases %standard-phases
                   (add-after 'unpack 'patch
@@ -4040,6 +4091,12 @@ Python 3.11 for Python >=3.8.6.")
                       (when tests?
                         (with-directory-excursion "tests"
                           (invoke "python" "-m" "unittest"))))))))
+    (propagated-inputs
+     (list python-backports-strenum
+           python-capstone
+           python-keystone-engine))
+    (native-inputs
+     (list python-setuptools python-wheel))
     (home-page "https://github.com/angr/archinfo")
     (synopsis "Extract architecture-specific information from binaries")
     (description

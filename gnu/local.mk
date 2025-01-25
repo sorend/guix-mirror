@@ -7,7 +7,7 @@
 # Copyright © 2016, 2017, 2018 Kei Kebreau <kkebreau@posteo.net>
 # Copyright © 2016, 2017 Rene Saavedra <rennes@openmailbox.org>
 # Copyright © 2016 Adonay "adfeno" Felipe Nogueira <https://libreplanet.org/wiki/User:Adfeno> <adfeno@openmailbox.org>
-# Copyright © 2016-2024 Ricardo Wurmus <rekado@elephly.net>
+# Copyright © 2016-2025 Ricardo Wurmus <rekado@elephly.net>
 # Copyright © 2016 Ben Woodcroft <donttrustben@gmail.com>
 # Copyright © 2016, 2017, 2018, 2019 Alex Vong <alexvong1995@gmail.com>
 # Copyright © 2016-2023 Efraim Flashner <efraim@flashner.co.il>
@@ -1207,6 +1207,7 @@ dist_patch_DATA =						\
   %D%/packages/patches/emacs-deferred-fix-number-of-arguments.patch	\
   %D%/packages/patches/emacs-elpy-dup-test-name.patch		\
   %D%/packages/patches/emacs-disable-jit-compilation.patch			\
+  %D%/packages/patches/emacs-eglot-x-fix-apply-text-edits.patch			\
   %D%/packages/patches/emacs-exec-path.patch			\
   %D%/packages/patches/emacs-fix-scheme-indent-function.patch	\
   %D%/packages/patches/emacs-helpful-fix-tests.patch	\
@@ -1216,8 +1217,10 @@ dist_patch_DATA =						\
   %D%/packages/patches/emacs-lispy-fix-thread-last-test.patch   \
   %D%/packages/patches/emacs-native-comp-driver-options.patch   \
   %D%/packages/patches/emacs-native-comp-fix-filenames.patch   \
+  %D%/packages/patches/emacs-native-comp-pin-packages.patch   \
   %D%/packages/patches/emacs-next-exec-path.patch   \
   %D%/packages/patches/emacs-next-native-comp-driver-options.patch   \
+  %D%/packages/patches/emacs-next-native-comp-fix-filenames.patch   \
   %D%/packages/patches/emacs-pasp-mode-quote-file-names.patch  \
   %D%/packages/patches/emacs-pgtk-super-key-fix.patch	\
   %D%/packages/patches/emacs-polymode-fix-lexical-variable-error.patch  \
@@ -2014,7 +2017,6 @@ dist_patch_DATA =						\
   %D%/packages/patches/strace-readlink-tests.patch		\
   %D%/packages/patches/sunxi-tools-remove-sys-io.patch	\
   %D%/packages/patches/p11-kit-hurd.patch			\
-  %D%/packages/patches/pari-gp-qfcvp.patch                      \
   %D%/packages/patches/patch-hurd-path-max.patch		\
   %D%/packages/patches/perl-5.14-autosplit-default-time.patch	\
   %D%/packages/patches/perl-5.14-module-pluggable-search.patch	\
@@ -2089,7 +2091,6 @@ dist_patch_DATA =						\
   %D%/packages/patches/python-debugpy-unbundle-pydevd.patch	\
   %D%/packages/patches/python-docopt-pytest6-compat.patch	\
   %D%/packages/patches/python-fixtures-remove-monkeypatch-test.patch	\
-  %D%/packages/patches/python-hiredis-fix-header.patch		\
   %D%/packages/patches/python-hiredis-use-system-hiredis.patch	\
   %D%/packages/patches/python-online-judge-api-client-tests.patch \
   %D%/packages/patches/python-optree-fix-32-bit.patch		\
@@ -2115,14 +2116,12 @@ dist_patch_DATA =						\
   %D%/packages/patches/python-robotframework-atest.patch	\
   %D%/packages/patches/python-robotframework-source-date-epoch.patch \
   %D%/packages/patches/python-robotframework-sshlibrary-rf5-compat.patch \
-  %D%/packages/patches/python-typing-inspect-fix.patch		\
   %D%/packages/patches/python-unittest2-python3-compat.patch	\
   %D%/packages/patches/python-unittest2-remove-argparse.patch	\
   %D%/packages/patches/python-vega-datasets-remove-la-riots-code.patch	\
   %D%/packages/patches/python-versioneer-guix-support.patch	\
   %D%/packages/patches/python-werkzeug-tests.patch		\
   %D%/packages/patches/python-xmp-toolkit-add-missing-error-codes.patch	\
-  %D%/packages/patches/python-zeep-Fix-pytest_httpx-test-cases.patch	\
   %D%/packages/patches/qemu-7.2.4-build-info-manual.patch	\
   %D%/packages/patches/qemu-build-info-manual.patch		\
   %D%/packages/patches/qemu-disable-aarch64-migration-test.patch	\

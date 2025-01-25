@@ -31,7 +31,7 @@
 ;;; Copyright © 2019, 2021, 2022 Guillaume Le Vaillant <glv@posteo.net>
 ;;; Copyright © 2019, 2020, 2021 Mathieu Othacehe <m.othacehe@gmail.com>
 ;;; Copyright © 2020 Oleg Pykhalov <go.wigust@gmail.com>
-;;; Copyright © 2020, 2023, 2024 Janneke Nieuwenhuizen <janneke@gnu.org>
+;;; Copyright © 2020, 2023, 2024, 2025 Janneke Nieuwenhuizen <janneke@gnu.org>
 ;;; Copyright © 2020, 2021, 2022 Michael Rohleder <mike@rohleder.de>
 ;;; Copyright © 2020 Vincent Legoll <vincent.legoll@gmail.com>
 ;;; Copyright © 2020 Morgan Smith <Morgan.J.Smith@outlook.com>
@@ -73,6 +73,7 @@
 ;;; Copyright © 2024 Ashish SHUKLA <ashish.is@lostca.se>
 ;;; Copyright © 2024 Ashvith Shetty <ashvithshetty10@gmail.com>
 ;;; Copyright © 2025 Dariqq <dariqq@posteo.net>
+;;; Copyright © 2024 nik gaffney <nik@fo.am>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -1572,7 +1573,9 @@ connection alive.")
                                     version "/dhcp-" version ".tar.gz"))
                 (sha256
                  (base32
-                  "1ivkvhhvqxap6c51cli7pa6xn76ngxri1zbl45ishz4ranxidi0a"))))
+                  "1ivkvhhvqxap6c51cli7pa6xn76ngxri1zbl45ishz4ranxidi0a"))
+                (patches (search-patches
+                           "dhclient-script-resolvconf-support.patch"))))
       (build-system gnu-build-system)
       (arguments
        `(#:parallel-build? #f
@@ -1666,12 +1669,13 @@ connection alive.")
              (lambda* (#:key inputs outputs #:allow-other-keys)
                ;; Install the dhclient script for GNU/Linux and make sure
                ;; if finds all the programs it needs.
-               (let* ((out       (assoc-ref outputs "out"))
-                      (libexec   (string-append out "/libexec"))
-                      (coreutils (assoc-ref inputs "coreutils*"))
-                      (inetutils (assoc-ref inputs "inetutils"))
-                      (grep      (assoc-ref inputs "grep*"))
-                      (sed       (assoc-ref inputs "sed*"))
+               (let* ((out        (assoc-ref outputs "out"))
+                      (libexec    (string-append out "/libexec"))
+                      (coreutils  (assoc-ref inputs "coreutils*"))
+                      (inetutils  (assoc-ref inputs "inetutils"))
+                      (grep       (assoc-ref inputs "grep*"))
+                      (resolvconf (assoc-ref inputs "resolvconf*"))
+                      (sed        (assoc-ref inputs "sed*"))
                       (debianutils (assoc-ref inputs "debianutils")))
                  (substitute* "client/scripts/linux"
                    (("/sbin/ip")
@@ -1687,7 +1691,8 @@ connection alive.")
                      ,(map (lambda (dir)
                              (string-append dir "/bin:"
                                             dir "/sbin"))
-                           (list inetutils coreutils grep sed debianutils))))))))))
+                           (list inetutils coreutils grep sed resolvconf
+                                 debianutils))))))))))
 
       (native-inputs
        (list config perl file))
@@ -1716,6 +1721,7 @@ connection alive.")
 
                 ("coreutils*" ,coreutils)
                 ("grep*" ,grep)
+                ("resolvconf*" ,openresolv)
                 ("sed*" ,sed)))
 
       (home-page "https://www.isc.org/dhcp/")
@@ -2977,99 +2983,85 @@ specified directories.")
 (define-public ansible-core
   (package
     (name "ansible-core")
-    (version "2.17.1")
+    ;; XXX: Starting from 2.18.1, Ansible requires Python 3.11 or newer on the
+    ;; controller, this is the latest version supporting 3.10.
+    (version "2.17.7")
     (source
      (origin
        (method url-fetch)
        (uri (pypi-uri "ansible_core" version))
        (sha256
-        (base32 "007ginimzbizx2c3fp3vccizscyki0fp4yg3bzl3qz6ipdqrsi26"))))
-    (build-system python-build-system)
+        (base32 "1kysajyc0kh885dlba6aj0a2mnpcq06q09n3kcixdqn4sqsvgais"))))
+    (build-system pyproject-build-system)
     (arguments
-     `(#:modules ((guix build python-build-system)
+     (list
+      #:modules '((guix build pyproject-build-system)
                   (guix build utils)
                   (ice-9 ftw))
-       #:phases
-       (modify-phases %standard-phases
-         ;; Several ansible commands (ansible-config, ansible-console, etc.)
-         ;; are just symlinks to a single ansible executable.  The ansible
-         ;; executable behaves differently based on the value of sys.argv[0].
-         ;; This does not work well with our wrap phase, and therefore the
-         ;; following two phases are required as a workaround.
-         (add-after 'unpack 'hide-wrapping
-           (lambda _
-             ;; Overwrite sys.argv[0] to hide the wrapper script from it.
-             (substitute* "bin/ansible"
-               (("import traceback" all)
-                (string-append all "
+      #:test-flags
+      #~(list "units"
+              "--exclude" "test/units/cli/test_adhoc.py"
+              "--exclude" "test/units/galaxy/test_collection_install.py"
+              "--num-workers" (number->string (parallel-job-count)))
+      #:phases
+      #~(modify-phases %standard-phases
+          (add-after 'unpack 'relax-requirements
+            (lambda _
+              (substitute* "requirements.txt"
+                ;; resolvelib >= 0.5.3, < 1.1.0
+                ((">= 0.5.3, < 1.1.0") ""))))
+          ;; Several ansible commands (ansible-config, ansible-console, etc.)
+          ;; are just symlinks to a single ansible executable.  The ansible
+          ;; executable behaves differently based on the value of sys.argv[0].
+          ;; This does not work well with our wrap phase, and therefore the
+          ;; following two phases are required as a workaround.
+          (add-after 'unpack 'hide-wrapping
+            (lambda _
+              ;; Overwrite sys.argv[0] to hide the wrapper script from it.
+              (substitute* "bin/ansible"
+                (("import traceback" all)
+                 (string-append all "
 import re
 sys.argv[0] = re.sub(r'\\.([^/]*)-real$', r'\\1', sys.argv[0])
 ")))))
-         (add-after 'install 'replace-symlinks
-           (lambda* (#:key outputs #:allow-other-keys)
-             ;; Replace symlinks with duplicate copies of the ansible
-             ;; executable so that sys.argv[0] has the correct value.
-             (define bin (string-append (assoc-ref outputs "out") "/bin"))
-             (with-directory-excursion bin
-               (for-each
-                (lambda (ansible-symlink)
-                  (delete-file ansible-symlink)
-                  (copy-file "ansible" ansible-symlink))
-                (scandir "." (lambda (x)
-                               (and (eq? 'symlink (stat:type (lstat x)))
-                                    (string-prefix? "ansible-" x)
-                                    (string=? "ansible" (readlink x)))))))))
-         (add-after 'unpack 'skip-controller-tests
-           (lambda _
-             ;; XXX: This disables all the controller tests, which fail for
-             ;; unknown reasons, seemingly while attempting to set the
-             ;; locale to en_US.UTF-8.
-             (substitute* "test/lib/ansible_test/_internal/commands\
-/units/__init__.py"
-               (("^            if test_context == TestContext.controller:.*"
-                 all)
-                (string-append all "                continue\n")))))
-         (add-after 'unpack 'preserve-pythonpath
-           (lambda _
-             (substitute* "test/lib/ansible_test/_internal/ansible_util.py"
-               (("PYTHONPATH=get_ansible_python_path\\(args\\)" all)
-                (string-append all "+ ':' + os.environ['GUIX_PYTHONPATH']")))
-             (substitute* "test/lib/ansible_test/_internal/commands\
-/units/__init__.py"
-               (("PYTHONPATH=get_units_ansible_python_path\\(args, \
-test_context)" all)
-                (string-append all "+ ':' + os.environ['GUIX_PYTHONPATH']")))))
-         (add-after 'unpack 'patch-paths
-           (lambda* (#:key inputs outputs #:allow-other-keys)
-             (substitute* "lib/ansible/module_utils/compat/selinux.py"
-               (("libselinux.so.1" name)
-                (string-append (assoc-ref inputs "libselinux")
-                               "/lib/" name)))
-             (substitute* "test/units/modules/test_async_wrapper.py"
-               (("/usr/bin/python")
-                (which "python")))))
+          (add-after 'install 'replace-symlinks
+            (lambda _
+              ;; Replace symlinks with duplicate copies of the ansible
+              ;; executable so that sys.argv[0] has the correct value.
+              (with-directory-excursion (string-append #$output "/bin")
+                (for-each
+                 (lambda (ansible-symlink)
+                   (delete-file ansible-symlink)
+                   (copy-file "ansible" ansible-symlink))
+                 (scandir "." (lambda (x)
+                                (and (eq? 'symlink (stat:type (lstat x)))
+                                     (string-prefix? "ansible-" x)
+                                     (string=? "ansible" (readlink x)))))))))
+          (add-after 'unpack 'patch-paths
+            (lambda _
+              (substitute* "lib/ansible/module_utils/compat/selinux.py"
+                (("libselinux.so.1" name)
+                 (string-append #$(this-package-input "libselinux")
+                                "/lib/" name)))
+              (substitute* "test/lib/ansible_test/_internal/ansible_util.py"
+                (("PYTHONPATH=get_ansible_python_path\\(args\\)" all)
+                 (string-append all "+ ':' + os.environ['GUIX_PYTHONPATH']")))
+              (substitute* "test/lib/ansible_test/_internal/commands/units/__init__.py"
+                (("PYTHONPATH=get_units_ansible_python_path\\(args, test_context)" all)
+                 (string-append all "+ ':' + os.environ['GUIX_PYTHONPATH']")))
+              (substitute* "test/units/modules/test_async_wrapper.py"
+                (("/usr/bin/python")
+                 (which "python")))))
          (replace 'check
-           (lambda* (#:key inputs outputs tests? #:allow-other-keys)
+           (lambda* (#:key inputs outputs tests? test-flags #:allow-other-keys)
              (when tests?
                ;; Otherwise Ansible fails to create its config directory.
                (setenv "HOME" "/tmp")
-               ;; These tests fail in the container; it appears that the
-               ;; mocking of the absolute file names such as /usr/bin/svcs do
-               ;; not work as intended there.
-               (delete-file "test/units/modules/test_iptables.py")
-               (delete-file "test/units/modules/test_service.py")
-               ;; These tests fail with a "unsupported locale setting" error
-               ;; when invoking 'locale.setlocale(locale.LC_ALL, '')'
-               (delete-file "test/units/module_utils/basic/\
-test_command_nonexisting.py")
-               (delete-file "test/units/module_utils/basic/test_tmpdir.py")
                ;; The test suite needs to be run with 'ansible-test', which
                ;; does some extra environment setup.  Taken from
                ;; https://raw.githubusercontent.com/ansible/ansible/\
                ;; devel/test/utils/shippable/shippable.sh.
-               (invoke "./bin/ansible-test" "units" "-v"
-                       "--num-workers" (number->string
-                                        (parallel-job-count)))))))))
+               (apply invoke "python" "bin/ansible-test" test-flags)))))))
     (native-inputs
      (list openssh
            openssl
@@ -3079,15 +3071,20 @@ test_command_nonexisting.py")
            python-pytest-forked
            python-pytest-mock
            python-pytest-xdist
-           python-pytz))
+           python-pytz
+           python-setuptools
+           python-wheel))
     (inputs                    ;optional dependencies captured in wrap scripts
-     (list libselinux python-paramiko python-passlib python-pexpect
+     (list libselinux
            sshpass))
     (propagated-inputs      ;core dependencies listed in egg-info/requires.txt
      (list python-cryptography
            python-jinja2
-           python-pyyaml
            python-packaging             ;for version number parsing
+           python-paramiko
+           python-passlib
+           python-pexpect
+           python-pyyaml
            python-resolvelib))
     (home-page "https://www.ansible.com/")
     (synopsis "Radically simple IT automation")
@@ -5008,7 +5005,7 @@ Logitech Unifying Receiver.")
   (package
     (name "lynis")
     ;; Also update the ‘lynis-sdk’ input to the commit matching this release.
-    (version "3.0.9")
+    (version "3.1.1")
     (source
      (origin
        (method git-fetch)
@@ -5017,7 +5014,7 @@ Logitech Unifying Receiver.")
              (commit version)))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "1rgiifbzlk9lfjhbgxy6pqza5kxpr5rsr8vj9fcqvqihzdb5izj1"))
+        (base32 "05bh16i916xz9w8p8fz8flzj9ayyzg7wpbi7q61ylrlahhc03nqd"))
        (modules '((guix build utils)))
        (snippet
         '(begin
@@ -5033,10 +5030,10 @@ Logitech Unifying Receiver.")
            (method git-fetch)
            (uri (git-reference
                  (url "https://github.com/CISOfy/lynis-sdk")
-                 (commit "92522b3ec39ad4cdef4756dc303d99741ec7fe20")))
+                 (commit "f4f885f1f049f59940487a6ffc2d53806c729d12")))
            (file-name (git-file-name "lynis-sdk" version))
            (sha256
-            (base32 "05qq4395x8f0kyl1ppm74npsf8sb3hhgz0ck4fya91sy6a26b4ja"))))))
+            (base32 "09d98wmvan7nlchm056kls5xm939d1231pwsvlp4q2aznz8cmg42"))))))
     (arguments
      (list
       #:phases

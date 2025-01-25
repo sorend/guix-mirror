@@ -1,6 +1,6 @@
 ;;; GNU Guix --- Functional package management for GNU
 ;;; Copyright © 2014, 2019 Eric Bavier <bavier@member.fsf.org>
-;;; Copyright © 2015-2024 Ricardo Wurmus <rekado@elephly.net>
+;;; Copyright © 2015-2025 Ricardo Wurmus <rekado@elephly.net>
 ;;; Copyright © 2015 Paul van der Walt <paul@denknerd.org>
 ;;; Copyright © 2016 Al McElrath <hello@yrns.org>
 ;;; Copyright © 2016, 2017, 2019, 2021-2024 Efraim Flashner <efraim@flashner.co.il>
@@ -2206,6 +2206,13 @@ Key features include:
      (list
       #:tests? #f                       ;xmllint attempts to download DTD
       #:test-target "test"
+      #:configure-flags
+      #~(list (string-append "--enable-docbook-stylesheet="
+                             #$(this-package-native-input "docbook-xsl")
+                             "/xml/xsl/"
+                             #$(package-name docbook-xsl) "-"
+                             #$(package-version docbook-xsl)
+                             "/html/chunk.xsl"))
       #:phases
       #~(modify-phases %standard-phases
           (add-after 'unpack 'set-version
@@ -2250,6 +2257,9 @@ for path in [path for path in sys.path if 'site-packages' in path]: site.addsite
               (substitute* "run-solfege.py"
                 (("prefix = os.path.*$")
                  (string-append "prefix = " #$output)))))
+          (add-after 'build 'build-manual
+            (lambda _
+              (invoke "make" "update-manual")))
           (add-after 'install 'wrap-program
             (lambda* (#:key outputs #:allow-other-keys)
               ;; Make sure 'solfege' runs with the correct PYTHONPATH.
@@ -2274,6 +2284,10 @@ for path in [path for path in sys.path if 'site-packages' in path]: site.addsite
            pkg-config
            txt2man
            libxml2                      ; for tests
+           docbook-xsl                  ; for manual
+           docbook-xml-4.1.2
+           itstool
+           libxslt
            ghostscript
            texinfo))
     (home-page "https://www.gnu.org/software/solfege/")
@@ -2503,7 +2517,7 @@ perform creative live mixes with digital music files.")
 (define-public synthv1
   (package
     (name "synthv1")
-    (version "1.1.0")
+    (version "1.2.0")
     (source (origin
               (method url-fetch)
               (uri
@@ -2511,7 +2525,7 @@ perform creative live mixes with digital music files.")
                               "/synthv1-" version ".tar.gz"))
               (sha256
                (base32
-                "0szl3p9wgy7cdjb757yrkskr4sqs1gvqq2zk1cm7hvadc8r0pbp3"))))
+                "1p1lsm199xzr747sy8m7smx2f33kjqgvny4w2j2spsxa3appviwm"))))
     (build-system cmake-build-system)
     (arguments
      `(#:tests? #f))                    ; there are no tests
@@ -2535,7 +2549,7 @@ oscillators and stereo effects.")
 (define-public drumkv1
   (package
     (name "drumkv1")
-    (version "1.1.0")
+    (version "1.2.0")
     (source (origin
               (method url-fetch)
               (uri
@@ -2543,7 +2557,7 @@ oscillators and stereo effects.")
                               "/drumkv1-" version ".tar.gz"))
               (sha256
                (base32
-                "0z1j4218x69nzri0nbcp3sadlwk0ixs5m9fdi4w7zpwy528bgxiz"))))
+                "1r9hp4p4vh9ml00n5fy12n2z6rgb00sv5vbhl0hw1i3dm3c17hj2"))))
     (build-system cmake-build-system)
     (arguments
      `(#:tests? #f))                    ; there are no tests
@@ -2568,7 +2582,7 @@ effects.")
 (define-public samplv1
   (package
     (name "samplv1")
-    (version "1.1.0")
+    (version "1.2.0")
     (source (origin
               (method url-fetch)
               (uri
@@ -2576,7 +2590,7 @@ effects.")
                               "/samplv1-" version ".tar.gz"))
               (sha256
                (base32
-                "1lfa9q8mkjz6m34w7fvqkd8p62f42wrrcniyv4k4d9f1a4582frd"))))
+                "06k8bhkkfwm86kcji4hprjzzm0l2zskg7vwfn5gw1mcld02gmixc"))))
     (build-system cmake-build-system)
     (arguments
      `(#:tests? #f))                    ; there are no tests
@@ -2601,7 +2615,7 @@ effects.")
 (define-public padthv1
   (package
     (name "padthv1")
-    (version "1.1.0")
+    (version "1.2.0")
     (source (origin
               (method url-fetch)
               (uri
@@ -2609,7 +2623,7 @@ effects.")
                               "/padthv1-" version ".tar.gz"))
               (sha256
                (base32
-                "17jx61bfg9k24mz266icxqbax3x0qvvywxlby16ky6fjp2dqy7x8"))))
+                "155q82rib92jpxahwihklfv4a1dck76bmnji6qdvxdir0fn4v7lw"))))
     (build-system cmake-build-system)
     (arguments
      `(#:tests? #f))                    ; there are no tests
@@ -3271,6 +3285,8 @@ using a system-independent interface.")
       (build-system pyproject-build-system)
       (arguments
        (list
+        ;; XXX: pytest failed to import 'py.test'.
+        #:tests? #f
         #:phases
         '(modify-phases %standard-phases
            (add-after 'unpack 'fix-build-system
@@ -3278,7 +3294,8 @@ using a system-independent interface.")
                (substitute* "setup.py"
                  (("from subprocess") "import sys; from subprocess")))))))
       (inputs (list libsmf glib))
-      (native-inputs (list pkg-config python-cython python-pytest))
+      (native-inputs (list pkg-config python-cython python-pytest
+                           python-setuptools python-wheel))
       (home-page "https://github.com/mididings/pysmf")
       (synopsis "Read and write Standard MIDI files")
       (description
@@ -4304,6 +4321,7 @@ websites such as Libre.fm.")
            python-munkres
            python-musicbrainzngs
            python-pyyaml
+           python-typing-extensions
            python-unidecode
            ;; Optional dependencies for plugins. Some of these are also required by tests.
            python-beautifulsoup4 ; For lyrics.
@@ -4629,7 +4647,12 @@ standard MIDI file with the csvmidi program.")
              python-pyinotify
              python-pyliblo
              python-pysmf))
-      (native-inputs (list python-pytest pkg-config scdoc))
+      (native-inputs
+       (list python-pytest
+             python-setuptools
+             python-wheel
+             pkg-config
+             scdoc))
       (home-page "https://github.com/mididings/mididings")
       (synopsis "MIDI router and processor")
       (description

@@ -1,5 +1,5 @@
 ;;; GNU Guix --- Functional package management for GNU
-;;; Copyright © 2012-2021, 2021-2024 Ludovic Courtès <ludo@gnu.org>
+;;; Copyright © 2012-2021, 2021-2025 Ludovic Courtès <ludo@gnu.org>
 ;;; Copyright © 2013, 2014, 2015, 2016 Andreas Enge <andreas@enge.fr>
 ;;; Copyright © 2012 Nikita Karetnikov <nikita@karetnikov.org>
 ;;; Copyright © 2014, 2015, 2016, 2017, 2018, 2019, 2020 Mark H Weaver <mhw@netris.org>
@@ -514,7 +514,7 @@ corresponding UPSTREAM-SOURCE (an origin), using the given DEBLOB-SCRIPTS."
 ;; The current "stable" kernels. That is, the most recently released major
 ;; versions that are still supported upstream.
 
-(define-public linux-libre-6.12-version "6.12.9")
+(define-public linux-libre-6.12-version "6.12.10")
 (define-public linux-libre-6.12-gnu-revision "gnu")
 (define deblob-scripts-6.12
   (linux-libre-deblob-scripts
@@ -524,7 +524,7 @@ corresponding UPSTREAM-SOURCE (an origin), using the given DEBLOB-SCRIPTS."
    (base32 "0jwnb1pd8ayfkck3sw3jjlsg7gayig0ymiay53mg7qchhycih8xs")))
 (define-public linux-libre-6.12-pristine-source
   (let ((version linux-libre-6.12-version)
-        (hash (base32 "1d5f4rn6d5hyw94jqdcc7ay0y1s8lmhm3hxss90b6c89vxh07gl7")))
+        (hash (base32 "15xjjn8ff7g9q0ljr2g8k098ppxnpvxlgv22rdrplls8sxg6wlaa")))
    (make-linux-libre-source version
                             (%upstream-linux-source version hash)
                             deblob-scripts-6.12)))
@@ -533,7 +533,7 @@ corresponding UPSTREAM-SOURCE (an origin), using the given DEBLOB-SCRIPTS."
 ;; Here are the support timelines:
 ;; <https://www.kernel.org/category/releases.html>
 
-(define-public linux-libre-6.6-version "6.6.70")
+(define-public linux-libre-6.6-version "6.6.72")
 (define-public linux-libre-6.6-gnu-revision "gnu")
 (define deblob-scripts-6.6
   (linux-libre-deblob-scripts
@@ -543,12 +543,12 @@ corresponding UPSTREAM-SOURCE (an origin), using the given DEBLOB-SCRIPTS."
    (base32 "1gqha26cxijizyhg6k5397bc9pn54wxz01d4gb7j2xx22rkxjwhb")))
 (define-public linux-libre-6.6-pristine-source
   (let ((version linux-libre-6.6-version)
-        (hash (base32 "15rgzl86q52ki0n7n4xlhb1pmipxbshmnafinsyfnvxjgzh3xll4")))
+        (hash (base32 "0fggpba886340xi8gkxc6hmzplcm69nliddql3d6hn8djcafbfgy")))
    (make-linux-libre-source version
                             (%upstream-linux-source version hash)
                             deblob-scripts-6.6)))
 
-(define-public linux-libre-6.1-version "6.1.124")
+(define-public linux-libre-6.1-version "6.1.125")
 (define-public linux-libre-6.1-gnu-revision "gnu")
 (define deblob-scripts-6.1
   (linux-libre-deblob-scripts
@@ -558,7 +558,7 @@ corresponding UPSTREAM-SOURCE (an origin), using the given DEBLOB-SCRIPTS."
    (base32 "060pbbvk3c1r9v6fz1qm5f0hjb29wi67lg7an0nwl6bpjsk5ci52")))
 (define-public linux-libre-6.1-pristine-source
   (let ((version linux-libre-6.1-version)
-        (hash (base32 "09wqb2wqrbg62kqn1r4vj5694r701lkvb9vdzj0slvv2rkazckpz")))
+        (hash (base32 "0g0b23dm8kzijh9j1g4rv7b3r2lzz53g26xmz4zgchkybxfkbwnr")))
    (make-linux-libre-source version
                             (%upstream-linux-source version hash)
                             deblob-scripts-6.1)))
@@ -792,6 +792,11 @@ corresponding UPSTREAM-SOURCE (an origin), using the given DEBLOB-SCRIPTS."
 (define-public linux-libre-headers-5.15.49
   (make-linux-libre-headers "5.15.49" "gnu"
                             "13zqdcm4664vh7g57sxbfrlpsxm7zrma72mxdfdz7d9yndy2gfv8"))
+
+;; linux 5.19 include loongarch support.
+(define-public linux-libre-headers-5.19.17
+  (make-linux-libre-headers "5.19.17" "gnu"
+                            "0m1yabfvaanbzv0ip04r4kvs16aq0pp2dk93xzi5cq18i3vw351m"))
 
 (define-public linux-libre-headers linux-libre-headers-5.15.49)
 ;; linux-libre-headers-latest points to the latest headers package
@@ -1263,32 +1268,38 @@ Linux kernel.  It has been modified to remove all non-free binary blobs.")
                       (default-extra-linux-options linux-libre-version))))
 
 (define-public linux-libre-lts-arm64-generic
-  (make-linux-libre* linux-libre-lts-version
-                     linux-libre-lts-gnu-revision
-                     linux-libre-lts-source
-                     '("aarch64-linux")
-                     #:defconfig "defconfig"
-                     #:extra-version "arm64-generic"
-                     #:extra-options
-                     (append
-                      `(;; Provide support for ath9k wireless
-                        ("CONFIG_ATH9K_HTC" . m)
-                        ;; needed to fix the RTC on rockchip platforms
-                        ("CONFIG_RTC_DRV_RK808" . #t)
-                        ;; Pinebook display, battery, charger and usb
-                        ("CONFIG_DRM_ANALOGIX_ANX6345" . m)
-                        ("CONFIG_CHARGER_AXP20X" . m)
-                        ("CONFIG_INPUT_AXP20X_PEK" . m)
-                        ("CONFIG_CHARGER_AXP20X" . m)
-                        ("CONFIG_BATTERY_AXP20X" . m)
-                        ("CONFIG_PINCTRL_AXP209" . m)
-                        ("CONFIG_AXP20X_POWER" . m)
-                        ("CONFIG_AXP20X_ADC" . m)
-                        ;; Pinebook PRO battery and sound support
-                        ("CONFIG_BATTERY_CW2015" . m)
-                        ("CONFIG_CHARGER_GPIO" . m)
-                        ("CONFIG_SND_SOC_ES8316" . m))
-                      (default-extra-linux-options linux-libre-lts-version))))
+  (if (string=? linux-libre-lts-version linux-libre-version)
+
+      ;; Make it a strict alias so that the user interface does not see two
+      ;; packages with the exact same name and version.
+      linux-libre-arm64-generic
+
+      (make-linux-libre* linux-libre-lts-version
+                         linux-libre-lts-gnu-revision
+                         linux-libre-lts-source
+                         '("aarch64-linux")
+                         #:defconfig "defconfig"
+                         #:extra-version "arm64-generic"
+                         #:extra-options
+                         (append
+                          `( ;; Provide support for ath9k wireless
+                            ("CONFIG_ATH9K_HTC" . m)
+                            ;; needed to fix the RTC on rockchip platforms
+                            ("CONFIG_RTC_DRV_RK808" . #t)
+                            ;; Pinebook display, battery, charger and usb
+                            ("CONFIG_DRM_ANALOGIX_ANX6345" . m)
+                            ("CONFIG_CHARGER_AXP20X" . m)
+                            ("CONFIG_INPUT_AXP20X_PEK" . m)
+                            ("CONFIG_CHARGER_AXP20X" . m)
+                            ("CONFIG_BATTERY_AXP20X" . m)
+                            ("CONFIG_PINCTRL_AXP209" . m)
+                            ("CONFIG_AXP20X_POWER" . m)
+                            ("CONFIG_AXP20X_ADC" . m)
+                            ;; Pinebook PRO battery and sound support
+                            ("CONFIG_BATTERY_CW2015" . m)
+                            ("CONFIG_CHARGER_GPIO" . m)
+                            ("CONFIG_SND_SOC_ES8316" . m))
+                          (default-extra-linux-options linux-libre-lts-version)))))
 
 (define-public linux-libre-arm64-generic-5.10
   (make-linux-libre* linux-libre-5.10-version
@@ -10046,6 +10057,7 @@ types and interfaces and translates so that the X server can use them.")
                   jack-2
                   ldacbt
                   libcamera
+                  libdrm
                   libfdk
                   libfreeaptx
                   libsndfile
