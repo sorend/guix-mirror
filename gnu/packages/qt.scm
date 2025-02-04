@@ -758,13 +758,13 @@ developers using C++ or QML, a CSS & JavaScript like language.")
   (package
     (inherit qtbase-5)
     (name "qtbase")
-    (version "6.7.2")
+    (version "6.8.2")
     (source (origin
               (inherit (package-source qtbase-5))
               (uri (qt-url name version))
               (sha256
                (base32
-                "16bmfrjfxjajs6sqg1383ihhfwwf69ihkpnpvsajh5pv21g2mwn5"))
+                "01gy1p8zvxq8771x6iqkrc7s3kzdddgf1i7xj656w7j1dp746801"))
               (modules '((guix build utils)))
               (snippet
                ;; corelib uses bundled harfbuzz, md4, md5, sha3
@@ -778,7 +778,6 @@ developers using C++ or QML, a CSS & JavaScript like language.")
                                "qtbase-absolute-runpath.patch"
                                "qtbase-qmake-use-libname.patch"
                                "qtbase-qmlimportscanner-qml-import-path.patch"
-                               "qtbase-find-tools-in-PATH.patch"
                                "qtbase-qmake-fix-includedir.patch"))))
     (build-system cmake-build-system)
     (arguments
